@@ -1,0 +1,69 @@
+<div class="no-print">
+  <button mat-stroked-button (click)="print()" *ngIf="appointment">
+    <mat-icon>print</mat-icon>
+    Print
+  </button>
+</div>
+
+<div class="print-sheet" *ngIf="appointment">
+  <div class="sheet-head">
+    <div class="brand">
+      <div class="brand-line">
+        <img *ngIf="branding?.logoUrl" [src]="branding?.logoUrl" alt="logo" class="brand-logo">
+        <span>{{ branding?.name || 'MediCoreX Hospital' }}</span>
+      </div>
+      <small *ngIf="branding?.website || branding?.phone">{{ branding?.website || '' }}{{ (branding?.website && branding?.phone) ? ' • ' : '' }}{{ branding?.phone || '' }}</small>
+      <small *ngIf="branding?.address">{{ branding?.address }}</small>
+    </div>
+    <div class="doc-title">
+      <h1>Appointment Slip</h1>
+      <p>Issued {{ formatDate(issuedAt) }}</p>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <strong>Status:</strong>
+    <span class="status-chip" [class]="statusClass">{{ appointment.status }}</span>
+  </div>
+
+  <div class="slip">
+    <div class="slip-row"><label>Patient</label><span>{{ appointment.patientName }}</span></div>
+    <div class="slip-row"><label>MRN</label><span>{{ appointment.patient?.mrn || '—' }}</span></div>
+    <div class="slip-row"><label>Date</label><span>{{ formatDate(appointment.appointmentDate) }}</span></div>
+    <div class="slip-row"><label>Time</label><span>{{ formatTime(appointment.startTime) }} — {{ formatTime(appointment.endTime) }}</span></div>
+    <div class="slip-row"><label>Doctor</label><span>Dr. {{ appointment.doctorName }}</span></div>
+    <div class="slip-row"><label>Type</label><span>{{ appointment.appointmentType || appointment.type }}</span></div>
+    <div class="slip-row"><label>Consultation Fee</label><span>Rs. {{ formatFee(appointment.consultationFee) }}</span></div>
+  </div>
+
+  <section>
+    <h3>Reason for Visit</h3>
+    <div class="note" [class.empty]="!appointment.reason && !appointment.chiefComplaint">
+      {{ appointment.reason || appointment.chiefComplaint || 'No reason recorded.' }}
+    </div>
+  </section>
+
+  <section *ngIf="appointment.notes">
+    <h3>Notes</h3>
+    <div class="note">{{ appointment.notes }}</div>
+  </section>
+
+  <section class="doctor-space">
+    <h3>Doctor's Prescription / Notes</h3>
+    <div class="writing-area"></div>
+  </section>
+
+  <div class="foot">
+    <span>MediCoreX Hospital Management System</span>
+    <span>Appointment ID: {{ appointment.id }}</span>
+  </div>
+</div>
+
+<div style="display:grid;place-items:center;min-height:60vh;" *ngIf="loading">
+  <mat-spinner diameter="36"></mat-spinner>
+</div>
+
+<div style="text-align:center;padding:80px 0;color:#64748b;" *ngIf="!loading && !appointment">
+  <h2>Appointment unavailable</h2>
+  <p>The appointment could not be loaded or no longer exists.</p>
+</div>

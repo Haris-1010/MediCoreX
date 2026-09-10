@@ -1,0 +1,59 @@
+<div class="org-list">
+  <div class="filter-bar">
+    <mat-form-field appearance="outline" class="search">
+      <mat-icon matPrefix>search</mat-icon>
+      <mat-label>Search organizations</mat-label>
+      <input matInput [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()">
+    </mat-form-field>
+    <button mat-raised-button color="primary" (click)="createNew()">
+      <mat-icon>add_business</mat-icon>
+      New organization
+    </button>
+  </div>
+
+  <div class="loading" *ngIf="loading">
+    <mat-spinner diameter="36"></mat-spinner>
+  </div>
+
+  <div class="empty" *ngIf="!loading && !filtered.length">
+    <mat-icon>corporate_fare</mat-icon>
+    <h3>No organizations found</h3>
+    <p>Create your first customer organization to get started.</p>
+    <button mat-stroked-button color="primary" (click)="createNew()">Create organization</button>
+  </div>
+
+  <div class="org-tile" *ngFor="let org of filtered" (click)="openDetail(org)">
+    <div class="org-avatar">
+      <mat-icon>corporate_fare</mat-icon>
+    </div>
+    <div class="org-info">
+      <h3>{{ org.name }}</h3>
+      <div class="meta">
+        <span>{{ org.code || '—' }}</span>
+        <span><mat-icon>mail</mat-icon> {{ org.contactEmail || 'No email' }}</span>
+      </div>
+    </div>
+    <div class="stat-cell">
+      <strong>{{ org.userCount }}</strong>
+      <small>Users</small>
+    </div>
+    <div class="stat-cell">
+      <strong>{{ org.branchCount }}</strong>
+      <small>Branches</small>
+    </div>
+    <div>
+      <span class="status-chip" [class.active]="org.isActive" [class.inactive]="!org.isActive">
+        {{ org.isActive ? 'Active' : 'Inactive' }}
+      </span>
+    </div>
+    <div class="tile-actions" (click)="$event.stopPropagation()">
+      <button mat-icon-button matTooltip="Activate / Deactivate" (click)="toggleActive(org)">
+        <mat-icon>{{ org.isActive ? 'pause_circle' : 'play_circle' }}</mat-icon>
+      </button>
+      <button mat-button color="primary" (click)="openDetail(org)">
+        Manage
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>

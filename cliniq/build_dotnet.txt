@@ -1,0 +1,13 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ClinIQ.Domain -> C:\Development\files\cliniq-updated\cliniq\src\ClinIQ.Domain\bin\Debug\net8.0\ClinIQ.Domain.dll
+  ClinIQ.Shared -> C:\Development\files\cliniq-updated\cliniq\src\ClinIQ.Shared\bin\Debug\net8.0\ClinIQ.Shared.dll
+  ClinIQ.Application -> C:\Development\files\cliniq-updated\cliniq\src\ClinIQ.Application\bin\Debug\net8.0\ClinIQ.Application.dll
+  ClinIQ.Infrastructure -> C:\Development\files\cliniq-updated\cliniq\src\ClinIQ.Infrastructure\bin\Debug\net8.0\ClinIQ.Infrastructure.dll
+  ClinIQ.API -> C:\Development\files\cliniq-updated\cliniq\src\ClinIQ.API\bin\Debug\net8.0\ClinIQ.API.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:14.54

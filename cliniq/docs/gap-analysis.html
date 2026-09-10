@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClinIQ Gap Analysis</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #f8f9fa;
+  --surface: #ffffff;
+  --surface-alt: #f1f3f5;
+  --border: #dee2e6;
+  --text: #212529;
+  --text-muted: #6c757d;
+  --text-light: #adb5bd;
+  --accent: #1a237e;
+  --accent-light: #e8eaf6;
+  --green: #2e7d32;
+  --green-bg: #e8f5e9;
+  --green-border: #a5d6a7;
+  --yellow: #f57f17;
+  --yellow-bg: #fff8e1;
+  --yellow-border: #ffe082;
+  --red: #c62828;
+  --red-bg: #ffebee;
+  --red-border: #ef9a9a;
+  --blue: #1565c0;
+  --blue-bg: #e3f2fd;
+  --blue-border: #90caf9;
+  --purple: #6a1b9a;
+  --purple-bg: #f3e5f5;
+  --purple-border: #ce93d8;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'DM Sans', -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-alt: #1c2129;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --text-light: #484f58;
+    --accent: #7986cb;
+    --accent-light: #1a1f3a;
+    --green: #66bb6a;
+    --green-bg: #1a2e1a;
+    --green-border: #2e7d32;
+    --yellow: #ffa726;
+    --yellow-bg: #2e2a1a;
+    --yellow-border: #f57f17;
+    --red: #ef5350;
+    --red-bg: #2e1a1a;
+    --red-border: #c62828;
+    --blue: #42a5f5;
+    --blue-bg: #1a2a3e;
+    --blue-border: #1565c0;
+    --purple: #ba68c8;
+    --purple-bg: #2a1a2e;
+    --purple-border: #6a1b9a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface-alt: #1c2129;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --text-light: #484f58;
+  --accent: #7986cb;
+  --accent-light: #1a1f3a;
+  --green: #66bb6a;
+  --green-bg: #1a2e1a;
+  --green-border: #2e7d32;
+  --yellow: #ffa726;
+  --yellow-bg: #2e2a1a;
+  --yellow-border: #f57f17;
+  --red: #ef5350;
+  --red-bg: #2e1a1a;
+  --red-border: #c62828;
+  --blue: #42a5f5;
+  --blue-bg: #1a2a3e;
+  --blue-border: #1565c0;
+  --purple: #ba68c8;
+  --purple-bg: #2a1a2e;
+  --purple-border: #6a1b9a;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+header { text-align: center; margin-bottom: 3rem; padding: 3rem 0 2rem; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 2rem; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; margin-bottom: 0.5rem; }
+header p { color: var(--text-muted); font-size: 0.95rem; max-width: 600px; margin: 0 auto; }
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2.5rem; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; text-align: center; }
+.stat-card .number { font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat-card .label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 0.25rem; }
+.stat-card.done .number { color: var(--green); }
+.stat-card.partial .number { color: var(--yellow); }
+.stat-card.missing .number { color: var(--red); }
+.stat-card.stub .number { color: var(--blue); }
+.section { margin-bottom: 2.5rem; }
+.section-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--border); }
+.section-header h2 { font-size: 1.15rem; font-weight: 600; }
+.section-header .badge { font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.badge-done { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.badge-partial { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow-border); }
+.badge-missing { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+.badge-stub { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-border); }
+.badge-extra { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-border); }
+table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; font-size: 0.875rem; }
+th { background: var(--surface-alt); text-align: left; padding: 0.6rem 1rem; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+td { padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+.status { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 4px; white-space: nowrap; }
+.s-done { background: var(--green-bg); color: var(--green); }
+.s-partial { background: var(--yellow-bg); color: var(--yellow); }
+.s-missing { background: var(--red-bg); color: var(--red); }
+.s-stub { background: var(--blue-bg); color: var(--blue); }
+.s-extra { background: var(--purple-bg); color: var(--purple); }
+code { font-family: var(--mono); font-size: 0.8rem; background: var(--surface-alt); padding: 0.1rem 0.35rem; border-radius: 3px; }
+.mono { font-family: var(--mono); font-size: 0.8rem; }
+.text-muted { color: var(--text-muted); }
+.sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; }
+.card h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; }
+.card ul { list-style: none; font-size: 0.85rem; }
+.card li { padding: 0.2rem 0; display: flex; align-items: flex-start; gap: 0.5rem; }
+.card li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; margin-top: 0.45rem; flex-shrink: 0; }
+.card li.done::before { background: var(--green); }
+.card li.partial::before { background: var(--yellow); }
+.card li.missing::before { background: var(--red); }
+.card li.stub::before { background: var(--blue); }
+.legend { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem; padding: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; }
+.legend-item { display: flex; align-items: center; gap: 0.4rem; }
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+@media (max-width: 768px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .grid-2 { grid-template-columns: 1fr; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 0.4rem 0.6rem; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>ClinIQ — Gap Analysis</h1>
+    <p>Comprehensive audit of the current ClinIQ codebase against the master prompt requirements. Built on .NET 8 + Angular 19 + SQL Server.</p>
+  </header>
+
+  <div class="stats-row">
+    <div class="stat-card done"><div class="number">12</div><div class="label">Fully Implemented</div></div>
+    <div class="stat-card partial"><div class="number">11</div><div class="label">Partially Implemented</div></div>
+    <div class="stat-card stub"><div class="number">10</div><div class="label">Stub / Empty APIs</div></div>
+    <div class="stat-card missing"><div class="number">18</div><div class="label">Not Started</div></div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Done — working end-to-end</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div> Partial — entity exists, incomplete logic</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div> Stub — returns empty, DB tables exist</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> Missing — no backend or frontend</div>
+  </div>
+
+  <!-- ===== SECTION 1: FOUNDATION ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>1. Foundation &amp; Infrastructure</h2>
+      <span class="badge badge-done">85% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>ASP.NET Core 8 Web API</td><td><span class="status s-done">Done</span></td><td>ClinIQ.API project, clean architecture</td></tr>
+      <tr><td>Entity Framework Core</td><td><span class="status s-done">Done</span></td><td>ApplicationDbContext, 40+ DbSets, query filters</td></tr>
+      <tr><td>SQL Server</td><td><span class="status s-done">Done</span></td><td>Connection configured, migrations exist</td></tr>
+      <tr><td>Clean Architecture</td><td><span class="status s-done">Done</span></td><td>API → Application → Domain → Infrastructure → Shared</td></tr>
+      <tr><td>Angular 19 Frontend</td><td><span class="status s-done">Done</span></td><td>17 feature modules, lazy loading, Material UI</td></tr>
+      <tr><td>JWT Authentication</td><td><span class="status s-done">Done</span></td><td>Access + refresh tokens, BCrypt hashing</td></tr>
+      <tr><td>Refresh Token Rotation</td><td><span class="status s-done">Done</span></td><td>RefreshToken entity, rotation on /refresh-token</td></tr>
+      <tr><td>FluentValidation</td><td><span class="status s-done">Done</span></td><td>Validators for Patient, Appointment, Auth</td></tr>
+      <tr><td>SignalR Service</td><td><span class="status s-partial">Partial</span></td><td>Frontend service exists, no backend hub wired</td></tr>
+      <tr><td>Background Jobs</td><td><span class="status s-missing">Missing</span></td><td>No Hangfire/Quartz configured</td></tr>
+      <tr><td>Health Checks</td><td><span class="status s-missing">Missing</span></td><td>No health check middleware</td></tr>
+      <tr><td>Structured Logging</td><td><span class="status s-missing">Missing</span></td><td>No Serilog/NLog configured</td></tr>
+      <tr><td>Dapper</td><td><span class="status s-missing">Missing</span></td><td>No Dapper usage for reporting queries</td></tr>
+      <tr><td>Caching</td><td><span class="status s-missing">Missing</span></td><td>No Redis or in-memory cache</td></tr>
+      <tr><td>Rate Limiting</td><td><span class="status s-missing">Missing</span></td><td>No rate limiting middleware</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 2: MULTI-TENANCY ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>2. Multi-Tenancy</h2>
+      <span class="badge badge-partial">60% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>Tenant Entity</td><td><span class="status s-done">Done</span></td><td>Tenant, TenantUser, BranchUser entities</td></tr>
+      <tr><td>Global Query Filters</td><td><span class="status s-done">Done</span></td><td>Auto-filter by TenantId on all ITenantEntity</td></tr>
+      <tr><td>SaveChanges Tenant Injection</td><td><span class="status s-done">Done</span></td><td>Auto-set TenantId/BranchId on insert</td></tr>
+      <tr><td>ITenantService</td><td><span class="status s-done">Done</span></td><td>GetCurrentTenantId(), GetCurrentBranchId()</td></tr>
+      <tr><td>Branch Support</td><td><span class="status s-done">Done</span></td><td>Branch entity, switch-branch endpoint</td></tr>
+      <tr><td>Department Support</td><td><span class="status s-done">Done</span></td><td>Department entity exists</td></tr>
+      <tr><td>Per-Controller Tenant Check</td><td><span class="status s-partial">Partial</span></td><td>Query filters handle it, but no explicit authorization checks in controllers</td></tr>
+      <tr><td>Cross-Tenant Attack Prevention</td><td><span class="status s-partial">Partial</span></td><td>Query filters help, but no explicit IDOR testing</td></tr>
+      <tr><td>Tenant-Aware Caching</td><td><span class="status s-missing">Missing</span></td><td>No caching layer at all</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 3: AUTH & RBAC ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>3. Authentication &amp; RBAC</h2>
+      <span class="badge badge-partial">70% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>Login / Logout</td><td><span class="status s-done">Done</span></td><td>JWT tokens, BCrypt passwords</td></tr>
+      <tr><td>Register</td><td><span class="status s-done">Done</span></td><td>AuthController /register</td></tr>
+      <tr><td>Refresh Token</td><td><span class="status s-done">Done</span></td><td>Rotation on each refresh</td></tr>
+      <tr><td>Forgot / Reset Password</td><td><span class="status s-done">Done</span></td><td>Endpoints exist (email sending not wired)</td></tr>
+      <tr><td>Change Password</td><td><span class="status s-done">Done</span></td><td>Endpoint exists</td></tr>
+      <tr><td>Role Entity</td><td><span class="status s-done">Done</span></td><td>Role, UserRole, Permission, RolePermission</td></tr>
+      <tr><td>Permission Entity</td><td><span class="status s-done">Done</span></td><td>Granular permissions in DB</td></tr>
+      <tr><td>[Authorize] on Controllers</td><td><span class="status s-done">Done</span></td><td>All controllers have [Authorize]</td></tr>
+      <tr><td>Frontend Route Guards</td><td><span class="status s-done">Done</span></td><td>AuthGuard, RoleGuard, PermissionGuard</td></tr>
+      <tr><td>Frontend Permission Directives</td><td><span class="status s-done">Done</span></td><td>HasPermissionDirective, HasRoleDirective</td></tr>
+      <tr><td>Per-Endpoint Permission Checks</td><td><span class="status s-missing">Missing</span></td><td>Controllers use [Authorize] but no [Authorize(Policy="...")] or permission checks</td></tr>
+      <tr><td>Login Throttling</td><td><span class="status s-missing">Missing</span></td><td>No brute-force protection</td></tr>
+      <tr><td>Account Lockout</td><td><span class="status s-missing">Missing</span></td><td>No lockout after failed attempts</td></tr>
+      <tr><td>Email Verification</td><td><span class="status s-missing">Missing</span></td><td>EmailConfirmed = true by default</td></tr>
+      <tr><td>Entitlements Service</td><td><span class="status s-missing">Missing</span></td><td>No IEntitlementService</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 4: SUBSCRIPTION ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>4. SaaS Subscription &amp; Packages</h2>
+      <span class="badge badge-missing">15% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>SubscriptionPackage Enum</td><td><span class="status s-done">Done</span></td><td>Free, Basic, Professional, Enterprise</td></tr>
+      <tr><td>SubscriptionStatus Enum</td><td><span class="status s-done">Done</span></td><td>Trial, Active, Suspended, Expired, Cancelled</td></tr>
+      <tr><td>Package Entity</td><td><span class="status s-missing">Missing</span></td><td>Enum exists but no Package/Subscription entity</td></tr>
+      <tr><td>IEntitlementService</td><td><span class="status s-missing">Missing</span></td><td>No entitlement checking</td></tr>
+      <tr><td>Feature Gating</td><td><span class="status s-missing">Missing</span></td><td>No middleware or service to check features</td></tr>
+      <tr><td>Usage Limits</td><td><span class="status s-missing">Missing</span></td><td>No tracking of users/patients/SMS limits</td></tr>
+      <tr><td>Subscription UI</td><td><span class="status s-missing">Missing</span></td><td>No frontend subscription management</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 5: PATIENT ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>5. Patient Management</h2>
+      <span class="badge badge-done">80% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>Patient Entity</td><td><span class="status s-done">Done</span></td><td>Full entity with all fields, soft delete</td></tr>
+      <tr><td>Quick Registration Form</td><td><span class="status s-done">Done</span></td><td>Single-card form with required + optional fields</td></tr>
+      <tr><td>Patient List + Search</td><td><span class="status s-done">Done</span></td><td>Paginated table with search and filters</td></tr>
+      <tr><td>Patient CRUD API</td><td><span class="status s-done">Done</span></td><td>GET, POST, PUT, DELETE with validation</td></tr>
+      <tr><td>Patient Medical History</td><td><span class="status s-done">Done</span></td><td>Allergies, chronic conditions</td></tr>
+      <tr><td>Patient Insurance</td><td><span class="status s-partial">Partial</span></td><td>PatientInsurance entity exists, no controller</td></tr>
+      <tr><td>Patient Documents</td><td><span class="status s-partial">Partial</span></td><td>PatientDocument entity exists, no upload API</td></tr>
+      <tr><td>Duplicate Detection</td><td><span class="status s-missing">Missing</span></td><td>No dedup logic</td></tr>
+      <tr><td>Patient Merge</td><td><span class="status s-missing">Missing</span></td><td>No merge functionality</td></tr>
+      <tr><td>Patient Timeline</td><td><span class="status s-missing">Missing</span></td><td>No unified timeline view</td></tr>
+      <tr><td>Patient Categories</td><td><span class="status s-partial">Partial</span></td><td>PatientCategory entity exists, no UI</td></tr>
+      <tr><td>Custom Fields</td><td><span class="status s-missing">Missing</span></td><td>No custom field architecture</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 6: APPOINTMENTS ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>6. Appointments &amp; Scheduling</h2>
+      <span class="badge badge-done">75% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>Appointment Entity</td><td><span class="status s-done">Done</span></td><td>Status, type, doctor, patient, time</td></tr>
+      <tr><td>Appointment CRUD API</td><td><span class="status s-done">Done</span></td><td>Full CRUD with validation</td></tr>
+      <tr><td>Calendar View</td><td><span class="status s-done">Done</span></td><td>Month calendar with appointment dots</td></tr>
+      <tr><td>List View</td><td><span class="status s-done">Done</span></td><td>Paginated table with filters</td></tr>
+      <tr><td>Appointment Form</td><td><span class="status s-done">Done</span></td><td>Create/edit form</td></tr>
+      <tr><td>Doctor Schedule</td><td><span class="status s-partial">Partial</span></td><td>Component exists, schedule entity missing</td></tr>
+      <tr><td>Double Booking Prevention</td><td><span class="status s-missing">Missing</span></td><td>No server-side conflict check</td></tr>
+      <tr><td>Working Hours / Breaks</td><td><span class="status s-missing">Missing</span></td><td>No schedule entity</td></tr>
+      <tr><td>Holiday Management</td><td><span class="status s-missing">Missing</span></td><td>No holiday entity</td></tr>
+      <tr><td>Check-in / Check-out</td><td><span class="status s-missing">Missing</span></td><td>No workflow steps</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 7: OPD ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>7. OPD (Outpatient Department)</h2>
+      <span class="badge badge-stub">40% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>OPD Controller</td><td><span class="status s-stub">Stub</span></td><td>Returns empty array, no real logic</td></tr>
+      <tr><td>Visit Entity</td><td><span class="status s-done">Done</span></td><td>Visit entity with status, type</td></tr>
+      <tr><td>Queue Entity</td><td><span class="status s-done">Done</span></td><td>Queue entity with status, token number</td></tr>
+      <tr><td>Queue Management UI</td><td><span class="status s-stub">Stub</span></td><td>Frontend exists but API returns empty</td></tr>
+      <tr><td>Walk-in Support</td><td><span class="status s-missing">Missing</span></td><td>No walk-in workflow</td></tr>
+      <tr><td>Token Numbers</td><td><span class="status s-missing">Missing</span></td><td>No auto-numbering logic</td></tr>
+      <tr><td>Visit Workflow (Check-in → Vitals → Consult → Billing)</td><td><span class="status s-missing">Missing</span></td><td>No workflow engine</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 8: IPD ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>8. IPD (Inpatient Department)</h2>
+      <span class="badge badge-partial">55% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>Admission Entity</td><td><span class="status s-done">Done</span></td><td>Status, type, doctor, bed, dates</td></tr>
+      <tr><td>Admission CRUD API</td><td><span class="status s-done">Done</span></td><td>Full CRUD with validation</td></tr>
+      <tr><td>Admission Form</td><td><span class="status s-done">Done</span></td><td>Frontend form component</td></tr>
+      <tr><td>Bed Management UI</td><td><span class="status s-done">Done</span></td><td>Visual bed grid with status colors</td></tr>
+      <tr><td>Nursing Station UI</td><td><span class="status s-partial">Partial</span></td><td>UI exists, API returns empty</td></tr>
+      <tr><td>Discharge Component</td><td><span class="status s-partial">Partial</span></td><td>Component exists, logic incomplete</td></tr>
+      <tr><td>Bed Allocation Service</td><td><span class="status s-missing">Missing</span></td><td>IBedManagementService interface only</td></tr>
+      <tr><td>Bed Transfer</td><td><span class="status s-missing">Missing</span></td><td>No transfer API or workflow</td></tr>
+      <tr><td>Bed History</td><td><span class="status s-missing">Missing</span></td><td>BedAllocation entity exists but no history API</td></tr>
+      <tr><td>Discharge Workflow</td><td><span class="status s-missing">Missing</span></td><td>No billing finalization, bed release, summary</td></tr>
+      <tr><td>Daily Progress Notes</td><td><span class="status s-missing">Missing</span></td><td>No clinical notes API</td></tr>
+      <tr><td>Inpatient Timeline</td><td><span class="status s-missing">Missing</span></td><td>No longitudinal view</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 9: FACILITY ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>9. Facility Management</h2>
+      <span class="badge badge-partial">50% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>Building Entity</td><td><span class="status s-done">Done</span></td><td>Building, Floor, Ward, Room, Bed entities</td></tr>
+      <tr><td>BedAllocation Entity</td><td><span class="status s-done">Done</span></td><td>Patient, bed, dates, status</td></tr>
+      <tr><td>BedType / BedStatus Enums</td><td><span class="status s-done">Done</span></td><td>10 bed types, 6+ statuses</td></tr>
+      <tr><td>Facility API (Buildings)</td><td><span class="status s-stub">Stub</span></td><td>Returns empty, no CRUD logic</td></tr>
+      <tr><td>Wards API</td><td><span class="status s-stub">Stub</span></td><td>Returns empty, no CRUD logic</td></tr>
+      <tr><td>Facility Dashboard UI</td><td><span class="status s-done">Done</span></td><td>Buildings/Wards/Rooms/Equipment tabs</td></tr>
+      <tr><td>Building CRUD</td><td><span class="status s-missing">Missing</span></td><td>No create/update/delete logic</td></tr>
+      <tr><td>Ward CRUD</td><td><span class="status s-missing">Missing</span></td><td>No create/update/delete logic</td></tr>
+      <tr><td>Room CRUD</td><td><span class="status s-missing">Missing</span></td><td>No create/update/delete logic</td></tr>
+      <tr><td>Bed CRUD</td><td><span class="status s-missing">Missing</span></td><td>No create/update/delete logic</td></tr>
+      <tr><td>Bed Occupancy Dashboard</td><td><span class="status s-missing">Missing</span></td><td>No visual occupancy view</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 10: BILLING ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>10. Billing Engine</h2>
+      <span class="badge badge-partial">55% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>Invoice Entity</td><td><span class="status s-done">Done</span></td><td>Status, total, items, payments</td></tr>
+      <tr><td>InvoiceItem Entity</td><td><span class="status s-done">Done</span></td><td>Service, quantity, price, tax</td></tr>
+      <tr><td>Payment Entity</td><td><span class="status s-done">Done</span></td><td>Method, amount, status</td></tr>
+      <tr><td>Service / ServiceCategory</td><td><span class="status s-done">Done</span></td><td>Service catalog entities</td></tr>
+      <tr><td>TaxConfiguration</td><td><span class="status s-done">Done</span></td><td>Tax config entity</td></tr>
+      <tr><td>Invoice CRUD API</td><td><span class="status s-done">Done</span></td><td>Full CRUD in BillingController</td></tr>
+      <tr><td>Billing UI</td><td><span class="status s-done">Done</span></td><td>Invoice list and form</td></tr>
+      <tr><td>Automatic Tax Calculation</td><td><span class="status s-missing">Missing</span></td><td>No server-side calculation</td></tr>
+      <tr><td>Discount Engine</td><td><span class="status s-missing">Missing</span></td><td>No discount entity or logic</td></tr>
+      <tr><td>Payment Processing</td><td><span class="status s-missing">Missing</span></td><td>Payment entity exists, no processing logic</td></tr>
+      <tr><td>Partial Payment</td><td><span class="status s-missing">Missing</span></td><td>No outstanding balance tracking</td></tr>
+      <tr><td>Refund</td><td><span class="status s-missing">Missing</span></td><td>No refund entity or workflow</td></tr>
+      <tr><td>Insurance Billing</td><td><span class="status s-missing">Missing</span></td><td>No insurance integration</td></tr>
+      <tr><td>Corporate Billing</td><td><span class="status s-missing">Missing</span></td><td>CorporateClient entity exists, no logic</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 11: INSURANCE ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>11. Insurance &amp; Claims</h2>
+      <span class="badge badge-partial">35% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>InsuranceCompany Entity</td><td><span class="status s-done">Done</span></td><td>Entity exists in Domain</td></tr>
+      <tr><td>InsurancePlan Entity</td><td><span class="status s-done">Done</span></td><td>Entity exists in Domain</td></tr>
+      <tr><td>InsuranceClaim Entity</td><td><span class="status s-done">Done</span></td><td>Status, amounts, entity exists</td></tr>
+      <tr><td>CorporateClient Entity</td><td><span class="status s-done">Done</span></td><td>Entity exists in Domain</td></tr>
+      <tr><td>PatientInsurance Entity</td><td><span class="status s-done">Done</span></td><td>Link patient to insurance</td></tr>
+      <tr><td>InsuranceController</td><td><span class="status s-missing">Missing</span></td><td>No controller exists</td></tr>
+      <tr><td>Insurance UI</td><td><span class="status s-missing">Missing</span></td><td>No frontend module</td></tr>
+      <tr><td>Claim Workflow</td><td><span class="status s-missing">Missing</span></td><td>No submission/approval logic</td></tr>
+      <tr><td>Insurance Verification</td><td><span class="status s-missing">Missing</span></td><td>No verification API</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 12: INVENTORY ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>12. Inventory &amp; Procurement</h2>
+      <span class="badge badge-stub">35% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>Item Entity</td><td><span class="status s-done">Done</span></td><td>Name, SKU, category, stock, price</td></tr>
+      <tr><td>StockBatch Entity</td><td><span class="status s-done">Done</span></td><td>Batch, expiry, quantity</td></tr>
+      <tr><td>PurchaseOrder Entity</td><td><span class="status s-done">Done</span></td><td>PO, items, status</td></tr>
+      <tr><td>StockMovement Entity</td><td><span class="status s-done">Done</span></td><td>Movement type, quantity, reference</td></tr>
+      <tr><td>Supplier Entity</td><td><span class="status s-done">Done</span></td><td>Supplier profile entity</td></tr>
+      <tr><td>GoodsReceipt Entity</td><td><span class="status s-done">Done</span></td><td>GRN with items</td></tr>
+      <tr><td>Inventory UI (Items)</td><td><span class="status s-done">Done</span></td><td>List with search, filters, add/edit dialog</td></tr>
+      <tr><td>Stock Adjustment UI</td><td><span class="status s-done">Done</span></td><td>Adjustment form with autocomplete</td></tr>
+      <tr><td>Inventory API</td><td><span class="status s-stub">Stub</span></td><td>All endpoints return empty arrays</td></tr>
+      <tr><td>Purchase Orders API</td><td><span class="status s-stub">Stub</span></td><td>Returns empty, no CRUD logic</td></tr>
+      <tr><td>Stock Deduction on Sale</td><td><span class="status s-missing">Missing</span></td><td>No transactional stock logic</td></tr>
+      <tr><td>Batch Expiry Management</td><td><span class="status s-missing">Missing</span></td><td>No expiry alerts or FEFO</td></tr>
+      <tr><td>Stock Transfer</td><td><span class="status s-missing">Missing</span></td><td>Entities exist, no logic</td></tr>
+      <tr><td>GRN Workflow</td><td><span class="status s-missing">Missing</span></td><td>Entity exists, no workflow</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 13: PHARMACY ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>13. Pharmacy &amp; Prescriptions</h2>
+      <span class="badge badge-stub">40% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>Prescription Entity</td><td><span class="status s-done">Done</span></td><td>Prescription + PrescriptionItem</td></tr>
+      <tr><td>Prescription UI</td><td><span class="status s-done">Done</span></td><td>Pharmacy module with list view</td></tr>
+      <tr><td>Pharmacy API</td><td><span class="status s-stub">Stub</span></td><td>Returns empty arrays</td></tr>
+      <tr><td>Prescription Form</td><td><span class="status s-missing">Missing</span></td><td>No prescription creation form</td></tr>
+      <tr><td>Medicine Dispensing</td><td><span class="status s-missing">Missing</span></td><td>No dispensing workflow</td></tr>
+      <tr><td>Prescription Templates</td><td><span class="status s-missing">Missing</span></td><td>No template system</td></tr>
+      <tr><td>Medicine Search / IntelliSense</td><td><span class="status s-missing">Missing</span></td><td>No smart search</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 14: LAB & RADIOLOGY ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>14. Laboratory &amp; Radiology</h2>
+      <span class="badge badge-stub">25% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>MedicalOrder Entity</td><td><span class="status s-done">Done</span></td><td>Order type, status, results</td></tr>
+      <tr><td>Lab Module UI</td><td><span class="status s-done">Done</span></td><td>Basic list view</td></tr>
+      <tr><td>Radiology Module UI</td><td><span class="status s-done">Done</span></td><td>Basic list view</td></tr>
+      <tr><td>Laboratory API</td><td><span class="status s-stub">Stub</span></td><td>Returns empty arrays</td></tr>
+      <tr><td>Radiology API</td><td><span class="status s-stub">Stub</span></td><td>Returns empty arrays</td></tr>
+      <tr><td>Lab Test Catalog</td><td><span class="status s-missing">Missing</span></td><td>No test/category entities</td></tr>
+      <tr><td>Lab Results Entry</td><td><span class="status s-missing">Missing</span></td><td>No result entry form</td></tr>
+      <tr><td>Result Approval</td><td><span class="status s-missing">Missing</span></td><td>No approval workflow</td></tr>
+      <tr><td>External LIS Integration</td><td><span class="status s-missing">Missing</span></td><td>No integration interface</td></tr>
+      <tr><td>External RIS/PACS Integration</td><td><span class="status s-missing">Missing</span></td><td>No integration interface</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 15: EMERGENCY ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>15. Emergency Department</h2>
+      <span class="badge badge-stub">30% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>EmergencyVisit Entity</td><td><span class="status s-done">Done</span></td><td>Triage level, priority, status</td></tr>
+      <tr><td>TriageLevel Enum</td><td><span class="status s-done">Done</span></td><td>5 triage levels defined</td></tr>
+      <tr><td>Emergency Module UI</td><td><span class="status s-done">Done</span></td><td>Basic list view</td></tr>
+      <tr><td>Emergency API</td><td><span class="status s-stub">Stub</span></td><td>Returns empty arrays</td></tr>
+      <tr><td>Emergency Registration</td><td><span class="status s-missing">Missing</span></td><td>No registration workflow</td></tr>
+      <tr><td>Triage Workflow</td><td><span class="status s-missing">Missing</span></td><td>No triage assignment logic</td></tr>
+      <tr><td>Admission Conversion</td><td><span class="status s-missing">Missing</span></td><td>No ER-to-IPD flow</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 16: NURSING ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>16. Nursing</h2>
+      <span class="badge badge-stub">35% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>Vital Entity</td><td><span class="status s-done">Done</span></td><td>BP, pulse, temp, SpO2, etc.</td></tr>
+      <tr><td>NursingNote Entity</td><td><span class="status s-done">Done</span></td><td>Note entity exists</td></tr>
+      <tr><td>Nursing Station UI</td><td><span class="status s-done">Done</span></td><td>Vitals, medications, tasks tabs</td></tr>
+      <tr><td>Nursing API</td><td><span class="status s-stub">Stub</span></td><td>All endpoints return empty</td></tr>
+      <tr><td>Vitals Recording</td><td><span class="status s-missing">Missing</span></td><td>No vitals API or chart</td></tr>
+      <tr><td>Medication Administration</td><td><span class="status s-missing">Missing</span></td><td>No MAR API</td></tr>
+      <tr><td>Care Plans</td><td><span class="status s-missing">Missing</span></td><td>No care plan entity</td></tr>
+      <tr><td>Intake/Output</td><td><span class="status s-missing">Missing</span></td><td>No I&O tracking</td></tr>
+      <tr><td>Shift Handover</td><td><span class="status s-missing">Missing</span></td><td>No handover system</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 17: EMR ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>17. EMR (Electronic Medical Records)</h2>
+      <span class="badge badge-missing">20% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>Visit Entity</td><td><span class="status s-done">Done</span></td><td>Basic visit tracking</td></tr>
+      <tr><td>Vital Entity</td><td><span class="status s-done">Done</span></td><td>Basic vitals</td></tr>
+      <tr><td>Chief Complaint / HPI</td><td><span class="status s-missing">Missing</span></td><td>No clinical note fields</td></tr>
+      <tr><td>Examination Notes</td><td><span class="status s-missing">Missing</span></td><td>No examination entity</td></tr>
+      <tr><td>Diagnosis (ICD)</td><td><span class="status s-missing">Missing</span></td><td>No diagnosis entity</td></tr>
+      <tr><td>Custom Forms / Form Designer</td><td><span class="status s-missing">Missing</span></td><td>No form designer</td></tr>
+      <tr><td>Clinical Timeline</td><td><span class="status s-missing">Missing</span></td><td>No timeline view</td></tr>
+      <tr><td>Patient Documents Upload</td><td><span class="status s-missing">Missing</span></td><td>No file upload API</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 18: QUEUE ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>18. Queue Management (Real-time)</h2>
+      <span class="badge badge-stub">30% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>Queue Entity</td><td><span class="status s-done">Done</span></td><td>Status, token, priority</td></tr>
+      <tr><td>QueueStatus Enum</td><td><span class="status s-done">Done</span></td><td>Waiting, Called, InConsultation, etc.</td></tr>
+      <tr><td>SignalR Hub</td><td><span class="status s-missing">Missing</span></td><td>No SignalR hub on backend</td></tr>
+      <tr><td>Real-time Queue Updates</td><td><span class="status s-missing">Missing</span></td><td>Frontend service exists, no backend hub</td></tr>
+      <tr><td>Queue API</td><td><span class="status s-stub">Stub</span></td><td>Dashboard queue returns empty</td></tr>
+      <tr><td>Queue Display Screen</td><td><span class="status s-missing">Missing</span></td><td>No public display view</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 19: NOTIFICATIONS ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>19. Notifications &amp; Messaging</h2>
+      <span class="badge badge-missing">25% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>Notification Entity</td><td><span class="status s-done">Done</span></td><td>Title, message, type, read status</td></tr>
+      <tr><td>NotificationType Enum</td><td><span class="status s-done">Done</span></td><td>Multiple notification types defined</td></tr>
+      <tr><td>INotificationService Interface</td><td><span class="status s-done">Done</span></td><td>Interface defined in Application layer</td></tr>
+      <tr><td>NotificationService (Angular)</td><td><span class="status s-done">Done</span></td><td>Toast notifications in frontend</td></tr>
+      <tr><td>Notification API</td><td><span class="status s-missing">Missing</span></td><td>No notification controller</td></tr>
+      <tr><td>ISmsProvider</td><td><span class="status s-partial">Partial</span></td><td>Interface defined, no implementation</td></tr>
+      <tr><td>IEmailProvider</td><td><span class="status s-partial">Partial</span></td><td>Interface defined, no implementation</td></tr>
+      <tr><td>WhatsApp Abstraction</td><td><span class="status s-missing">Missing</span></td><td>No interface defined</td></tr>
+      <tr><td>In-App Notification Center</td><td><span class="status s-missing">Missing</span></td><td>No notification bell/dropdown</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 20: REPORTS ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>20. Reports &amp; Dashboards</h2>
+      <span class="badge badge-partial">40% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>Dashboard Stats API</td><td><span class="status s-done">Done</span></td><td>Real DB queries for patients, appointments, admissions, revenue</td></tr>
+      <tr><td>Dashboard UI</td><td><span class="status s-done">Done</span></td><td>Stats cards, charts, lists</td></tr>
+      <tr><td>Reports Module UI</td><td><span class="status s-done">Done</span></td><td>Category grid with report items</td></tr>
+      <tr><td>ReportsController</td><td><span class="status s-partial">Partial</span></td><td>Returns categories, but no real report data</td></tr>
+      <tr><td>Report Data Generation</td><td><span class="status s-missing">Missing</span></td><td>No actual report queries</td></tr>
+      <tr><td>Export (Excel/PDF)</td><td><span class="status s-missing">Missing</span></td><td>No export functionality</td></tr>
+      <tr><td>Date Range Filters</td><td><span class="status s-missing">Missing</span></td><td>DateRangePicker component exists, not wired</td></tr>
+      <tr><td>Role-Specific Dashboards</td><td><span class="status s-missing">Missing</span></td><td>One generic dashboard</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 21: UX ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>21. UX / Power User Features</h2>
+      <span class="badge badge-missing">15% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>Modern Sidebar</td><td><span class="status s-done">Done</span></td><td>Gradient, logo, collapsible groups</td></tr>
+      <tr><td>Responsive Layout</td><td><span class="status s-done">Done</span></td><td>Mobile-friendly form layouts</td></tr>
+      <tr><td>Global Command Palette (Ctrl+K)</td><td><span class="status s-missing">Missing</span></td><td>No command palette</td></tr>
+      <tr><td>Keyboard Shortcuts</td><td><span class="status s-missing">Missing</span></td><td>No keyboard navigation</td></tr>
+      <tr><td>Smart Global Search</td><td><span class="status s-missing">Missing</span></td><td>No cross-module search</td></tr>
+      <tr><td>Quick Action Dialogs</td><td><span class="status s-missing">Missing</span></td><td>Only patient and staff forms</td></tr>
+      <tr><td>Virtual Scrolling</td><td><span class="status s-missing">Missing</span></td><td>Standard pagination only</td></tr>
+      <tr><td>Bulk Operations</td><td><span class="status s-missing">Missing</span></td><td>No bulk select/actions</td></tr>
+      <tr><td>Import/Export</td><td><span class="status s-missing">Missing</span></td><td>No import/export</td></tr>
+      <tr><td>Print Templates</td><td><span class="status s-missing">Missing</span></td><td>No invoice/prescription print</td></tr>
+      <tr><td>Unsaved Change Warning</td><td><span class="status s-missing">Missing</span></td><td>No canDeactivate guard</td></tr>
+      <tr><td>Recently Used Items</td><td><span class="status s-missing">Missing</span></td><td>No recent items tracking</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 22: SECURITY ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>22. Security</h2>
+      <span class="badge badge-partial">50% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>JWT + Refresh Tokens</td><td><span class="status s-done">Done</span></td><td>Full implementation</td></tr>
+      <tr><td>BCrypt Password Hashing</td><td><span class="status s-done">Done</span></td><td>Used in Auth and Staff creation</td></tr>
+      <tr><td>Global Query Filters (Tenant)</td><td><span class="status s-done">Done</span></td><td>Automatic tenant isolation</td></tr>
+      <tr><td>Soft Delete</td><td><span class="status s-done">Done</span></td><td>Global filter on BaseAuditableEntity</td></tr>
+      <tr><td>Audit Log Entity</td><td><span class="status s-done">Done</span></td><td>Entity exists, not wired to controllers</td></tr>
+      <tr><td>CORS Configuration</td><td><span class="status s-partial">Partial</span></td><td>Basic CORS, needs hardening</td></tr>
+      <tr><td>Input Validation</td><td><span class="status s-partial">Partial</span></td><td>FluentValidation for 3 entities only</td></tr>
+      <tr><td>IDOR Protection</td><td><span class="status s-partial">Partial</span></td><td>Query filters help, no explicit checks</td></tr>
+      <tr><td>Audit Logging (Actual)</td><td><span class="status s-missing">Missing</span></td><td>Entity exists, no middleware/service</td></tr>
+      <tr><td>File Upload Security</td><td><span class="status s-missing">Missing</span></td><td>No upload validation</td></tr>
+      <tr><td>Secure Headers</td><td><span class="status s-missing">Missing</span></td><td>No security headers middleware</td></tr>
+      <tr><td>Anti-Forgery / CSRF</td><td><span class="status s-missing">Missing</span></td><td>JWT-only, no CSRF tokens</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 23: DATABASE ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>23. Database</h2>
+      <span class="badge badge-done">80% Done</span>
+    </div>
+    <table>
+      <tr><th>Requirement</th><th>Status</th><th>Details</th></tr>
+      <tr><td>55+ Entity Classes</td><td><span class="status s-done">Done</span></td><td>Comprehensive entity model</td></tr>
+      <tr><td>40+ DbSets</td><td><span class="status s-done">Done</span></td><td>Full DbContext</td></tr>
+      <tr><td>28 Enums</td><td><span class="status s-done">Done</span></td><td>All major enums defined</td></tr>
+      <tr><td>Global Query Filters</td><td><span class="status s-done">Done</span></td><td>Tenant + Soft Delete</td></tr>
+      <tr><td>EF Configurations</td><td><span class="status s-partial">Partial</span></td><td>4 configs (Tenant, Patient, Bed, Invoice)</td></tr>
+      <tr><td>Proper Indexes</td><td><span class="status s-partial">Partial</span></td><td>Some in configs, many missing</td></tr>
+      <tr><td>Unique Constraints</td><td><span class="status s-partial">Partial</span></td><td>Email unique, others missing</td></tr>
+      <tr><td>RowVersion / Concurrency</td><td><span class="status s-missing">Missing</span></td><td>No concurrency tokens</td></tr>
+      <tr><td>Migration History</td><td><span class="status s-partial">Partial</span></td><td>Migrations exist but incomplete</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== PRIORITY ROADMAP ===== -->
+  <div class="section">
+    <div class="section-header">
+      <h2>Priority Roadmap — What to Build Next</h2>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="color: var(--red);">Critical (Week 1-2)</h3>
+        <ul>
+          <li class="partial">Wire up real DB logic for Inventory, Pharmacy, Lab, Radiology, Emergency, Nursing APIs</li>
+          <li class="partial">Implement Bed Allocation / Transfer / Discharge workflow</li>
+          <li class="partial">Build SignalR hub for real-time queue</li>
+          <li class="partial">Implement per-endpoint authorization (not just [Authorize])</li>
+          <li class="partial">Add FluentValidation to all controllers</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="color: var(--yellow);">High Priority (Week 3-4)</h3>
+        <ul>
+          <li class="partial">Billing engine: tax calculation, discounts, partial payments, refunds</li>
+          <li class="partial">Insurance module: companies, plans, claims workflow</li>
+          <li class="partial">OPD workflow: check-in → vitals → consult → billing</li>
+          <li class="partial">Prescription creation form with medicine search</li>
+          <li class="partial">Facility CRUD: buildings, wards, rooms, beds</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="color: var(--blue);">Medium Priority (Month 2)</h3>
+        <ul>
+          <li class="missing">Global command palette (Ctrl+K)</li>
+          <li class="missing">Smart cross-module search</li>
+          <li class="missing">Report data generation + export</li>
+          <li class="missing">Audit logging middleware</li>
+          <li class="missing">Subscription / entitlement checking</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="color: var(--green);">Foundation (Month 2-3)</h3>
+        <ul>
+          <li class="missing">Background jobs (Hangfire)</li>
+          <li class="missing">Redis caching</li>
+          <li class="missing">SMS / Email / WhatsApp providers</li>
+          <li class="missing">File storage service</li>
+          <li class="missing">Health checks + structured logging</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

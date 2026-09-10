@@ -1,0 +1,84 @@
+# EditorConfig helps maintain consistent coding styles
+# https://editorconfig.org
+
+root = true
+
+# All files
+[*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# C# files
+[*.cs]
+indent_size = 4
+
+# C# formatting
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# C# code style
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+# C# new line preferences
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+
+# C# indentation preferences
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+
+# C# namespace declarations
+csharp_style_namespace_declarations = file_scoped:suggestion
+
+# C# expression-bodied members
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_constructors = false:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+
+# C# pattern matching
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+
+# C# null checking
+csharp_style_throw_expression = true:suggestion
+csharp_style_conditional_delegate_call = true:suggestion
+
+# JSON files
+[*.json]
+indent_size = 2
+
+# YAML files
+[*.{yml,yaml}]
+indent_size = 2
+
+# XML/CSPROJ files
+[*.{xml,csproj,props,targets}]
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+
+# TypeScript/JavaScript files
+[*.{ts,tsx,js,jsx}]
+indent_size = 2
+
+# HTML files
+[*.html]
+indent_size = 2
+
+# CSS/SCSS files
+[*.{css,scss,less}]
+indent_size = 2
+
+# Shell scripts
+[*.sh]
+end_of_line = lf

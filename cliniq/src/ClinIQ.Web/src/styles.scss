@@ -1,0 +1,167 @@
+@use '@angular/material' as mat;
+
+// Include the common styles for Angular Material
+@include mat.core();
+
+// Define custom theme
+$medicorex-primary: mat.m2-define-palette(mat.$m2-indigo-palette, 600);
+$medicorex-accent: mat.m2-define-palette(mat.$m2-teal-palette, A200, A100, A400);
+$medicorex-warn: mat.m2-define-palette(mat.$m2-red-palette);
+
+$medicorex-theme: mat.m2-define-light-theme((
+  color: (
+    primary: $medicorex-primary,
+    accent: $medicorex-accent,
+    warn: $medicorex-warn,
+  ),
+  typography: mat.m2-define-typography-config(
+    $font-family: 'Inter, sans-serif'
+  ),
+  density: 0,
+));
+
+@include mat.all-component-themes($medicorex-theme);
+
+// Global styles
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', sans-serif;
+  background-color: #f5f5f5;
+  overflow-x: hidden;
+}
+
+// Typography
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  color: #333;
+}
+
+// Utility classes
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-muted { color: #666; }
+.text-primary { color: mat.m2-get-color-from-palette($medicorex-primary, 600); }
+.text-success { color: #4caf50; }
+.text-warning { color: #ff9800; }
+.text-danger { color: #f44336; }
+
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mt-4 { margin-top: 2rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 2rem; }
+
+.p-1 { padding: 0.5rem; }
+.p-2 { padding: 1rem; }
+.p-3 { padding: 1.5rem; }
+.p-4 { padding: 2rem; }
+
+.d-flex { display: flex; }
+.flex-column { flex-direction: column; }
+.justify-content-between { justify-content: space-between; }
+.justify-content-center { justify-content: center; }
+.align-items-center { align-items: center; }
+.gap-1 { gap: 0.5rem; }
+.gap-2 { gap: 1rem; }
+.gap-3 { gap: 1.5rem; }
+
+.w-100 { width: 100%; }
+.h-100 { height: 100%; }
+
+// Card styles
+.card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  h2 {
+    font-size: 1.25rem;
+    margin: 0;
+  }
+}
+
+// Table styles
+.data-table {
+  width: 100%;
+
+  th {
+    font-weight: 600;
+    color: #666;
+    text-align: left;
+  }
+
+  td, th {
+    padding: 0.75rem;
+  }
+}
+
+// Form styles
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+
+  > * {
+    flex: 1;
+  }
+}
+
+mat-form-field {
+  .mdc-text-field__input::placeholder {
+    color: transparent !important;
+  }
+
+  .mdc-floating-label {
+    pointer-events: none;
+  }
+}
+
+// Status badges
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge-success { background: #e8f5e9; color: #2e7d32; }
+.badge-warning { background: #fff3e0; color: #ef6c00; }
+.badge-danger { background: #ffebee; color: #c62828; }
+.badge-info { background: #e3f2fd; color: #1565c0; }
+.badge-secondary { background: #f5f5f5; color: #666; }
+
+// Loading spinner
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+  }
+}

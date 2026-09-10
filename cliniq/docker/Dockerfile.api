@@ -1,0 +1,42 @@
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy solution and project files
+COPY ClinIQ.sln ./
+COPY src/ClinIQ.Domain/ClinIQ.Domain.csproj ./src/ClinIQ.Domain/
+COPY src/ClinIQ.Shared/ClinIQ.Shared.csproj ./src/ClinIQ.Shared/
+COPY src/ClinIQ.Application/ClinIQ.Application.csproj ./src/ClinIQ.Application/
+COPY src/ClinIQ.Infrastructure/ClinIQ.Infrastructure.csproj ./src/ClinIQ.Infrastructure/
+COPY src/ClinIQ.API/ClinIQ.API.csproj ./src/ClinIQ.API/
+
+# Restore dependencies
+RUN dotnet restore
+
+# Copy source code
+COPY src/ ./src/
+
+# Build and publish
+WORKDIR /src/src/ClinIQ.API
+RUN dotnet publish -c Release -o /app/publish --no-restore
+
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Create non-root user
+RUN adduser --disabled-password --gecos '' appuser
+
+COPY --from=build /app/publish .
+
+# Change ownership
+RUN chown -R appuser:appuser /app
+
+USER appuser
+
+EXPOSE 5000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
+
+ENTRYPOINT ["dotnet", "ClinIQ.API.dll"]

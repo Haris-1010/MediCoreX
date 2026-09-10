@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: cliniq-db
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=ClinIQ@2024!
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - cliniq-network
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "ClinIQ@2024!" -Q "SELECT 1"
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    container_name: cliniq-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ClinIQ;User Id=sa;Password=ClinIQ@2024!;TrustServerCertificate=True
+    ports:
+      - "5000:5000"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - cliniq-network
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+    container_name: cliniq-web
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    networks:
+      - cliniq-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: cliniq-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - cliniq-network
+
+volumes:
+  sqlserver-data:
+  redis-data:
+
+networks:
+  cliniq-network:
+    driver: bridge

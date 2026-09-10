@@ -1,0 +1,123 @@
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio
+.vs/
+*.user
+*.userosscache
+*.suo
+*.cache
+*.userprefs
+*.sln.docstates
+*.GhostDoc.xml
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Rider
+.idea/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+project.lock.json
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Entity Framework
+*.mdf
+*.ldf
+
+# Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.log
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm/
+.yarn/
+
+# Angular
+dist/
+.angular/
+.sass-cache/
+*.js.map
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+appsettings.Development.json
+appsettings.Local.json
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE - general
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Publish output
+publish/
+PublishOutput/
+
+# Docker
+.docker/
+
+# Sensitive files
+*.pfx
+*.p12
+*.key
+*.pem
+secrets.json
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Application specific
+uploads/
+logs/
+wwwroot/uploads/

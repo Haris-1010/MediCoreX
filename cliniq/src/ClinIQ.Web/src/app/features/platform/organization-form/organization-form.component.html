@@ -1,0 +1,154 @@
+<div class="form-shell">
+  <div class="loading" *ngIf="loading" style="display:grid;place-items:center;padding:60px;">
+    <mat-spinner diameter="36"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <!-- Credentials shown after create / password reset -->
+    <mat-card class="credential-panel" *ngIf="createdCredentials">
+      <h3>Save these credentials now</h3>
+      <p>The password is shown once only and cannot be recovered later.</p>
+      <div>
+        <strong>Email:</strong>
+        <span class="cred">{{ createdCredentials.email }}</span>
+      </div>
+      <div>
+        <strong>Temporary password:</strong>
+        <span class="cred">{{ createdCredentials.password }}</span>
+      </div>
+      <button mat-raised-button color="primary" (click)="createdCredentials = null">
+        I saved these credentials
+      </button>
+    </mat-card>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <mat-card style="padding:28px;">
+        <div class="section-title">
+          <mat-icon>corporate_fare</mat-icon>
+          <div>
+            <h3>{{ isEdit ? 'Organization details' : 'Organization profile' }}</h3>
+            <p>{{ isEdit ? 'Update the billing contact information for this customer organization.' : 'Basic information about the customer organization.' }}</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Organization name</mat-label>
+            <input matInput formControlName="name" placeholder="e.g. CarePoint Hospital">
+            <mat-error *ngIf="form.get('name')?.hasError('required')">Name is required</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Organization code</mat-label>
+            <input matInput formControlName="code" placeholder="e.g. CAREPOINT">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Contact person</mat-label>
+            <input matInput formControlName="contactPersonName" placeholder="Full name">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Contact email</mat-label>
+            <input matInput type="email" formControlName="contactEmail">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Contact phone</mat-label>
+            <input matInput formControlName="contactPhone">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" *ngIf="!isEdit">
+            <mat-label>Initial branch name</mat-label>
+            <input matInput formControlName="initialBranchName">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Address</mat-label>
+            <textarea matInput rows="2" formControlName="address"></textarea>
+          </mat-form-field>
+        </div>
+
+        <!-- Master admin (create only) -->
+        <ng-container *ngIf="!isEdit">
+          <div class="section-title">
+            <mat-icon>admin_panel_settings</mat-icon>
+            <div>
+              <h3>Organization administrator</h3>
+              <p>This person receives an email with the temporary password. They can then invite their staff.</p>
+            </div>
+          </div>
+
+          <div class="grid">
+            <mat-form-field appearance="outline">
+              <mat-label>First name</mat-label>
+              <input matInput formControlName="firstName">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Last name</mat-label>
+              <input matInput formControlName="lastName">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Admin email</mat-label>
+              <input matInput type="email" formControlName="masterEmail">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Temporary password</mat-label>
+              <input matInput type="text" formControlName="temporaryPassword">
+              <mat-hint>Min 8 characters. The org admin must change it on first login.</mat-hint>
+            </mat-form-field>
+          </div>
+        </ng-container>
+
+        <!-- Module selection -->
+        <div class="section-title">
+          <mat-icon>widgets</mat-icon>
+          <div>
+            <h3>Modules</h3>
+            <p>{{ selectedFeatures.length }} selected — these determine which parts of the app the organization can access.</p>
+          </div>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-card"
+               *ngFor="let feature of availableFeatures"
+               [class.selected]="isModuleSelected(feature.key)"
+               (click)="toggleModule(feature.key, !isModuleSelected(feature.key))">
+            <mat-icon class="ficon">{{ feature.icon }}</mat-icon>
+            <div class="ftext">
+              <strong>{{ feature.label }}</strong>
+              <small>{{ feature.description }}</small>
+            </div>
+            <mat-icon class="checkmark" *ngIf="isModuleSelected(feature.key)">check_circle</mat-icon>
+          </div>
+        </div>
+
+        <!-- Password reset (edit only) -->
+        <div class="section-title" *ngIf="isEdit">
+          <mat-icon>vpn_key</mat-icon>
+          <div>
+            <h3>Reset admin password</h3>
+            <p>Generate a new temporary password for the organization's master user.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:12px;" *ngIf="isEdit">
+          <mat-form-field appearance="outline" style="min-width:300px;">
+            <mat-label>New master-user temporary password</mat-label>
+            <input matInput type="text" formControlName="temporaryPassword">
+          </mat-form-field>
+          <button mat-stroked-button type="button" (click)="resetMasterPassword()" [disabled]="saving">
+            Reset password
+          </button>
+        </div>
+
+        <div class="actions-bar">
+          <button mat-button type="button" (click)="loadOrganizationsList()">Cancel</button>
+          <button mat-raised-button color="primary" type="submit" [disabled]="saving">
+            <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
+            <span *ngIf="!saving">{{ isEdit ? 'Save changes' : 'Create organization' }}</span>
+          </button>
+        </div>
+      </mat-card>
+    </form>
+  </ng-container>
+</div>

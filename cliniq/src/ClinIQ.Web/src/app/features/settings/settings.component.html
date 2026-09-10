@@ -1,0 +1,98 @@
+<app-main-layout>
+  <app-page-header title="Settings" [breadcrumbs]="[{ label: 'Dashboard', route: '/dashboard' }, { label: 'Settings' }]"></app-page-header>
+
+  <mat-tab-group>
+    <mat-tab label="General">
+      <div class="tab-content">
+        <form [formGroup]="generalForm" (ngSubmit)="saveGeneral()">
+          <h3>Organization Settings</h3>
+          <mat-form-field appearance="outline" class="full-width"><mat-label>Organization Name</mat-label><input matInput formControlName="organizationName"></mat-form-field>
+          <div class="form-row">
+            <mat-form-field appearance="outline"><mat-label>Phone</mat-label><input matInput formControlName="phone"></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Email</mat-label><input matInput formControlName="email"></mat-form-field>
+          </div>
+          <mat-form-field appearance="outline" class="full-width"><mat-label>Address</mat-label><textarea matInput formControlName="address" rows="2"></textarea></mat-form-field>
+          <h3>Regional Settings</h3>
+          <div class="form-row">
+            <mat-form-field appearance="outline"><mat-label>Currency</mat-label><mat-select formControlName="currency"><mat-option value="USD">USD</mat-option><mat-option value="EUR">EUR</mat-option><mat-option value="GBP">GBP</mat-option><mat-option value="INR">INR</mat-option><mat-option value="PKR">PKR</mat-option></mat-select></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Date Format</mat-label><mat-select formControlName="dateFormat"><mat-option value="MM/dd/yyyy">MM/dd/yyyy</mat-option><mat-option value="dd/MM/yyyy">dd/MM/yyyy</mat-option><mat-option value="yyyy-MM-dd">yyyy-MM-dd</mat-option></mat-select></mat-form-field>
+          </div>
+          <div class="form-actions"><button mat-raised-button color="primary" type="submit">Save Changes</button></div>
+        </form>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Appointments">
+      <div class="tab-content">
+        <h3>Appointment Settings</h3>
+        <mat-form-field appearance="outline"><mat-label>Default Slot Duration (minutes)</mat-label><input matInput type="number" [(ngModel)]="appointmentSettings.slotDuration"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Advance Booking Days</mat-label><input matInput type="number" [(ngModel)]="appointmentSettings.advanceBookingDays"></mat-form-field>
+        <mat-slide-toggle [(ngModel)]="appointmentSettings.allowOnlineBooking">Allow Online Booking</mat-slide-toggle>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Billing">
+      <div class="tab-content">
+        <h3>Billing Settings</h3>
+        <mat-form-field appearance="outline"><mat-label>Invoice Prefix</mat-label><input matInput [(ngModel)]="billingSettings.invoicePrefix"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Default Tax %</mat-label><input matInput type="number" [(ngModel)]="billingSettings.defaultTax"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Payment Due Days</mat-label><input matInput type="number" [(ngModel)]="billingSettings.paymentDueDays"></mat-form-field>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Branding" *appHasPermission="'organization.branding'">
+      <div class="tab-content">
+        <form [formGroup]="brandingForm" (ngSubmit)="saveBranding()">
+          <h3>Organization Branding</h3>
+          <p class="muted">This information appears on printed documents, receipts, and reports.</p>
+          
+          <div class="logo-upload-section">
+            <h4>Organization Logo</h4>
+            <p class="muted">Upload a logo that will appear on all printed documents (Patient records, Appointment slips, Invoices, etc.)</p>
+            <div class="logo-preview-container">
+              <div class="logo-preview" *ngIf="brandingForm.get('logoUrl')?.value">
+                <img [src]="brandingForm.get('logoUrl')?.value" alt="Organization Logo" class="logo-preview-img">
+                <button type="button" mat-icon-button color="warn" class="remove-logo-btn" (click)="removeLogo()">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+              <div class="logo-placeholder" *ngIf="!brandingForm.get('logoUrl')?.value">
+                <mat-icon>business</mat-icon>
+                <span>No logo uploaded</span>
+              </div>
+            </div>
+            <div class="logo-upload-actions">
+              <input type="file" #fileInput accept="image/*" style="display:none" (change)="onLogoSelected($event)">
+              <button type="button" mat-stroked-button (click)="fileInput.click()" [disabled]="logoUploading">
+                <mat-icon>upload</mat-icon>
+                {{ logoUploading ? 'Uploading...' : 'Upload Logo' }}
+              </button>
+              <span class="muted">or enter URL:</span>
+            </div>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Logo URL</mat-label>
+              <input matInput formControlName="logoUrl" placeholder="https://.../logo.png">
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width"><mat-label>Organization Name</mat-label><input matInput formControlName="name"></mat-form-field>
+          <div class="form-row">
+            <mat-form-field appearance="outline"><mat-label>Phone</mat-label><input matInput formControlName="phone"></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Email</mat-label><input matInput formControlName="email"></mat-form-field>
+          </div>
+          <mat-form-field appearance="outline" class="full-width"><mat-label>Website</mat-label><input matInput formControlName="website"></mat-form-field>
+          <mat-form-field appearance="outline" class="full-width"><mat-label>Address</mat-label><textarea matInput formControlName="address" rows="2"></textarea></mat-form-field>
+          <div class="form-row">
+            <mat-form-field appearance="outline"><mat-label>City</mat-label><input matInput formControlName="city"></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>State</mat-label><input matInput formControlName="state"></mat-form-field>
+          </div>
+          <div class="form-row">
+            <mat-form-field appearance="outline"><mat-label>Postal Code</mat-label><input matInput formControlName="postalCode"></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Country</mat-label><input matInput formControlName="country"></mat-form-field>
+          </div>
+          <div class="form-actions"><button mat-raised-button color="primary" type="submit">Save Branding</button></div>
+        </form>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</app-main-layout>

@@ -1,0 +1,176 @@
+import { Injectable } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
+import { ApiService } from './api.service';
+import { StorageService } from './storage.service';
+import { environment } from '../../../environments/environment';
+
+export interface Tenant {
+  id: string;
+  name: string;
+  code: string;
+  logo?: string;
+  logoUrl?: string;
+  website?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postalCode?: string;
+  settings: TenantSettings;
+}
+
+export interface TenantSettings {
+  currency: string;
+  timezone: string;
+  dateFormat: string;
+  timeFormat: string;
+  appointmentDuration: number;
+  workingHours: WorkingHours;
+  features: string[];
+}
+
+export interface WorkingHours {
+  startTime: string;
+  endTime: string;
+  workingDays: number[];
+}
+
+export interface Branch {
+  id: string;
+  name: string;
+  code: string;
+  address: string;
+  phone: string;
+  email: string;
+  isActive: boolean;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class TenantService {
+  private currentTenantSubject = new BehaviorSubject<Tenant | null>(null);
+  private currentBranchSubject = new BehaviorSubject<Branch | null>(null);
+  private branchesSubject = new BehaviorSubject<Branch[]>([]);
+
+  currentTenant$ = this.currentTenantSubject.asObservable();
+  currentBranch$ = this.currentBranchSubject.asObservable();
+  branches$ = this.branchesSubject.asObservable();
+
+  constructor(
+    private api: ApiService,
+    private storage: StorageService
+  ) {}
+
+  loadTenant(): Observable<Tenant> {
+    return this.api.get<any>('v1/tenants/current').pipe(
+      map(tenant => this.normalizeTenant(tenant)),
+      tap(tenant => this.currentTenantSubject.next(tenant))
+    );
+  }
+
+  loadBranches(): Observable<Branch[]> {
+    return this.api.get<Branch[]>('v1/branches').pipe(
+      tap(branches => this.branchesSubject.next(branches))
+    );
+  }
+
+  setCurrentBranch(branch: Branch): void {
+    this.currentBranchSubject.next(branch);
+    this.storage.setItem(environment.branchKey, branch.id);
+  }
+
+  getCurrentTenant(): Tenant | null {
+    return this.currentTenantSubject.value;
+  }
+
+  getCurrentBranch(): Branch | null {
+    return this.currentBranchSubject.value;
+  }
+
+  hasFeature(feature: string): boolean {
+    const tenant = this.currentTenantSubject.value;
+    return tenant?.settings.features.includes(feature) ?? false;
+  }
+
+  getSetting<K extends keyof TenantSettings>(key: K): TenantSettings[K] | null {
+    const tenant = this.currentTenantSubject.value;
+    return tenant?.settings[key] ?? null;
+  }
+
+  formatDate(date: Date): string {
+    const format = this.getSetting('dateFormat') || 'dd/MM/yyyy';
+    return this.formatDateWithPattern(date, format);
+  }
+
+  formatTime(date: Date): string {
+    const format = this.getSetting('timeFormat') || 'HH:mm';
+    return this.formatTimeWithPattern(date, format);
+  }
+
+  formatCurrency(amount: number): string {
+    const currency = this.getSetting('currency') || 'USD';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency
+    }).format(amount);
+  }
+
+  private normalizeTenant(tenant: any): Tenant {
+    if (!tenant) {
+      return {
+        id: '',
+        name: '',
+        code: '',
+        settings: { currency: 'USD', timezone: 'UTC', dateFormat: 'dd/MM/yyyy', timeFormat: 'HH:mm', appointmentDuration: 30, workingHours: { startTime: '09:00', endTime: '17:00', workingDays: [1, 2, 3, 4, 5] }, features: [] }
+      };
+    }
+    return {
+      id: tenant.id ?? '',
+      name: tenant.name ?? '',
+      code: tenant.slug ?? '',
+      logo: tenant.logoUrl,
+      logoUrl: tenant.logoUrl,
+      website: tenant.website,
+      email: tenant.email,
+      phone: tenant.phone,
+      address: tenant.address,
+      city: tenant.city,
+      state: tenant.state,
+      country: tenant.country,
+      postalCode: tenant.postalCode,
+      settings: {
+        currency: tenant.currency || 'USD',
+        timezone: tenant.timezone || 'UTC',
+        dateFormat: 'dd/MM/yyyy',
+        timeFormat: 'HH:mm',
+        appointmentDuration: 30,
+        workingHours: { startTime: '09:00', endTime: '17:00', workingDays: [1, 2, 3, 4, 5] },
+        features: []
+      }
+    };
+  }
+
+  private formatDateWithPattern(date: Date, pattern: string): string {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString();
+
+    return pattern
+      .replace('dd', day)
+      .replace('MM', month)
+      .replace('yyyy', year);
+  }
+
+  private formatTimeWithPattern(date: Date, pattern: string): string {
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+
+    return pattern
+      .replace('HH', hours)
+      .replace('mm', minutes);
+  }
+}

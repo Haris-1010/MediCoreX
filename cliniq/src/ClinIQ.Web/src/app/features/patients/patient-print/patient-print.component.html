@@ -1,0 +1,112 @@
+<div class="no-print">
+  <button mat-stroked-button (click)="print()" *ngIf="patient">
+    <mat-icon>print</mat-icon>
+    Print
+  </button>
+</div>
+
+<div class="print-sheet" *ngIf="patient">
+  <div class="sheet-head">
+    <div class="brand">
+      <div class="brand-line">
+        <img *ngIf="branding?.logoUrl" [src]="branding?.logoUrl" alt="logo" class="brand-logo">
+        <span>{{ branding?.name || 'MediCoreX Hospital' }}</span>
+      </div>
+      <small *ngIf="branding?.website || branding?.phone">{{ branding?.website || '' }}{{ (branding?.website && branding?.phone) ? ' • ' : '' }}{{ branding?.phone || '' }}</small>
+      <small *ngIf="branding?.address">{{ branding?.address }}</small>
+    </div>
+    <div class="doc-title">
+      <h1>Patient Record</h1>
+      <p>Issued {{ formatDate(issuedAt) }}</p>
+    </div>
+  </div>
+
+  <div class="ident">
+    <div class="avatar">{{ getInitials() }}</div>
+    <div>
+      <h2>{{ patient.fullName }}</h2>
+      <div class="chips">
+        <span class="chip">MRN: {{ patient.mrn }}</span>
+        <span class="chip">{{ patient.status }}</span>
+        <span class="chip blood">{{ patient.bloodGroup || 'Blood type n/a' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <h3>Demographics</h3>
+    <div class="grid">
+      <div class="field" *ngIf="patient.dateOfBirth"><label>Date of birth</label><span>{{ formatDate(patient.dateOfBirth) }}</span></div>
+      <div class="field" *ngIf="patient.age !== null && patient.age !== undefined"><label>Age</label><span>{{ patient.age }} years</span></div>
+      <div class="field" *ngIf="patient.gender"><label>Gender</label><span>{{ patient.gender }}</span></div>
+      <div class="field" *ngIf="patient.maritalStatus"><label>Marital status</label><span>{{ patient.maritalStatus }}</span></div>
+      <div class="field" *ngIf="patient.nationality"><label>Nationality</label><span>{{ patient.nationality }}</span></div>
+      <div class="field" *ngIf="patient.nationalId"><label>National ID</label><span>{{ patient.nationalId }}</span></div>
+      <div class="field" *ngIf="patient.occupation"><label>Occupation</label><span>{{ patient.occupation }}</span></div>
+      <div class="field" *ngIf="patient.createdAt"><label>Registered</label><span>{{ formatDate(patient.createdAt) }}</span></div>
+      <div class="field" *ngIf="patient.lastVisit"><label>Last visit</label><span>{{ formatDate(patient.lastVisit) }}</span></div>
+    </div>
+  </section>
+
+  <section *ngIf="patient.phone || patient.alternatePhone || patient.email || patient.address || patient.city || patient.state || patient.country">
+    <h3>Contact Information</h3>
+    <div class="grid">
+      <div class="field" *ngIf="patient.phone"><label>Phone</label><span>{{ patient.phone }}</span></div>
+      <div class="field" *ngIf="patient.alternatePhone"><label>Alternate phone</label><span>{{ patient.alternatePhone }}</span></div>
+      <div class="field" *ngIf="patient.email"><label>Email</label><span>{{ patient.email }}</span></div>
+      <div class="field" *ngIf="patient.address"><label>Address</label><span>{{ patient.address }}</span></div>
+      <div class="field" *ngIf="patient.city"><label>City</label><span>{{ patient.city }}</span></div>
+      <div class="field" *ngIf="patient.state"><label>State</label><span>{{ patient.state + (patient.postalCode ? ', ' + patient.postalCode : '') }}</span></div>
+      <div class="field" *ngIf="patient.country"><label>Country</label><span>{{ patient.country }}</span></div>
+    </div>
+  </section>
+
+  <section *ngIf="patient.allergies?.length || patient.chronicConditions?.length">
+    <h3>Medical</h3>
+    <div class="grid">
+      <div class="field list-field" *ngIf="patient.allergies?.length">
+        <label>Allergies</label>
+        <div class="tags">
+          <span class="tag" *ngFor="let item of patient.allergies">{{ item }}</span>
+        </div>
+      </div>
+      <div class="field list-field" *ngIf="patient.chronicConditions?.length">
+        <label>Chronic conditions</label>
+        <div class="tags">
+          <span class="tag" *ngFor="let item of patient.chronicConditions">{{ item }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section *ngIf="patient.emergencyContactName || patient.emergencyContactPhone || patient.emergencyContactRelation">
+    <h3>Emergency Contact</h3>
+    <div class="grid">
+      <div class="field" *ngIf="patient.emergencyContactName"><label>Name</label><span>{{ patient.emergencyContactName }}</span></div>
+      <div class="field" *ngIf="patient.emergencyContactPhone"><label>Phone</label><span>{{ patient.emergencyContactPhone }}</span></div>
+      <div class="field" *ngIf="patient.emergencyContactRelation"><label>Relation</label><span>{{ patient.emergencyContactRelation }}</span></div>
+    </div>
+  </section>
+
+  <section *ngIf="patient.insuranceProvider || patient.insurancePolicyNumber">
+    <h3>Insurance</h3>
+    <div class="grid">
+      <div class="field" *ngIf="patient.insuranceProvider"><label>Provider</label><span>{{ patient.insuranceProvider }}</span></div>
+      <div class="field" *ngIf="patient.insurancePolicyNumber"><label>Policy number</label><span>{{ patient.insurancePolicyNumber }}</span></div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <span>MediCoreX Hospital Management System</span>
+    <span>Patient MRN: {{ patient.mrn }}</span>
+  </div>
+</div>
+
+<div style="display:grid;place-items:center;min-height:60vh;" *ngIf="loading">
+  <mat-spinner diameter="36"></mat-spinner>
+</div>
+
+<div style="text-align:center;padding:80px 0;color:#64748b;" *ngIf="!loading && !patient">
+  <h2>Patient record unavailable</h2>
+  <p>The record could not be loaded or no longer exists.</p>
+</div>
