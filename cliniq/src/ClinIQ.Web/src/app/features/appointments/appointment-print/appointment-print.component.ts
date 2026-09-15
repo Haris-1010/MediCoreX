@@ -59,12 +59,15 @@ export class AppointmentPrintComponent implements OnInit {
   branding: Tenant | null = null;
   loading = true;
   issuedAt: Date = new Date();
+  currencySymbol = '$';
 
   constructor(
     private route: ActivatedRoute,
     private api: ApiService,
     private tenantService: TenantService
-  ) {}
+  ) {
+    this.currencySymbol = tenantService.getCurrencySymbol();
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -107,7 +110,7 @@ export class AppointmentPrintComponent implements OnInit {
   formatFee(fee: any): string {
     if (fee === null || fee === undefined || fee === '') return '—';
     const n = Number(fee);
-    return isNaN(n) ? String(fee) : n.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    return isNaN(n) ? String(fee) : n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   }
 
   print(): void {

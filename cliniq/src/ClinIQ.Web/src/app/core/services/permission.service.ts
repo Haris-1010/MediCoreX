@@ -59,15 +59,25 @@ export class PermissionService {
       'Appointments.View', 'Appointments.Create', 'Appointments.Edit', 'Appointments.Cancel', 'Appointments.Confirm', 'Appointments.CheckIn',
       'OPD.View', 'IPD.View', 'Emergency.View',
       'Prescriptions.View', 'Prescriptions.Create', 'Prescriptions.Edit', 'Prescriptions.Delete', 'Prescriptions.Dispense', 'Prescriptions.Print',
-      'Billing.View', 'Inventory.View', 'Pharmacy.View', 'Laboratory.View', 'Radiology.View',
+      'Services.View', 'Services.Create', 'Services.Edit', 'Services.Delete',
+      'Billing.View', 'Billing.Create', 'Billing.Edit', 'Billing.Discount', 'Billing.Refund', 'Billing.Cancel', 'Billing.Delete',
+      'Payments.View', 'Payments.Create', 'Payments.Refund',
+      'Inventory.View', 'Inventory.Manage', 'Inventory.Adjust', 'Inventory.Transfer',
+      'Suppliers.View', 'Suppliers.Manage',
+      'PurchaseOrders.View', 'PurchaseOrders.Create', 'PurchaseOrders.Approve', 'PurchaseOrders.Receive',
+      'Pharmacy.View', 'Pharmacy.Dispense', 'Pharmacy.Sale',
+      'Laboratory.View', 'Radiology.View',
       'Doctors.View', 'Staff.View', 'Departments.View', 'Facility.View', 'Wards.View',
-      'Reports.View', 'Settings.View', 'Roles.View', 'Users.View'
+      'Reports.View', 'Settings.View', 'Roles.View', 'Users.View',
+      'Audit.View', 'Admissions.View', 'Beds.View'
     ];
 
     const enabledModules = [
       'dashboard', 'patients', 'appointments', 'opd', 'ipd', 'emergency',
-      'prescriptions', 'billing', 'inventory', 'pharmacy', 'laboratory', 'radiology',
-      'doctors', 'staff', 'departments', 'facility', 'wards', 'reports', 'settings'
+      'prescriptions', 'services', 'billing', 'inventory', 'suppliers', 'purchase_orders',
+      'pharmacy', 'laboratory', 'radiology',
+      'doctors', 'staff', 'departments', 'facility', 'wards', 'reports', 'settings',
+      'audit', 'admissions', 'beds'
     ];
 
     return {

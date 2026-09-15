@@ -40,7 +40,7 @@ export interface TableAction {
                 {{ row[column.key] | date:'mediumDate' }}
               </ng-container>
               <ng-container *ngSwitchCase="'currency'">
-                {{ row[column.key] | currency }}
+                {{ row[column.key] | currencyFormat }}
               </ng-container>
               <ng-container *ngSwitchCase="'status'">
                 <app-status-badge [status]="row[column.key]"></app-status-badge>

@@ -107,7 +107,7 @@ export class TenantService {
   }
 
   formatTime(date: Date): string {
-    const format = this.getSetting('timeFormat') || 'HH:mm';
+    const format = this.getSetting('timeFormat') || 'hh:mm a';
     return this.formatTimeWithPattern(date, format);
   }
 
@@ -119,13 +119,24 @@ export class TenantService {
     }).format(amount);
   }
 
+  getCurrencySymbol(): string {
+    const currency = this.getSetting('currency') || 'USD';
+    try {
+      const parts = new Intl.NumberFormat('en-US', { style: 'currency', currency }).formatToParts(0);
+      const symbolPart = parts.find(p => p.type === 'currency');
+      return symbolPart ? symbolPart.value : '$';
+    } catch {
+      return '$';
+    }
+  }
+
   private normalizeTenant(tenant: any): Tenant {
     if (!tenant) {
       return {
         id: '',
         name: '',
         code: '',
-        settings: { currency: 'USD', timezone: 'UTC', dateFormat: 'dd/MM/yyyy', timeFormat: 'HH:mm', appointmentDuration: 30, workingHours: { startTime: '09:00', endTime: '17:00', workingDays: [1, 2, 3, 4, 5] }, features: [] }
+        settings: {         currency: 'USD', timezone: 'UTC', dateFormat: 'dd/MM/yyyy', timeFormat: 'hh:mm a', appointmentDuration: 30, workingHours: { startTime: '09:00', endTime: '17:00', workingDays: [1, 2, 3, 4, 5] }, features: [] }
       };
     }
     return {
@@ -146,7 +157,7 @@ export class TenantService {
         currency: tenant.currency || 'USD',
         timezone: tenant.timezone || 'UTC',
         dateFormat: 'dd/MM/yyyy',
-        timeFormat: 'HH:mm',
+        timeFormat: 'hh:mm a',
         appointmentDuration: 30,
         workingHours: { startTime: '09:00', endTime: '17:00', workingDays: [1, 2, 3, 4, 5] },
         features: []
@@ -166,11 +177,16 @@ export class TenantService {
   }
 
   private formatTimeWithPattern(date: Date, pattern: string): string {
-    const hours = date.getHours().toString().padStart(2, '0');
+    let hours = date.getHours();
     const minutes = date.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const h = hours.toString().padStart(2, '0');
 
     return pattern
-      .replace('HH', hours)
-      .replace('mm', minutes);
+      .replace('hh', h)
+      .replace('HH', hours.toString().padStart(2, '0'))
+      .replace('mm', minutes)
+      .replace('a', ampm);
   }
 }

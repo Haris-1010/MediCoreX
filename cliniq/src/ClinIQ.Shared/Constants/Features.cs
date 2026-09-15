@@ -16,11 +16,14 @@ public static class Features
     public const string EMR = "emr";
     public const string Prescriptions = "prescriptions";
     public const string Billing = "billing";
+    public const string Services = "services";
     public const string Insurance = "insurance";
     public const string Pharmacy = "pharmacy";
     public const string Inventory = "inventory";
     public const string Procurement = "procurement";
     public const string FormDesigner = "form_designer";
+    public const string Users = "users";
+    public const string Roles = "roles";
     public const string VitalForms = "vital_forms";
     public const string SMS = "sms";
     public const string WhatsApp = "whatsapp";

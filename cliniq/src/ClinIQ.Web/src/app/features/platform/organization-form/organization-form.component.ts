@@ -20,6 +20,17 @@ import { PLATFORM_FEATURES } from '../platform.constants';
     .section-title h3 { margin: 0; font-size: 16px; color: #172033; }
     .section-title p { margin: 0; color: #64748b; font-size: 13px; }
 
+    .give-all-bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 14px 18px; margin: 18px 0 4px; background: #374151; border-radius: 10px; }
+    .give-all-bar .give-all-text { display: flex; flex-direction: column; gap: 2px; }
+    .give-all-bar .give-all-text strong { font-size: 14px; color: #fff; }
+    .give-all-bar .give-all-text span { font-size: 12px; color: #d1d5db; }
+    .toggle-switch { position: relative; display: inline-block; width: 46px; height: 26px; flex: 0 0 auto; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; inset: 0; cursor: pointer; background: #6b7280; border-radius: 999px; transition: .2s; }
+    .toggle-slider::before { content: ''; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: .2s; }
+    .toggle-switch input:checked + .toggle-slider { background: #8bc34a; }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
     .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0 4px; }
     .feature-card { display: flex; align-items: center; gap: 12px; border: 1px solid #dce5e5; border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: border-color .15s, background .15s; }
     .feature-card:hover { border-color: #b7c9c9; }
@@ -126,6 +137,19 @@ export class OrganizationFormComponent implements OnInit {
     this.selectedFeatures = enabled
       ? [...new Set([...this.selectedFeatures, featureKey])]
       : this.selectedFeatures.filter(f => f !== featureKey);
+  }
+
+  hasAllFeatures(): boolean {
+    return this.availableFeatures.length > 0 &&
+      this.availableFeatures.every(f => this.selectedFeatures.includes(f.key));
+  }
+
+  toggleAllFeatures(): void {
+    if (this.hasAllFeatures()) {
+      this.selectedFeatures = [];
+    } else {
+      this.selectedFeatures = this.availableFeatures.map(f => f.key);
+    }
   }
 
   submit(): void {

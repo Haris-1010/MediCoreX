@@ -205,6 +205,7 @@ VALUES
     (N'billing.create', N'Create Invoice', N'Billing', N'Financial', 20),
     (N'billing.edit', N'Edit Invoice', N'Billing', N'Financial', 30),
     (N'billing.discount', N'Apply Discount', N'Billing', N'Financial', 40),
+    (N'billing.manage_discounts', N'Manage Discount Templates', N'Billing', N'Financial', 45),
     (N'billing.refund', N'Refund', N'Billing', N'Financial', 50),
     (N'billing.cancel', N'Cancel Invoice', N'Billing', N'Financial', 60),
     (N'payments.view', N'View', N'Payments', N'Financial', 10),

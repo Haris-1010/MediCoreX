@@ -5,11 +5,12 @@ import { environment } from '../../../environments/environment';
 
 export interface QueueUpdate {
   queueId: string;
-  patientId: string;
+  patientId?: string;
   patientName: string;
   tokenNumber: number;
   status: string;
   doctorId: string;
+  doctorName?: string;
   roomNumber: string;
 }
 

@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using ClinIQ.Infrastructure.Data;
 using ClinIQ.Shared.Models;
 using ClinIQ.API.Authorization;
@@ -19,12 +20,16 @@ public class NursingController : ControllerBase
         _context = context;
     }
 
+    private Guid CurrentUserId =>
+        Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : Guid.Empty;
+
+    // ──────────── Vitals ────────────
+
     [HttpGet("vitals")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.EmrView)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsView)]
     public async Task<IActionResult> GetVitals([FromQuery] Guid? admissionId = null, [FromQuery] Guid? patientId = null)
     {
-        var query = _context.Vitals
-            .Where(v => !v.IsDeleted);
+        var query = _context.Vitals.Where(v => !v.IsDeleted);
 
         if (admissionId.HasValue)
             query = query.Where(v => v.AdmissionId == admissionId.Value);
@@ -33,7 +38,7 @@ public class NursingController : ControllerBase
 
         var vitals = await query
             .OrderByDescending(v => v.RecordedAt)
-            .Take(50)
+            .Take(100)
             .Select(v => new
             {
                 v.Id,
@@ -62,7 +67,7 @@ public class NursingController : ControllerBase
     }
 
     [HttpPost("vitals")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.EmrEdit)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsEdit)]
     public async Task<IActionResult> RecordVitals([FromBody] RecordVitalsRequest request)
     {
         if (request.PatientId == Guid.Empty)
@@ -84,6 +89,7 @@ public class NursingController : ControllerBase
             PatientId = request.PatientId,
             AdmissionId = request.AdmissionId,
             RecordedAt = DateTime.UtcNow,
+            RecordedById = CurrentUserId,
             SystolicBP = request.SystolicBP,
             DiastolicBP = request.DiastolicBP,
             Pulse = request.Pulse,
@@ -107,8 +113,51 @@ public class NursingController : ControllerBase
         return Ok(Result<object>.Success(new { vital.Id }, "Vitals recorded successfully"));
     }
 
+    [HttpPut("vitals/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsEdit)]
+    public async Task<IActionResult> UpdateVitals(Guid id, [FromBody] RecordVitalsRequest request)
+    {
+        var vital = await _context.Vitals.FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
+        if (vital == null) return NotFound(Result.Failure("Vitals not found"));
+
+        decimal? bmi = null;
+        if (request.Weight.HasValue && request.Height.HasValue && request.Height > 0)
+        {
+            var heightM = request.Height.Value / 100m;
+            bmi = Math.Round(request.Weight.Value / (heightM * heightM), 1);
+        }
+
+        vital.SystolicBP = request.SystolicBP;
+        vital.DiastolicBP = request.DiastolicBP;
+        vital.Pulse = request.Pulse;
+        vital.Temperature = request.Temperature;
+        vital.RespiratoryRate = request.RespiratoryRate;
+        vital.SpO2 = request.SpO2;
+        vital.Weight = request.Weight;
+        vital.Height = request.Height;
+        vital.BMI = bmi;
+        vital.BloodSugar = request.BloodSugar;
+        vital.BloodSugarType = request.BloodSugarType;
+        vital.Notes = request.Notes;
+
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Vitals updated successfully"));
+    }
+
+    [HttpDelete("vitals/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsEdit)]
+    public async Task<IActionResult> DeleteVitals(Guid id)
+    {
+        var vital = await _context.Vitals.FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
+        if (vital == null) return NotFound(Result.Failure("Vitals not found"));
+
+        vital.IsDeleted = true;
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Vitals deleted successfully"));
+    }
+
     [HttpGet("vitals/{admissionId:guid}")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.EmrView)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsView)]
     public async Task<IActionResult> GetVitalsByAdmission(Guid admissionId)
     {
         var vitals = await _context.Vitals
@@ -134,12 +183,46 @@ public class NursingController : ControllerBase
         return Ok(Result<object>.Success(vitals));
     }
 
+    [HttpGet("vitals/single/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsView)]
+    public async Task<IActionResult> GetVitalById(Guid id)
+    {
+        var vital = await _context.Vitals
+            .Where(v => v.Id == id && !v.IsDeleted)
+            .Select(v => new
+            {
+                v.Id,
+                v.PatientId,
+                v.AdmissionId,
+                v.RecordedAt,
+                v.SystolicBP,
+                v.DiastolicBP,
+                v.Pulse,
+                v.Temperature,
+                v.TemperatureUnit,
+                v.RespiratoryRate,
+                v.SpO2,
+                v.Weight,
+                v.Height,
+                v.BMI,
+                v.BloodSugar,
+                v.BloodSugarType,
+                v.Notes
+            })
+            .FirstOrDefaultAsync();
+
+        if (vital == null) return NotFound(Result.Failure("Vitals not found"));
+        return Ok(Result<object>.Success(vital));
+    }
+
+    // ──────────── Medications ────────────
+
     [HttpGet("medications")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.EmrView)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsView)]
     public async Task<IActionResult> GetMedications([FromQuery] Guid? admissionId = null)
     {
         var query = _context.Prescriptions
-            .Where(p => !p.IsDeleted && p.Items.Any(i => !i.IsDispensed));
+            .Where(p => !p.IsDeleted);
 
         if (admissionId.HasValue)
             query = query.Where(p => p.AdmissionId == admissionId.Value);
@@ -155,7 +238,7 @@ public class NursingController : ControllerBase
                 p.DoctorId,
                 p.PrescriptionDate,
                 p.Diagnosis,
-                Items = p.Items.Where(i => !i.IsDispensed).Select(i => new
+                Items = p.Items.Select(i => new
                 {
                     i.Id,
                     i.MedicineName,
@@ -164,7 +247,7 @@ public class NursingController : ControllerBase
                     i.DurationDays,
                     i.Quantity,
                     i.Instructions,
-                    IsDispensed = i.IsDispensed
+                    i.IsDispensed
                 }).ToList()
             })
             .ToListAsync();
@@ -173,79 +256,30 @@ public class NursingController : ControllerBase
     }
 
     [HttpPatch("medications/{id:guid}")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.EmrEdit)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsEdit)]
     public async Task<IActionResult> UpdateMedication(Guid id, [FromBody] UpdateMedicationRequest request)
     {
         var item = await _context.PrescriptionItems.FirstOrDefaultAsync(i => i.Id == id);
-        if (item == null)
-            return NotFound(Result.Failure("Prescription item not found"));
+        if (item == null) return NotFound(Result.Failure("Prescription item not found"));
 
         if (request.IsDispensed.HasValue)
         {
             item.IsDispensed = request.IsDispensed.Value;
             if (request.IsDispensed.Value)
-            {
                 item.DispensedQuantity = request.DispensedQuantity;
-            }
         }
 
         await _context.SaveChangesAsync();
         return Ok(Result.Success("Medication updated"));
     }
 
-    [HttpGet("tasks")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.EmrView)]
-    public async Task<IActionResult> GetTasks([FromQuery] Guid? nurseId = null)
-    {
-        var notes = await _context.NursingNotes
-            .Where(n => !n.IsDeleted)
-            .OrderByDescending(n => n.NoteDate)
-            .Take(50)
-            .Select(n => new
-            {
-                n.Id,
-                n.PatientId,
-                AdmissionId = n.AdmissionId,
-                PatientName = n.Patient != null ? n.Patient.FirstName + " " + n.Patient.LastName : null,
-                n.NoteDate,
-                n.Shift,
-                n.Assessment,
-                n.Interventions,
-                n.CarePlan,
-                n.PainScore,
-                n.FallRisk,
-                n.Mobility,
-                n.Diet,
-                n.Notes
-            })
-            .ToListAsync();
-
-        return Ok(Result<object>.Success(notes));
-    }
-
-    [HttpPatch("tasks/{id:guid}")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.EmrEdit)]
-    public async Task<IActionResult> UpdateTask(Guid id, [FromBody] UpdateTaskRequest request)
-    {
-        var note = await _context.NursingNotes.FirstOrDefaultAsync(n => n.Id == id && !n.IsDeleted);
-        if (note == null)
-            return NotFound(Result.Failure("Nursing note not found"));
-
-        if (request.Assessment != null) note.Assessment = request.Assessment;
-        if (request.Interventions != null) note.Interventions = request.Interventions;
-        if (request.CarePlan != null) note.CarePlan = request.CarePlan;
-        if (request.Notes != null) note.Notes = request.Notes;
-
-        await _context.SaveChangesAsync();
-        return Ok(Result.Success("Task updated"));
-    }
+    // ──────────── Nursing Notes ────────────
 
     [HttpGet("notes")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.EmrView)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsView)]
     public async Task<IActionResult> GetNotes([FromQuery] Guid? admissionId = null)
     {
-        var query = _context.NursingNotes
-            .Where(n => !n.IsDeleted);
+        var query = _context.NursingNotes.Where(n => !n.IsDeleted);
 
         if (admissionId.HasValue)
             query = query.Where(n => n.AdmissionId == admissionId.Value);
@@ -259,6 +293,7 @@ public class NursingController : ControllerBase
                 n.PatientId,
                 n.AdmissionId,
                 PatientName = n.Patient != null ? n.Patient.FirstName + " " + n.Patient.LastName : null,
+                NurseId = n.NurseId,
                 n.NoteDate,
                 n.Shift,
                 n.Assessment,
@@ -278,7 +313,7 @@ public class NursingController : ControllerBase
     }
 
     [HttpPost("notes")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.EmrEdit)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsEdit)]
     public async Task<IActionResult> AddNote([FromBody] AddNoteRequest request)
     {
         if (request.PatientId == Guid.Empty || request.AdmissionId == Guid.Empty)
@@ -288,6 +323,7 @@ public class NursingController : ControllerBase
         {
             PatientId = request.PatientId,
             AdmissionId = request.AdmissionId,
+            NurseId = CurrentUserId,
             NoteDate = DateTime.UtcNow,
             Shift = request.Shift,
             Assessment = request.Assessment,
@@ -307,6 +343,201 @@ public class NursingController : ControllerBase
 
         return Ok(Result<object>.Success(new { note.Id }, "Note added successfully"));
     }
+
+    [HttpPut("notes/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsEdit)]
+    public async Task<IActionResult> UpdateNote(Guid id, [FromBody] AddNoteRequest request)
+    {
+        var note = await _context.NursingNotes.FirstOrDefaultAsync(n => n.Id == id && !n.IsDeleted);
+        if (note == null) return NotFound(Result.Failure("Nursing note not found"));
+
+        note.Shift = request.Shift;
+        note.Assessment = request.Assessment;
+        note.Interventions = request.Interventions;
+        note.PatientResponse = request.PatientResponse;
+        note.CarePlan = request.CarePlan;
+        note.Notes = request.Notes;
+        note.PainScore = request.PainScore;
+        note.FallRisk = request.FallRisk;
+        note.Mobility = request.Mobility;
+        note.Diet = request.Diet;
+        note.IntakeOutput = request.IntakeOutput;
+
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Note updated successfully"));
+    }
+
+    [HttpDelete("notes/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsEdit)]
+    public async Task<IActionResult> DeleteNote(Guid id)
+    {
+        var note = await _context.NursingNotes.FirstOrDefaultAsync(n => n.Id == id && !n.IsDeleted);
+        if (note == null) return NotFound(Result.Failure("Nursing note not found"));
+
+        note.IsDeleted = true;
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Note deleted successfully"));
+    }
+
+    [HttpGet("notes/single/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsView)]
+    public async Task<IActionResult> GetNoteById(Guid id)
+    {
+        var note = await _context.NursingNotes
+            .Where(n => n.Id == id && !n.IsDeleted)
+            .Select(n => new
+            {
+                n.Id,
+                n.PatientId,
+                n.AdmissionId,
+                n.NurseId,
+                n.NoteDate,
+                n.Shift,
+                n.Assessment,
+                n.Interventions,
+                n.PatientResponse,
+                n.CarePlan,
+                n.Notes,
+                n.PainScore,
+                n.FallRisk,
+                n.Mobility,
+                n.Diet,
+                n.IntakeOutput
+            })
+            .FirstOrDefaultAsync();
+
+        if (note == null) return NotFound(Result.Failure("Nursing note not found"));
+        return Ok(Result<object>.Success(note));
+    }
+
+    // ──────────── Intake/Output ────────────
+
+    [HttpGet("intake-output")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsView)]
+    public async Task<IActionResult> GetIntakeOutput([FromQuery] Guid admissionId)
+    {
+        var note = await _context.NursingNotes
+            .Where(n => !n.IsDeleted && n.AdmissionId == admissionId && n.IntakeOutput != null)
+            .OrderByDescending(n => n.NoteDate)
+            .FirstOrDefaultAsync();
+
+        var records = string.IsNullOrEmpty(note?.IntakeOutput)
+            ? new List<object>()
+            : System.Text.Json.JsonSerializer.Deserialize<List<object>>(note.IntakeOutput!) ?? new List<object>();
+
+        return Ok(Result<object>.Success(records));
+    }
+
+    [HttpPost("intake-output")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsEdit)]
+    public async Task<IActionResult> AddIntakeOutput([FromBody] AddIntakeOutputRequest request)
+    {
+        if (request.AdmissionId == Guid.Empty)
+            return BadRequest(Result.Failure("AdmissionId is required"));
+
+        // Get or create a nursing note for today to store IO
+        var today = DateTime.UtcNow.Date;
+        var note = await _context.NursingNotes
+            .FirstOrDefaultAsync(n => !n.IsDeleted && n.AdmissionId == request.AdmissionId
+                && n.NoteDate >= today && n.NoteDate < today.AddDays(1));
+
+        var ioEntry = new
+        {
+            Id = Guid.NewGuid(),
+            Type = request.Type,
+            Description = request.Description,
+            Amount = request.Amount,
+            Notes = request.Notes,
+            RecordedAt = DateTime.UtcNow
+        };
+
+        var ioList = new List<object>();
+        if (!string.IsNullOrEmpty(note?.IntakeOutput))
+        {
+            ioList = System.Text.Json.JsonSerializer.Deserialize<List<object>>(note.IntakeOutput!) ?? new List<object>();
+        }
+        ioList.Add(ioEntry);
+
+        if (note == null)
+        {
+            note = new Domain.Entities.Clinical.NursingNote
+            {
+                PatientId = request.PatientId,
+                AdmissionId = request.AdmissionId,
+                NurseId = CurrentUserId,
+                NoteDate = DateTime.UtcNow,
+                Shift = "N/A",
+                IntakeOutput = System.Text.Json.JsonSerializer.Serialize(ioList)
+            };
+            _context.NursingNotes.Add(note);
+        }
+        else
+        {
+            note.IntakeOutput = System.Text.Json.JsonSerializer.Serialize(ioList);
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(Result<object>.Success(new { ioEntry.Id }, "Intake/Output recorded"));
+    }
+
+    [HttpDelete("intake-output/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsEdit)]
+    public async Task<IActionResult> DeleteIntakeOutput(Guid id, [FromQuery] Guid admissionId)
+    {
+        if (admissionId == Guid.Empty)
+            return BadRequest(Result.Failure("AdmissionId is required"));
+
+        var today = DateTime.UtcNow.Date;
+        var note = await _context.NursingNotes
+            .FirstOrDefaultAsync(n => !n.IsDeleted && n.AdmissionId == admissionId
+                && n.NoteDate >= today && n.NoteDate < today.AddDays(1)
+                && n.IntakeOutput != null);
+
+        if (note == null) return NotFound(Result.Failure("No intake/output records found"));
+
+        var ioList = System.Text.Json.JsonSerializer.Deserialize<List<System.Text.Json.JsonElement>>(note.IntakeOutput!) ?? new();
+        ioList.RemoveAll(e => e.TryGetProperty("Id", out var idProp) && idProp.GetString() == id.ToString());
+        note.IntakeOutput = System.Text.Json.JsonSerializer.Serialize(ioList);
+
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Intake/Output deleted"));
+    }
+
+    [HttpGet("intake-output/single/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsView)]
+    public async Task<IActionResult> GetIntakeOutputById(Guid id, [FromQuery] Guid admissionId)
+    {
+        if (admissionId == Guid.Empty)
+            return BadRequest(Result.Failure("AdmissionId is required"));
+
+        var today = DateTime.UtcNow.Date;
+        var note = await _context.NursingNotes
+            .FirstOrDefaultAsync(n => !n.IsDeleted && n.AdmissionId == admissionId
+                && n.NoteDate >= today && n.NoteDate < today.AddDays(1)
+                && n.IntakeOutput != null);
+
+        if (note == null) return NotFound(Result.Failure("No intake/output records found"));
+
+        var ioList = System.Text.Json.JsonSerializer.Deserialize<List<System.Text.Json.JsonElement>>(note.IntakeOutput!) ?? new();
+        var entry = ioList.FirstOrDefault(e => e.TryGetProperty("Id", out var idProp) && idProp.GetString() == id.ToString());
+
+        if (entry.ValueKind == System.Text.Json.JsonValueKind.Undefined)
+            return NotFound(Result.Failure("Intake/Output record not found"));
+
+        var record = new
+        {
+            Id = id,
+            Type = entry.TryGetProperty("Type", out var t) ? t.GetString() : "",
+            Description = entry.TryGetProperty("Description", out var d) ? d.GetString() : "",
+            Amount = entry.TryGetProperty("Amount", out var a) ? a.GetInt32() : 0,
+            Notes = entry.TryGetProperty("Notes", out var n) ? n.GetString() : "",
+            RecordedAt = entry.TryGetProperty("RecordedAt", out var r) && DateTime.TryParse(r.GetString(), out var dt) ? dt : DateTime.MinValue
+        };
+
+        return Ok(Result<object>.Success(record));
+    }
+
+    // ──────────── Request DTOs ────────────
 
     public class RecordVitalsRequest
     {
@@ -334,14 +565,6 @@ public class NursingController : ControllerBase
         public decimal? DispensedQuantity { get; set; }
     }
 
-    public class UpdateTaskRequest
-    {
-        public string? Assessment { get; set; }
-        public string? Interventions { get; set; }
-        public string? CarePlan { get; set; }
-        public string? Notes { get; set; }
-    }
-
     public class AddNoteRequest
     {
         public Guid PatientId { get; set; }
@@ -357,5 +580,15 @@ public class NursingController : ControllerBase
         public string? Mobility { get; set; }
         public string? Diet { get; set; }
         public string? IntakeOutput { get; set; }
+    }
+
+    public class AddIntakeOutputRequest
+    {
+        public Guid PatientId { get; set; }
+        public Guid AdmissionId { get; set; }
+        public string Type { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public int Amount { get; set; }
+        public string? Notes { get; set; }
     }
 }

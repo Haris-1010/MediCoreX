@@ -29,7 +29,7 @@ interface NewPatient {
           <tbody>
             <tr *ngFor="let patient of patients">
               <td>{{ patient.name }}</td>
-              <td>{{ patient.phone }}</td>
+              <td>{{ patient.phone | phone }}</td>
               <td>{{ patient.date | date:'M/d/yyyy' }}</td>
             </tr>
           </tbody>

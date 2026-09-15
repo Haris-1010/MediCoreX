@@ -11,7 +11,7 @@ import { Component, Input } from '@angular/core';
         <div class="chart-bars">
           <div class="chart-bar" *ngFor="let item of data; let i = index"
                [style.height.%]="getBarHeight(item.value)"
-               [matTooltip]="item.label + ': ' + (item.value | currency)">
+               [matTooltip]="item.label + ': ' + (item.value | currencyFormat)">
             <span class="bar-label">{{ item.label }}</span>
           </div>
         </div>

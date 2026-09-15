@@ -94,11 +94,49 @@ export class SettingsComponent implements OnInit {
   roleFormData: any = {};
   permissionGroups: any[] = [];
 
+  currencies = [
+    { code: 'PKR', symbol: 'Rs', name: 'Pakistani Rupee' },
+    { code: 'USD', symbol: '$', name: 'US Dollar' },
+    { code: 'EUR', symbol: '€', name: 'Euro' },
+    { code: 'GBP', symbol: '£', name: 'British Pound' },
+    { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+    { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal' },
+    { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
+    { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+    { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+    { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
+    { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+    { code: 'TRY', symbol: '₺', name: 'Turkish Lira' },
+    { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
+    { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit' },
+    { code: 'PHP', symbol: '₱', name: 'Philippine Peso' },
+    { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
+    { code: 'EGP', symbol: 'E£', name: 'Egyptian Pound' },
+    { code: 'KWD', symbol: 'KD', name: 'Kuwaiti Dinar' },
+    { code: 'QAR', symbol: 'QR', name: 'Qatari Riyal' },
+    { code: 'OMR', symbol: 'OMR', name: 'Omani Rial' },
+    { code: 'BHD', symbol: 'BD', name: 'Bahraini Dinar' },
+  ];
+  filteredCurrencies = [...this.currencies];
+
   constructor(private fb: FormBuilder, private api: ApiService, private notification: NotificationService) {}
 
   ngOnInit() {
     this.generalForm = this.fb.group({ organizationName: [''], phone: [''], email: [''], address: [''], currency: ['USD'], dateFormat: ['MM/dd/yyyy'] });
     this.api.get<any>('v1/settings/general').subscribe(r => this.generalForm.patchValue(r));
+
+    this.generalForm.get('currency')?.valueChanges.subscribe(val => {
+      const term = (val || '').toLowerCase();
+      if (!term) {
+        this.filteredCurrencies = [...this.currencies];
+      } else {
+        this.filteredCurrencies = this.currencies.filter(c =>
+          c.code.toLowerCase().includes(term) ||
+          c.name.toLowerCase().includes(term) ||
+          c.symbol.toLowerCase().includes(term)
+        );
+      }
+    });
 
     this.brandingForm = this.fb.group({ name: [''], logoUrl: [''], phone: [''], email: [''], website: [''], address: [''], city: [''], state: [''], postalCode: [''], country: [''] });
     this.api.get<any>('v1/tenants/current').subscribe(r => this.brandingForm.patchValue({
@@ -107,12 +145,23 @@ export class SettingsComponent implements OnInit {
       postalCode: r?.postalCode, country: r?.country
     }));
 
+    this.api.get<any>('v1/settings/billing').subscribe(r => {
+      if (r) this.billingSettings = { ...this.billingSettings, ...r };
+    });
+
     this.loadPermissionGroups();
     this.loadRoles();
     this.loadUsers();
   }
 
   saveGeneral() { this.api.put('v1/settings', 'general', this.generalForm.value).subscribe(() => this.notification.success('Settings saved')); }
+
+  saveBilling() {
+    this.api.put('v1/settings', 'billing', this.billingSettings).subscribe({
+      next: () => this.notification.success('Billing settings saved'),
+      error: (err) => this.notification.error(this.extractError(err))
+    });
+  }
 
   saveBranding() {
     const value = this.brandingForm.value;

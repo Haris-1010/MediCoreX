@@ -159,17 +159,67 @@ INSERT INTO Patients (Id, TenantId, BranchId, MRN, FirstName, LastName, DateOfBi
 (NEWID(), @TenantId, @BranchId, 'MRN-0004', 'David', 'Davis', '1965-01-30', 'Male', 'AB+', '4444444444', 'david@email.com', '654 Maple Lane', 1, GETUTCDATE()),
 (NEWID(), @TenantId, @BranchId, 'MRN-0005', 'Emma', 'Miller', '2010-05-12', 'Female', 'A-', '5555555555', 'emma@email.com', '987 Cedar Court', 1, GETUTCDATE());
 
+-- Create service categories
+DECLARE @CatConsultation UNIQUEIDENTIFIER = NEWID();
+DECLARE @CatLaboratory UNIQUEIDENTIFIER = NEWID();
+DECLARE @CatRadiology UNIQUEIDENTIFIER = NEWID();
+DECLARE @CatRoom UNIQUEIDENTIFIER = NEWID();
+DECLARE @CatSurgery UNIQUEIDENTIFIER = NEWID();
+DECLARE @CatDiagnostic UNIQUEIDENTIFIER = NEWID();
+
+INSERT INTO ServiceCategories (Id, TenantId, Name, Code, Description, IsActive, DisplayOrder, CreatedAt) VALUES
+(@CatConsultation, @TenantId, 'Consultation', 'CONS', 'Doctor consultations', 1, 10, GETUTCDATE()),
+(@CatLaboratory, @TenantId, 'Laboratory', 'LAB', 'Lab tests and investigations', 1, 20, GETUTCDATE()),
+(@CatRadiology, @TenantId, 'Radiology', 'RAD', 'Imaging and radiology services', 1, 30, GETUTCDATE()),
+(@CatRoom, @TenantId, 'Room & Bed', 'ROOM', 'Room and bed charges', 1, 40, GETUTCDATE()),
+(@CatSurgery, @TenantId, 'Surgery', 'SURG', 'Surgical procedures', 1, 50, GETUTCDATE()),
+(@CatDiagnostic, @TenantId, 'Diagnostic', 'DX', 'Diagnostic procedures', 1, 60, GETUTCDATE());
+
 -- Create service items for billing
-INSERT INTO ServiceItems (Id, TenantId, Code, Name, Description, Category, UnitPrice, IsActive, CreatedAt) VALUES
-(NEWID(), @TenantId, 'CONS-GEN', 'General Consultation', 'General physician consultation', 'Consultation', 500, 1, GETUTCDATE()),
-(NEWID(), @TenantId, 'CONS-SPEC', 'Specialist Consultation', 'Specialist doctor consultation', 'Consultation', 1000, 1, GETUTCDATE()),
-(NEWID(), @TenantId, 'LAB-CBC', 'Complete Blood Count', 'Full blood count test', 'Laboratory', 300, 1, GETUTCDATE()),
-(NEWID(), @TenantId, 'LAB-LFT', 'Liver Function Test', 'Liver function panel', 'Laboratory', 500, 1, GETUTCDATE()),
-(NEWID(), @TenantId, 'RAD-XRAY', 'X-Ray', 'Standard X-Ray imaging', 'Radiology', 400, 1, GETUTCDATE()),
-(NEWID(), @TenantId, 'RAD-CT', 'CT Scan', 'Computed tomography scan', 'Radiology', 3000, 1, GETUTCDATE()),
-(NEWID(), @TenantId, 'ROOM-GEN', 'General Ward - Per Day', 'General ward bed charges', 'Room', 500, 1, GETUTCDATE()),
-(NEWID(), @TenantId, 'ROOM-PVT', 'Private Room - Per Day', 'Private room charges', 'Room', 2000, 1, GETUTCDATE()),
-(NEWID(), @TenantId, 'ROOM-ICU', 'ICU - Per Day', 'ICU bed charges', 'Room', 5000, 1, GETUTCDATE());
+INSERT INTO Services (Id, TenantId, Code, Name, Description, CategoryId, Price, TaxPercent, IsActive, DisplayOrder, CreatedAt) VALUES
+-- Consultation services
+(NEWID(), @TenantId, 'CONS-GEN', 'General Consultation', 'General physician consultation', @CatConsultation, 500, 0, 1, 10, GETUTCDATE()),
+(NEWID(), @TenantId, 'CONS-SPEC', 'Specialist Consultation', 'Specialist doctor consultation', @CatConsultation, 1000, 0, 1, 20, GETUTCDATE()),
+(NEWID(), @TenantId, 'CONS-EMER', 'Emergency Consultation', 'Emergency department consultation', @CatConsultation, 1500, 0, 1, 30, GETUTCDATE()),
+(NEWID(), @TenantId, 'CONS-FOLL', 'Follow-up Consultation', 'Follow-up visit consultation', @CatConsultation, 300, 0, 1, 40, GETUTCDATE()),
+(NEWID(), @TenantId, 'CONS-TELE', 'Telemedicine Consultation', 'Virtual/online consultation', @CatConsultation, 400, 0, 1, 50, GETUTCDATE()),
+-- Laboratory services
+(NEWID(), @TenantId, 'LAB-CBC', 'Complete Blood Count', 'Full blood count test', @CatLaboratory, 300, 18, 1, 10, GETUTCDATE()),
+(NEWID(), @TenantId, 'LAB-LFT', 'Liver Function Test', 'Liver function panel', @CatLaboratory, 500, 18, 1, 20, GETUTCDATE()),
+(NEWID(), @TenantId, 'LAB-RFT', 'Renal Function Test', 'Kidney function panel', @CatLaboratory, 500, 18, 1, 30, GETUTCDATE()),
+(NEWID(), @TenantId, 'LAB-LIPID', 'Lipid Profile', 'Cholesterol and lipid panel', @CatLaboratory, 400, 18, 1, 40, GETUTCDATE()),
+(NEWID(), @TenantId, 'LAB-THY', 'Thyroid Profile', 'T3, T4, TSH test', @CatLaboratory, 600, 18, 1, 50, GETUTCDATE()),
+(NEWID(), @TenantId, 'LAB-GLU', 'Blood Glucose', 'Fasting/random blood sugar', @CatLaboratory, 100, 18, 1, 60, GETUTCDATE()),
+(NEWID(), @TenantId, 'LAB-HBA1C', 'HbA1c', 'Glycated hemoglobin', @CatLaboratory, 500, 18, 1, 70, GETUTCDATE()),
+(NEWID(), @TenantId, 'LAB-UA', 'Urinalysis', 'Complete urine examination', @CatLaboratory, 150, 18, 1, 80, GETUTCDATE()),
+(NEWID(), @TenantId, 'LAB-STOOL', 'Stool Examination', 'Routine stool analysis', @CatLaboratory, 100, 18, 1, 90, GETUTCDATE()),
+(NEWID(), @TenantId, 'LAB-PT', 'Prothrombin Time', 'Coagulation profile', @CatLaboratory, 350, 18, 1, 100, GETUTCDATE()),
+-- Radiology services
+(NEWID(), @TenantId, 'RAD-XRAY', 'X-Ray', 'Standard X-Ray imaging', @CatRadiology, 400, 18, 1, 10, GETUTCDATE()),
+(NEWID(), @TenantId, 'RAD-CT', 'CT Scan', 'Computed tomography scan', @CatRadiology, 3000, 18, 1, 20, GETUTCDATE()),
+(NEWID(), @TenantId, 'RAD-MRI', 'MRI Scan', 'Magnetic resonance imaging', @CatRadiology, 5000, 18, 1, 30, GETUTCDATE()),
+(NEWID(), @TenantId, 'RAD-USG', 'Ultrasound', 'Ultrasonography', @CatRadiology, 800, 18, 1, 40, GETUTCDATE()),
+(NEWID(), @TenantId, 'RAD-MAMMO', 'Mammography', 'Breast X-Ray screening', @CatRadiology, 1200, 18, 1, 50, GETUTCDATE()),
+(NEWID(), @TenantId, 'RAD-DXA', 'DEXA Scan', 'Bone density scan', @CatRadiology, 2000, 18, 1, 60, GETUTCDATE()),
+(NEWID(), @TenantId, 'RAD-ECHO', 'Echocardiography', 'Cardiac ultrasound', @CatRadiology, 1500, 18, 1, 70, GETUTCDATE()),
+(NEWID(), @TenantId, 'RAD-TMT', 'Treadmill Test', 'Cardiac stress test', @CatRadiology, 1000, 18, 1, 80, GETUTCDATE()),
+-- Room & bed charges
+(NEWID(), @TenantId, 'ROOM-GEN', 'General Ward - Per Day', 'General ward bed charges', @CatRoom, 500, 0, 1, 10, GETUTCDATE()),
+(NEWID(), @TenantId, 'ROOM-PVT', 'Private Room - Per Day', 'Private room charges', @CatRoom, 2000, 0, 1, 20, GETUTCDATE()),
+(NEWID(), @TenantId, 'ROOM-ICU', 'ICU - Per Day', 'ICU bed charges', @CatRoom, 5000, 0, 1, 30, GETUTCDATE()),
+(NEWID(), @TenantId, 'ROOM-CCU', 'CCU - Per Day', 'Cardiac care unit charges', @CatRoom, 4500, 0, 1, 40, GETUTCDATE()),
+(NEWID(), @TenantId, 'ROOM-EMER', 'Emergency Bed - Per Day', 'Emergency observation bed', @CatRoom, 1000, 0, 1, 50, GETUTCDATE()),
+-- Surgery services
+(NEWID(), @TenantId, 'SURG-APPEND', 'Appendectomy', 'Appendix removal surgery', @CatSurgery, 15000, 18, 1, 10, GETUTCDATE()),
+(NEWID(), @TenantId, 'SURG-CHOLE', 'Cholecystectomy', 'Gallbladder removal surgery', @CatSurgery, 20000, 18, 1, 20, GETUTCDATE()),
+(NEWID(), @TenantId, 'SURG-HERNIA', 'Hernia Repair', 'Hernia surgery', @CatSurgery, 12000, 18, 1, 30, GETUTCDATE()),
+(NEWID(), @TenantId, 'SURG-KNEE', 'Knee Arthroscopy', 'Knee joint surgery', @CatSurgery, 25000, 18, 1, 40, GETUTCDATE()),
+(NEWID(), @TenantId, 'SURG-CATARACT', 'Cataract Surgery', 'Cataract removal and lens implant', @CatSurgery, 18000, 18, 1, 50, GETUTCDATE()),
+-- Diagnostic services
+(NEWID(), @TenantId, 'DX-ECG', 'ECG', 'Electrocardiogram', @CatDiagnostic, 200, 0, 1, 10, GETUTCDATE()),
+(NEWID(), @TenantId, 'DX-EEG', 'EEG', 'Electroencephalogram', @CatDiagnostic, 1500, 18, 1, 20, GETUTCDATE()),
+(NEWID(), @TenantId, 'DX-PFT', 'Pulmonary Function Test', 'Lung function test', @CatDiagnostic, 800, 18, 1, 30, GETUTCDATE()),
+(NEWID(), @TenantId, 'DX-ABI', 'Ankle Brachial Index', 'Peripheral vascular test', @CatDiagnostic, 600, 18, 1, 40, GETUTCDATE());
 
 -- Print summary
 PRINT 'Seed data created successfully!';

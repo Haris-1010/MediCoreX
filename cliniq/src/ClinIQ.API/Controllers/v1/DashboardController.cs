@@ -33,12 +33,17 @@ public class DashboardController : ControllerBase
             .Where(i => !i.IsDeleted && i.InvoiceDate.Date == DateTime.Today && i.Status == Domain.Enums.InvoiceStatus.Paid)
             .SumAsync(i => i.TotalAmount);
 
+        var amountReceivables = await _context.Invoices
+            .Where(i => !i.IsDeleted && i.Status != Domain.Enums.InvoiceStatus.Paid && i.Status != Domain.Enums.InvoiceStatus.Cancelled && i.Status != Domain.Enums.InvoiceStatus.Refunded && i.Status != Domain.Enums.InvoiceStatus.WrittenOff)
+            .SumAsync(i => i.TotalAmount - i.PaidAmount);
+
         return Ok(Result<object>.Success(new
         {
             totalPatients,
             todayAppointments,
             activeAdmissions,
             todayRevenue,
+            amountReceivables,
             patientGrowth = 0.0,
             appointmentGrowth = 0.0,
             admissionGrowth = 0.0,

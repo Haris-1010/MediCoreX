@@ -9,6 +9,7 @@ import { PrescriptionListComponent } from './prescription-list/prescription-list
 import { PrescriptionDetailComponent } from './prescription-detail/prescription-detail.component';
 import { PrescriptionFormComponent } from './prescription-form/prescription-form.component';
 import { PrescriptionPrintComponent } from './prescription-print/prescription-print.component';
+import { PrescriptionItemDialogComponent } from './item-dialog/prescription-item-dialog.component';
 
 const routes: Routes = [
   { path: '', component: PrescriptionListComponent },
@@ -23,7 +24,8 @@ const routes: Routes = [
     PrescriptionListComponent,
     PrescriptionDetailComponent,
     PrescriptionFormComponent,
-    PrescriptionPrintComponent
+    PrescriptionPrintComponent,
+    PrescriptionItemDialogComponent
   ],
   imports: [
     CommonModule,

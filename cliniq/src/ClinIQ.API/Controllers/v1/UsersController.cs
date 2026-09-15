@@ -352,7 +352,7 @@ public class UsersController : ControllerBase
 
     [HttpPost("{id:guid}/reset-password")]
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.UsersEdit)]
-    public async Task<IActionResult> ResetPassword(Guid id)
+    public async Task<IActionResult> ResetPassword(Guid id, [FromBody] AdminResetPasswordRequest? request = null)
     {
         var tenantId = _tenantService.GetCurrentTenantId();
         if (tenantId is null)
@@ -364,11 +364,15 @@ public class UsersController : ControllerBase
         if (user == null)
             return NotFound(Result.Failure("User not found"));
 
-        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword("ChangeMe@123");
+        var newPassword = request?.NewPassword;
+        if (string.IsNullOrWhiteSpace(newPassword))
+            newPassword = "ChangeMe@123";
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         await _context.SaveChangesAsync();
 
         _permissionService.InvalidateUser(id, tenantId.Value);
-        return Ok(Result.Success("Password reset to ChangeMe@123"));
+        return Ok(Result.Success("Password updated successfully"));
     }
 }
 
@@ -388,4 +392,8 @@ public record UpdateUserRequest(
     string? Phone,
     bool IsActive,
     List<Guid>? RoleIds
+);
+
+public record AdminResetPasswordRequest(
+    string? NewPassword
 );

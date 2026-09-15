@@ -1,4 +1,5 @@
 using ClinIQ.Domain.Enums;
+using ClinIQ.Domain.Interfaces;
 using ClinIQ.Infrastructure.Data;
 using ClinIQ.Shared.Models;
 using ClinIQ.API.Authorization;
@@ -14,10 +15,35 @@ namespace ClinIQ.API.Controllers.v1;
 public class InventoryController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly ITenantService _tenantService;
 
-    public InventoryController(ApplicationDbContext context)
+    public InventoryController(ApplicationDbContext context, ITenantService tenantService)
     {
         _context = context;
+        _tenantService = tenantService;
+    }
+
+    private async Task<Guid> GetOrCreateDefaultWarehouseId()
+    {
+        var tenantId = _tenantService.GetCurrentTenantId();
+        if (tenantId is null) throw new InvalidOperationException("Unable to resolve the current organization.");
+
+        var warehouse = await _context.Warehouses
+            .FirstOrDefaultAsync(w => !w.IsDeleted && w.IsActive && w.TenantId == tenantId.Value);
+        if (warehouse != null) return warehouse.Id;
+
+        warehouse = new Domain.Entities.Inventory.Warehouse
+        {
+            Name = "Main Warehouse",
+            Code = "WH-001",
+            WarehouseType = "Main",
+            IsDefault = true,
+            IsActive = true,
+            TenantId = tenantId
+        };
+        _context.Warehouses.Add(warehouse);
+        await _context.SaveChangesAsync();
+        return warehouse.Id;
     }
 
     [HttpGet("items")]
@@ -231,37 +257,61 @@ public class InventoryController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.InventoryAdjust)]
     public async Task<IActionResult> CreateAdjustment([FromBody] StockAdjustmentRequest request)
     {
-        if (request.ItemId == Guid.Empty)
-            return BadRequest(Result.Failure("ItemId is required"));
-
-        var item = await _context.Items.FirstOrDefaultAsync(i => i.Id == request.ItemId && !i.IsDeleted);
-        if (item == null)
-            return NotFound(Result.Failure("Item not found"));
-
-        var quantityBefore = item.CurrentStock;
-        var adjustment = request.Type.ToLower() == "increase" ? request.Quantity : -request.Quantity;
-        item.CurrentStock += adjustment;
-
-        var movement = new Domain.Entities.Inventory.StockMovement
+        try
         {
-            MovementNumber = $"ADJ-{DateTime.UtcNow:yyyyMMddHHmmss}",
-            ItemId = request.ItemId,
-            WarehouseId = item.DefaultWarehouseId ?? Guid.Empty,
-            MovementType = StockMovementType.Adjustment,
-            MovementDate = DateTime.UtcNow,
-            Quantity = Math.Abs(adjustment),
-            QuantityBefore = quantityBefore,
-            QuantityAfter = item.CurrentStock,
-            UnitPrice = item.PurchasePrice,
-            TotalAmount = Math.Abs(adjustment) * item.PurchasePrice,
-            Reason = request.Reason,
-            Notes = request.Notes
-        };
+            if (request.ItemId == Guid.Empty)
+                return BadRequest(Result.Failure("ItemId is required"));
 
-        _context.StockMovements.Add(movement);
-        await _context.SaveChangesAsync();
+            var item = await _context.Items.FirstOrDefaultAsync(i => i.Id == request.ItemId && !i.IsDeleted);
+            if (item == null)
+                return NotFound(Result.Failure("Item not found"));
 
-        return Ok(Result<object>.Success(new { movement.Id, movement.MovementNumber }, "Stock adjusted successfully"));
+            var quantityBefore = item.CurrentStock;
+            decimal adjustment;
+
+            var adjType = (request.AdjustmentType ?? request.Type ?? "increase").ToLower();
+            if (adjType == "add" || adjType == "increase")
+            {
+                adjustment = request.Quantity;
+            }
+            else if (adjType == "set")
+            {
+                adjustment = request.Quantity - item.CurrentStock;
+            }
+            else
+            {
+                adjustment = -request.Quantity;
+            }
+
+            item.CurrentStock += adjustment;
+
+            var warehouseId = item.DefaultWarehouseId ?? await GetOrCreateDefaultWarehouseId();
+
+            var movement = new Domain.Entities.Inventory.StockMovement
+            {
+                MovementNumber = $"ADJ-{DateTime.UtcNow:yyyyMMddHHmmss}",
+                ItemId = request.ItemId,
+                WarehouseId = warehouseId,
+                MovementType = StockMovementType.Adjustment,
+                MovementDate = DateTime.UtcNow,
+                Quantity = Math.Abs(adjustment),
+                QuantityBefore = quantityBefore,
+                QuantityAfter = item.CurrentStock,
+                UnitPrice = item.PurchasePrice,
+                TotalAmount = Math.Abs(adjustment) * item.PurchasePrice,
+                Reason = request.Reason,
+                Notes = request.Notes
+            };
+
+            _context.StockMovements.Add(movement);
+            await _context.SaveChangesAsync();
+
+            return Ok(Result<object>.Success(new { movement.Id, movement.MovementNumber }, "Stock adjusted successfully"));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Result.Failure($"Failed to adjust stock: {ex.InnerException?.Message ?? ex.Message}"));
+        }
     }
 
     [HttpGet("adjustments")]
@@ -369,7 +419,7 @@ public class InventoryController : ControllerBase
     }
 
     [HttpGet("items/search")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.InventoryView)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.InventoryView, ClinIQ.Shared.Constants.Permissions.PurchaseOrdersCreate, RequireAll = false)]
     public async Task<IActionResult> SearchItems([FromQuery] string term)
     {
         if (string.IsNullOrWhiteSpace(term))
@@ -488,7 +538,8 @@ public class InventoryController : ControllerBase
     {
         public Guid ItemId { get; set; }
         public decimal Quantity { get; set; }
-        public string Type { get; set; } = "increase";
+        public string? AdjustmentType { get; set; }
+        public string? Type { get; set; }
         public string? Reason { get; set; }
         public string? Notes { get; set; }
     }

@@ -80,6 +80,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Service> Services => Set<Service>();
     public DbSet<ServiceCategory> ServiceCategories => Set<ServiceCategory>();
     public DbSet<TaxConfiguration> TaxConfigurations => Set<TaxConfiguration>();
+    public DbSet<Discount> Discounts => Set<Discount>();
 
     // Insurance
     public DbSet<InsuranceCompany> InsuranceCompanies => Set<InsuranceCompany>();
@@ -211,6 +212,8 @@ public class ApplicationDbContext : DbContext
                     entry.Entity.Id = entry.Entity.Id == Guid.Empty ? Guid.NewGuid() : entry.Entity.Id;
                     entry.Entity.CreatedAt = _dateTimeService.UtcNow;
                     entry.Entity.CreatedBy = _currentUserService.UserId;
+                    if (entry.Entity.RowVersion is null)
+                        entry.Entity.RowVersion = Array.Empty<byte>();
                     break;
                 case EntityState.Modified:
                     entry.Entity.UpdatedAt = _dateTimeService.UtcNow;

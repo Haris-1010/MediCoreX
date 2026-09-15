@@ -83,13 +83,21 @@ public static class PermissionCatalog
         // ---- Facility ----
         new(Permissions.FacilityView, "View", "Facility", "Administration", 10),
 
+        // ---- Services ----
+        new(Permissions.ServicesView,   "View",   "Services", "Financial", 10),
+        new(Permissions.ServicesCreate, "Create", "Services", "Financial", 20),
+        new(Permissions.ServicesEdit,   "Edit",   "Services", "Financial", 30),
+        new(Permissions.ServicesDelete, "Delete", "Services", "Financial", 40),
+
         // ---- Billing ----
-        new(Permissions.BillingView,     "View",           "Billing", "Financial", 10),
-        new(Permissions.BillingCreate,   "Create Invoice", "Billing", "Financial", 20),
-        new(Permissions.BillingEdit,     "Edit Invoice",   "Billing", "Financial", 30),
-        new(Permissions.BillingDiscount, "Apply Discount", "Billing", "Financial", 40),
-        new(Permissions.BillingRefund,   "Refund",         "Billing", "Financial", 50),
-        new(Permissions.BillingCancel,   "Cancel Invoice", "Billing", "Financial", 60),
+        new(Permissions.BillingView,              "View",                 "Billing", "Financial", 10),
+        new(Permissions.BillingCreate,            "Create Invoice",       "Billing", "Financial", 20),
+        new(Permissions.BillingEdit,              "Edit Invoice",         "Billing", "Financial", 30),
+        new(Permissions.BillingDiscount,          "Apply Discount",       "Billing", "Financial", 40),
+        new(Permissions.BillingManageDiscounts,   "Manage Discount Templates", "Billing", "Financial", 45),
+        new(Permissions.BillingRefund,            "Refund",               "Billing", "Financial", 50),
+        new(Permissions.BillingCancel,            "Cancel Invoice",       "Billing", "Financial", 60),
+        new(Permissions.BillingDelete,            "Delete Invoice",       "Billing", "Financial", 70),
 
         // ---- Payments ----
         new(Permissions.PaymentsView,   "View",   "Payments", "Financial", 10),
@@ -108,6 +116,10 @@ public static class PermissionCatalog
         new(Permissions.InventoryManage,   "Manage",   "Inventory", "Supply", 20),
         new(Permissions.InventoryAdjust,   "Adjust",   "Inventory", "Supply", 30),
         new(Permissions.InventoryTransfer, "Transfer", "Inventory", "Supply", 40),
+
+        // ---- Suppliers ----
+        new(Permissions.SuppliersView,   "View",   "Suppliers", "Supply", 10),
+        new(Permissions.SuppliersManage, "Manage", "Suppliers", "Supply", 20),
 
         // ---- Purchase Orders ----
         new(Permissions.PurchaseOrdersView,    "View",    "PurchaseOrders", "Supply", 10),
@@ -186,13 +198,15 @@ public static class PermissionCatalog
             ["emr"]             = Features.EMR,
             ["prescriptions"]   = Features.Prescriptions,
             ["admissions"]      = Features.IPD,
-            ["beds"]            = Features.Beds,
-            ["wards"]           = Features.Wards,
-            ["facility"]        = Features.Rooms,
+            ["beds"]            = Features.IPD,
+            ["wards"]           = Features.IPD,
+            ["facility"]        = Features.IPD,
             ["billing"]         = Features.Billing,
+            ["services"]        = Features.Services,
             ["payments"]        = Features.Billing,
             ["insurance"]       = Features.Insurance,
             ["inventory"]       = Features.Inventory,
+            ["suppliers"]       = Features.Inventory,
             ["purchase_orders"] = Features.Procurement,
             ["pharmacy"]        = Features.Pharmacy,
             ["laboratory"]      = Features.EMR,
@@ -202,5 +216,5 @@ public static class PermissionCatalog
 
     /// <summary>Prefixes that are never gated by the subscription.</summary>
     public static IReadOnlySet<string> UngatedPrefixes { get; } =
-        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "users", "roles", "settings", "audit", "doctors", "staff", "departments", "dashboard" };
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "users", "roles", "settings", "audit", "doctors", "staff", "departments", "dashboard", "suppliers", "purchase_orders" };
 }

@@ -14,6 +14,7 @@ const routes: Routes = [
   { path: '', component: AppointmentListComponent },
   { path: 'calendar', component: AppointmentCalendarComponent },
   { path: 'new', component: AppointmentFormComponent },
+  { path: ':id', component: AppointmentFormComponent },
   { path: ':id/edit', component: AppointmentFormComponent },
   { path: 'schedule', component: DoctorScheduleComponent },
   { path: ':id/print', component: AppointmentPrintComponent }

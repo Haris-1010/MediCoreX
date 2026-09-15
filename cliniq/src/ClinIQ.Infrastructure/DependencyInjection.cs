@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IPermissionService, PermissionService>();
         services.AddScoped<IEntitlementService, EntitlementService>();
         services.AddScoped<IOrganizationProvisioningService, OrganizationProvisioningService>();
+        services.AddScoped<IServiceService, ServiceService>();
 
         // Seeding
         services.AddScoped<Data.Seeding.PermissionSeeder>();

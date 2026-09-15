@@ -21,54 +21,73 @@ export interface NavItem {
 const NAV: NavItem[] = [
   { label: 'Dashboard', icon: 'home', route: '/dashboard', module: 'dashboard' },
 
-  { label: 'Patients', icon: 'people', route: '/patients', permission: 'patients.view' },
-
-  { label: 'OPD Visits', icon: 'assignment', route: '/opd', permission: 'opd.view' },
-
-  { label: 'Prescriptions', icon: 'receipt_long', route: '/prescriptions', permission: 'prescriptions.view' },
-
-  { label: 'Pharmacy', icon: 'description', route: '/pharmacy', permission: 'pharmacy.view' },
+  { label: 'Patients', icon: 'people', route: '/patients', module: 'patients', permission: 'patients.view' },
 
   {
-    label: 'Appointments', icon: 'event', permission: 'appointments.view',
+    label: 'Appointments', icon: 'event', module: 'appointments', permission: 'appointments.view',
     children: [
-      { label: 'Calendar', icon: 'calendar_month', route: '/appointments/calendar', permission: 'appointments.view' },
-      { label: 'List', icon: 'list', route: '/appointments', permission: 'appointments.view' },
+      { label: 'Calendar', icon: 'calendar_month', route: '/appointments/calendar', module: 'appointments', permission: 'appointments.view' },
+      { label: 'All Appointments', icon: 'list', route: '/appointments', module: 'appointments', permission: 'appointments.view' },
     ],
   },
 
-  { label: 'Invoices', icon: 'receipt_long', route: '/billing/invoices', permission: 'billing.view' },
-
-  { label: 'Payments', icon: 'money_off', route: '/billing', permission: 'payments.view' },
-
-  { label: 'Treatment Plans', icon: 'medical_services', route: '/opd', permission: 'opd.view' },
-
-  { label: 'Vaccinations', icon: 'vaccines', route: '/laboratory', permission: 'laboratory.view' },
-
   {
-    label: 'Inpatient (IPD)', icon: 'bed',
+    label: 'OPD', icon: 'local_hospital', module: 'opd', permission: 'opd.view',
     children: [
-      { label: 'Admissions', icon: 'assignment_ind', route: '/ipd/admissions', permission: 'admissions.view' },
-      { label: 'Bed Board', icon: 'grid_view', route: '/ipd/beds', permission: 'beds.view' },
-      { label: 'Wards', icon: 'meeting_room', route: '/wards', permission: 'wards.view' },
+      { label: 'Dashboard', icon: 'dashboard', route: '/opd', module: 'opd', permission: 'opd.view' },
+      { label: 'Queue Management', icon: 'queue', route: '/opd/queue', module: 'opd', permission: 'opd.view' },
+      { label: 'Token Display', icon: 'confirmation_number', route: '/opd/display', module: 'opd', permission: 'opd.view' },
+      { label: 'Token Generation', icon: 'receipt_long', route: '/opd/token', module: 'opd', permission: 'opd.view' },
     ],
   },
 
-  { label: 'Reports', icon: 'folder', route: '/reports', permission: 'reports.view' },
+  { label: 'Services', icon: 'miscellaneous_services', route: '/services', module: 'services', permission: 'services.view' },
 
-  { label: 'Emergency', icon: 'home_repair_service', route: '/emergency', permission: 'emergency.view' },
+  { label: 'Prescriptions', icon: 'receipt_long', route: '/prescriptions', module: 'prescriptions', permission: 'prescriptions.view' },
 
-  { label: 'Insurance', icon: 'health_and_safety', route: '/billing', permission: 'insurance.view' },
+  { label: 'Pharmacy', icon: 'local_pharmacy', route: '/pharmacy', module: 'pharmacy', permission: 'pharmacy.view' },
 
-  { label: 'Queue Management', icon: 'queue', route: '/opd/queue', permission: 'opd.view' },
+  {
+    label: 'Billing', icon: 'payments', module: 'billing', permission: 'billing.view',
+    children: [
+      { label: 'Invoices', icon: 'receipt_long', route: '/billing/invoices', module: 'billing', permission: 'billing.view' },
+      { label: 'Payments', icon: 'payments', route: '/billing/payments', module: 'billing', permission: 'payments.view' },
+      { label: 'Discounts', icon: 'local_offer', route: '/billing/discounts', module: 'billing', permission: 'billing.view' },
+    ],
+  },
+
+  { label: 'Insurance', icon: 'health_and_safety', route: '/insurance', module: 'insurance', permission: 'insurance.view' },
+
+  {
+    label: 'IPD', icon: 'bed', module: 'ipd', permission: 'ipd.view',
+    children: [
+      { label: 'Dashboard', icon: 'dashboard', route: '/ipd', module: 'ipd', permission: 'ipd.view' },
+      { label: 'Admissions', icon: 'assignment_ind', route: '/ipd/admissions', module: 'ipd', permission: 'admissions.view' },
+      { label: 'Wards', icon: 'hotel', route: '/ipd/wards', module: 'ipd', permission: 'ipd.view' },
+      { label: 'Rooms', icon: 'meeting_room', route: '/ipd/rooms', module: 'ipd', permission: 'ipd.view' },
+      { label: 'Bed Board', icon: 'grid_view', route: '/ipd/beds', module: 'ipd', permission: 'ipd.view' },
+      { label: 'Nursing Station', icon: 'local_hospital', route: '/ipd/nursing', module: 'ipd', permission: 'ipd.view' },
+    ],
+  },
+
+  {
+    label: 'Inventory', icon: 'inventory_2', module: 'inventory', permission: 'inventory.view',
+    children: [
+      { label: 'Items', icon: 'inventory', route: '/inventory', module: 'inventory', permission: 'inventory.view' },
+      { label: 'Suppliers', icon: 'local_shipping', route: '/inventory/suppliers', module: 'inventory', permission: 'inventory.view' },
+      { label: 'Purchase Orders', icon: 'shopping_cart', route: '/inventory/purchase-orders', module: 'inventory', permission: 'inventory.view' },
+    ],
+  },
+
+  { label: 'Reports', icon: 'bar_chart', route: '/reports', module: 'reports', permission: 'reports.view' },
 
   {
     label: 'Administration', icon: 'admin_panel_settings',
     children: [
+      { label: 'Doctors', icon: 'medical_services', route: '/doctors' },
+      { label: 'Departments', icon: 'apartment', route: '/departments' },
       { label: 'Users', icon: 'manage_accounts', route: '/settings/users', permission: 'users.view' },
       { label: 'Roles', icon: 'badge', route: '/settings/roles', permission: 'roles.view' },
-      { label: 'Departments', icon: 'apartment', route: '/departments', permission: 'departments.view' },
-      { label: 'Doctors', icon: 'medical_services', route: '/doctors', permission: 'doctors.view' },
       { label: 'Settings', icon: 'settings', route: '/settings', permission: 'settings.view' },
     ],
   },

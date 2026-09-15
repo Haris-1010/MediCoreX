@@ -72,13 +72,21 @@ public static class Permissions
     // Facility
     public const string FacilityView = "facility.view";
 
+    // Services
+    public const string ServicesView = "services.view";
+    public const string ServicesCreate = "services.create";
+    public const string ServicesEdit = "services.edit";
+    public const string ServicesDelete = "services.delete";
+
     // Billing
     public const string BillingView = "billing.view";
     public const string BillingCreate = "billing.create";
     public const string BillingEdit = "billing.edit";
     public const string BillingDiscount = "billing.discount";
+    public const string BillingManageDiscounts = "billing.manage_discounts";
     public const string BillingRefund = "billing.refund";
     public const string BillingCancel = "billing.cancel";
+    public const string BillingDelete = "billing.delete";
 
     // Payments
     public const string PaymentsView = "payments.view";
@@ -97,6 +105,10 @@ public static class Permissions
     public const string InventoryManage = "inventory.manage";
     public const string InventoryAdjust = "inventory.adjust";
     public const string InventoryTransfer = "inventory.transfer";
+
+    // Suppliers
+    public const string SuppliersView = "suppliers.view";
+    public const string SuppliersManage = "suppliers.manage";
 
     // Purchase Orders
     public const string PurchaseOrdersView = "purchase_orders.view";

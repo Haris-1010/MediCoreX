@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../../core/services/api.service';
+import { NotificationService } from '../../../core/services/notification.service';
+import { PasswordResetDialogComponent } from './password-reset-dialog/password-reset-dialog.component';
 
 @Component({
   standalone: false,
@@ -45,7 +48,7 @@ import { ApiService } from '../../../core/services/api.service';
               <tr *ngFor="let user of users">
                 <td>{{ user.fullName || ((user.firstName || '') + ' ' + (user.lastName || '')).trim() || 'Unknown User' }}</td>
                 <td>{{ user.email }}</td>
-                <td>{{ user.phoneNumber || user.phone || 'N/A' }}</td>
+                <td>{{ (user.phoneNumber || user.phone || 'N/A') | phone }}</td>
                 <td>
                   <span *ngFor="let role of getUserRoles(user)" class="badge badge-info">{{ role }}</span>
                   <span *ngIf="!getUserRoles(user).length" class="badge badge-muted">No roles</span>
@@ -60,7 +63,7 @@ import { ApiService } from '../../../core/services/api.service';
                   <button mat-icon-button color="primary" (click)="editUser(user.id)" matTooltip="Edit user">
                     <mat-icon>edit</mat-icon>
                   </button>
-                  <button mat-icon-button (click)="resetPassword(user.id)" matTooltip="Reset password">
+                  <button mat-icon-button (click)="openPasswordResetDialog(user)" matTooltip="Reset password">
                     <mat-icon>key</mat-icon>
                   </button>
                   <button mat-icon-button color="warn" (click)="deleteUser(user.id)" matTooltip="Delete user">
@@ -111,7 +114,12 @@ export class UserListComponent implements OnInit {
   currentPage = 1;
   totalPages = 1;
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(
+    private api: ApiService,
+    private router: Router,
+    private dialog: MatDialog,
+    private notification: NotificationService
+  ) {}
 
   ngOnInit() {
     this.loadUsers();
@@ -144,13 +152,28 @@ export class UserListComponent implements OnInit {
     this.router.navigate(['/settings/users/edit', id]);
   }
 
-  resetPassword(id: string) {
-    if (confirm('Reset password to ChangeMe@123?')) {
-      this.api.post<any>(`v1/users/${id}/reset-password`, {}).subscribe({
-        next: () => alert('Password reset successfully'),
-        error: () => alert('Failed to reset password')
-      });
-    }
+  openPasswordResetDialog(user: any) {
+    const dialogRef = this.dialog.open(PasswordResetDialogComponent, {
+      width: '450px',
+      data: {
+        userId: user.id,
+        userName: user.fullName || ((user.firstName || '') + ' ' + (user.lastName || '')).trim() || user.email,
+        currentPassword: 'ChangeMe@123'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result && result.newPassword) {
+        this.api.post<any>(`v1/users/${user.id}/reset-password`, { newPassword: result.newPassword }).subscribe({
+          next: () => {
+            this.notification.success('Password updated successfully');
+          },
+          error: () => {
+            this.notification.error('Failed to update password');
+          }
+        });
+      }
+    });
   }
 
   deleteUser(id: string) {

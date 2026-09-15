@@ -33,7 +33,7 @@
     <div class="slip-row"><label>Time</label><span>{{ formatTime(appointment.startTime) }} — {{ formatTime(appointment.endTime) }}</span></div>
     <div class="slip-row"><label>Doctor</label><span>Dr. {{ appointment.doctorName }}</span></div>
     <div class="slip-row"><label>Type</label><span>{{ appointment.appointmentType || appointment.type }}</span></div>
-    <div class="slip-row"><label>Consultation Fee</label><span>Rs. {{ formatFee(appointment.consultationFee) }}</span></div>
+    <div class="slip-row"><label>Consultation Fee</label><span>{{ currencySymbol }} {{ formatFee(appointment.consultationFee) }}</span></div>
   </div>
 
   <section>

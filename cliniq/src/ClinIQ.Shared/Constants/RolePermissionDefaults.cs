@@ -32,6 +32,7 @@ public static class RolePermissionDefaults
                 Permissions.BedsView, Permissions.BedsManage, Permissions.BedsAllocate, Permissions.BedsTransfer, Permissions.BedsRelease,
                 Permissions.WardsView,
                 Permissions.FacilityView,
+                Permissions.ServicesView, Permissions.ServicesCreate, Permissions.ServicesEdit, Permissions.ServicesDelete,
                 Permissions.BillingView, Permissions.BillingCreate, Permissions.BillingEdit, Permissions.BillingDiscount, Permissions.BillingRefund, Permissions.BillingCancel,
                 Permissions.PaymentsView, Permissions.PaymentsCreate, Permissions.PaymentsRefund,
                 Permissions.InsuranceView, Permissions.InsuranceCreate, Permissions.InsuranceEdit, Permissions.InsuranceClaims, Permissions.InsuranceApprove,
@@ -59,6 +60,7 @@ public static class RolePermissionDefaults
                 Permissions.AdmissionsDischarge, Permissions.AdmissionsTransfer,
                 Permissions.BedsView, Permissions.BedsManage, Permissions.BedsAllocate,
                 Permissions.BedsTransfer, Permissions.BedsRelease,
+                Permissions.ServicesView, Permissions.ServicesCreate, Permissions.ServicesEdit,
                 Permissions.BillingView, Permissions.BillingCreate, Permissions.BillingDiscount,
                 Permissions.PaymentsView, Permissions.PaymentsCreate,
                 Permissions.InventoryView, Permissions.PurchaseOrdersView, Permissions.PurchaseOrdersApprove,
@@ -78,6 +80,7 @@ public static class RolePermissionDefaults
                 Permissions.AppointmentsView, Permissions.AppointmentsCreate, Permissions.AppointmentsEdit,
                 Permissions.AppointmentsCancel, Permissions.AppointmentsConfirm, Permissions.AppointmentsCheckIn,
                 Permissions.VisitsView, Permissions.VisitsCreate,
+                Permissions.ServicesView, Permissions.ServicesCreate,
                 Permissions.BillingView, Permissions.BillingCreate, Permissions.BillingDiscount,
                 Permissions.PaymentsView, Permissions.PaymentsCreate,
                 Permissions.ReportsView, Permissions.ReportsExport,
@@ -106,7 +109,7 @@ public static class RolePermissionDefaults
                 Permissions.VisitsView,
                 Permissions.EmrView,
                 Permissions.PrescriptionsView,
-                Permissions.AdmissionsView,
+                Permissions.AdmissionsView, Permissions.AdmissionsEdit,
                 Permissions.BedsView, Permissions.BedsAllocate, Permissions.BedsRelease
             },
 
@@ -136,6 +139,7 @@ public static class RolePermissionDefaults
 
             [Roles.Accountant] = new[]
             {
+                Permissions.ServicesView,
                 Permissions.BillingView, Permissions.BillingCreate, Permissions.BillingEdit,
                 Permissions.BillingDiscount, Permissions.BillingRefund, Permissions.BillingCancel,
                 Permissions.PaymentsView, Permissions.PaymentsCreate, Permissions.PaymentsRefund,
@@ -146,7 +150,8 @@ public static class RolePermissionDefaults
             [Roles.BillingOfficer] = new[]
             {
                 Permissions.PatientsView,
-                Permissions.BillingView, Permissions.BillingCreate, Permissions.BillingEdit,
+                Permissions.ServicesView, Permissions.ServicesCreate, Permissions.ServicesEdit,
+                Permissions.BillingView, Permissions.BillingCreate, Permissions.BillingEdit, Permissions.BillingDelete,
                 Permissions.PaymentsView, Permissions.PaymentsCreate,
                 Permissions.ReportsView
             },

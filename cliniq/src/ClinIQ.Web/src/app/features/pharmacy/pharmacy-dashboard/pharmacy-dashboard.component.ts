@@ -10,7 +10,7 @@ import { ApiService } from '../../../core/services/api.service';
       <div class="stats-grid">
         <div class="stat-card"><mat-icon>receipt</mat-icon><div><h3>{{ stats.pendingPrescriptions }}</h3><p>Pending</p></div></div>
         <div class="stat-card"><mat-icon>check_circle</mat-icon><div><h3>{{ stats.dispensedToday }}</h3><p>Dispensed Today</p></div></div>
-        <div class="stat-card"><mat-icon>attach_money</mat-icon><div><h3>{{ stats.todaySales | currency }}</h3><p>Today's Sales</p></div></div>
+        <div class="stat-card"><mat-icon>attach_money</mat-icon><div><h3>{{ stats.todaySales | currencyFormat }}</h3><p>Today's Sales</p></div></div>
       </div>
       <div class="card">
         <h3>Pending Prescriptions</h3>
@@ -39,7 +39,13 @@ export class PharmacyDashboardComponent implements OnInit {
   constructor(private api: ApiService) {}
 
   ngOnInit() {
-    this.api.get<any>('v1/pharmacy/stats').subscribe(r => this.stats = r);
+    this.api.get<any>('v1/pharmacy/stats').subscribe(r => {
+      this.stats = {
+        pendingPrescriptions: r.pendingPrescriptions ?? r.pendingDispensing ?? 0,
+        dispensedToday: r.dispensedToday ?? r.todayDispensed ?? 0,
+        todaySales: r.todaySales ?? 0
+      };
+    });
     this.api.get<any[]>('v1/pharmacy/pending').subscribe(r => this.prescriptions = r);
   }
 }

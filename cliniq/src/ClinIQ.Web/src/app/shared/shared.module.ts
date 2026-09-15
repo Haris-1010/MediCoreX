@@ -49,6 +49,7 @@ import { DateRangePickerComponent } from './components/date-range-picker/date-ra
 // Shared Pipes
 import { DateFormatPipe } from './pipes/date-format.pipe';
 import { CurrencyFormatPipe } from './pipes/currency-format.pipe';
+import { CurrencySymbolPipe } from './pipes/currency-symbol.pipe';
 import { TimeAgoPipe } from './pipes/time-ago.pipe';
 import { TruncatePipe } from './pipes/truncate.pipe';
 import { PhonePipe } from './pipes/phone.pipe';
@@ -106,6 +107,7 @@ const SharedComponents = [
 const SharedPipes = [
   DateFormatPipe,
   CurrencyFormatPipe,
+  CurrencySymbolPipe,
   TimeAgoPipe,
   TruncatePipe,
   PhonePipe

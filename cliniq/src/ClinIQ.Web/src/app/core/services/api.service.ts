@@ -79,8 +79,9 @@ export class ApiService {
       );
   }
 
-  delete<T>(endpoint: string, id: string | number): Observable<T> {
-    return this.http.delete<ApiResponse<T>>(`${this.baseUrl}/${endpoint}/${id}`)
+  delete<T>(endpoint: string, id: string | number, params?: QueryParams): Observable<T> {
+    const httpParams = this.buildParams(params);
+    return this.http.delete<ApiResponse<T>>(`${this.baseUrl}/${endpoint}/${id}`, { params: httpParams })
       .pipe(
         map(response => this.handleResponse(response)),
         catchError(this.handleError)
@@ -145,6 +146,8 @@ export class ApiService {
       errorMessage = error.error.message;
     } else if (error instanceof HttpErrorResponse && error.error?.errors?.length) {
       errorMessage = error.error.errors.join(', ');
+    } else if (error instanceof HttpErrorResponse && typeof error.error === 'string') {
+      errorMessage = error.error;
     } else {
       switch (error.status) {
         case 400:

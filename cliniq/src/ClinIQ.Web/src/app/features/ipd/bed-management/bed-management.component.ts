@@ -13,6 +13,12 @@ import { ApiService } from '../../../core/services/api.service';
           <mat-button-toggle *ngFor="let w of wards" [value]="w.id">{{ w.name }}</mat-button-toggle>
         </mat-button-toggle-group>
       </div>
+      <div class="empty-state" *ngIf="wards.length === 0">
+        <mat-icon>bed</mat-icon>
+        <h3>No Wards Found</h3>
+        <p>Create wards and rooms first in Ward Management.</p>
+        <button mat-raised-button color="primary" routerLink="/ipd/wards"><mat-icon>hotel</mat-icon> Go to Ward Management</button>
+      </div>
       <div class="bed-grid" *ngIf="selectedWard">
         <div class="bed" *ngFor="let b of beds" [ngClass]="'bed-' + b.status.toLowerCase()" (click)="selectBed(b)">
           <span class="bed-number">{{ b.bedNumber }}</span>
@@ -29,6 +35,10 @@ import { ApiService } from '../../../core/services/api.service';
     </app-main-layout>
   `,
   styles: [`.ward-selector { margin-bottom: 1.5rem; }
+    .empty-state { text-align: center; padding: 4rem 2rem; background: white; border-radius: 10px; }
+    .empty-state mat-icon { font-size: 72px; width: 72px; height: 72px; color: #ccc; }
+    .empty-state h3 { margin: 1rem 0 0.5rem; color: #333; }
+    .empty-state p { color: #888; margin-bottom: 1.5rem; }
     .bed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; }
     .bed { background: white; padding: 1rem; border-radius: 8px; text-align: center; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
     .bed:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
@@ -46,7 +56,15 @@ export class BedManagementComponent implements OnInit {
 
   constructor(private api: ApiService, private router: Router) {}
 
-  ngOnInit() { this.api.get<any[]>('v1/wards').subscribe(r => { this.wards = r; if (r.length) { this.selectedWard = r[0].id; this.loadBeds(); } }); }
+  ngOnInit() {
+    this.api.get<any>('v1/wards').subscribe(r => {
+      this.wards = Array.isArray(r) ? r : [];
+      if (this.wards.length > 0) {
+        this.selectedWard = this.wards[0].id;
+        this.loadBeds();
+      }
+    });
+  }
 
   loadBeds() { if (this.selectedWard) this.api.get<any[]>(`v1/wards/${this.selectedWard}/beds`).subscribe(r => this.beds = r); }
   selectBed(bed: any) {

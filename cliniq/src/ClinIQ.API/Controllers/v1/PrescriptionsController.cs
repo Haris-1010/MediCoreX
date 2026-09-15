@@ -102,6 +102,7 @@ public class PrescriptionsController : ControllerBase
                 Items = p.Items.Select(i => new
                 {
                     i.Id,
+                    i.MedicineId,
                     i.MedicineName,
                     i.GenericName,
                     i.Strength,
@@ -164,8 +165,22 @@ public class PrescriptionsController : ControllerBase
             for (int i = 0; i < request.Items.Count; i++)
             {
                 var item = request.Items[i];
+
+                // Try to link medicine to inventory by name match
+                Guid? medicineId = null;
+                if (!string.IsNullOrWhiteSpace(item.MedicineName))
+                {
+                    var nameLower = item.MedicineName.ToLower().Trim();
+                    var inventoryItem = await _context.Items
+                        .FirstOrDefaultAsync(x => !x.IsDeleted && x.IsActive && x.IsMedicine &&
+                            x.Name.ToLower().Trim() == nameLower);
+                    if (inventoryItem != null)
+                        medicineId = inventoryItem.Id;
+                }
+
                 prescription.Items.Add(new PrescriptionItem
                 {
+                    MedicineId = medicineId,
                     MedicineName = item.MedicineName,
                     GenericName = item.GenericName,
                     Strength = item.Strength,
@@ -221,8 +236,22 @@ public class PrescriptionsController : ControllerBase
             for (int i = 0; i < request.Items.Count; i++)
             {
                 var item = request.Items[i];
+
+                // Try to link medicine to inventory by name match
+                Guid? medicineId = null;
+                if (!string.IsNullOrWhiteSpace(item.MedicineName))
+                {
+                    var nameLower = item.MedicineName.ToLower().Trim();
+                    var inventoryItem = await _context.Items
+                        .FirstOrDefaultAsync(x => !x.IsDeleted && x.IsActive && x.IsMedicine &&
+                            x.Name.ToLower().Trim() == nameLower);
+                    if (inventoryItem != null)
+                        medicineId = inventoryItem.Id;
+                }
+
                 prescription.Items.Add(new PrescriptionItem
                 {
+                    MedicineId = medicineId,
                     MedicineName = item.MedicineName,
                     GenericName = item.GenericName,
                     Strength = item.Strength,

@@ -1,3 +1,4 @@
+using ClinIQ.Domain.Entities.Billing;
 using ClinIQ.Domain.Entities.Clinical;
 using ClinIQ.Domain.Enums;
 using ClinIQ.Domain.Interfaces;
@@ -69,7 +70,9 @@ public class AppointmentsController : ControllerBase
                 AppointmentType = a.Type.ToString(),
                 Status = a.Status.ToString(),
                 a.ChiefComplaint,
-                a.Notes
+                a.Notes,
+                a.ConsultationFee,
+                a.IsBilled
             })
             .ToListAsync();
 
@@ -116,7 +119,9 @@ public class AppointmentsController : ControllerBase
                 Reason = a.ChiefComplaint,
                 a.Notes,
                 a.DurationMinutes,
-                a.ConsultationFee
+                a.ConsultationFee,
+                a.IsBilled,
+                a.InvoiceId
             })
             .FirstOrDefaultAsync();
 
@@ -205,6 +210,67 @@ public class AppointmentsController : ControllerBase
 
         _context.Appointments.Add(appointment);
         await _context.SaveChangesAsync();
+
+        // Auto-create invoice + payment if consultation fee > 0
+        if (consultationFee.HasValue && consultationFee.Value > 0)
+        {
+            var doctorName = doctor != null ? $"{doctor.FirstName} {doctor.LastName}" : "Doctor";
+
+            // Generate invoice number
+            var invoiceCount = await _context.Invoices.CountAsync() + 1;
+            var invoiceNumber = $"INV-{DateTime.UtcNow:yyyyMMdd}-{invoiceCount:D5}";
+
+            var invoice = new Invoice
+            {
+                InvoiceNumber = invoiceNumber,
+                PatientId = request.PatientId,
+                AppointmentId = appointment.Id,
+                InvoiceDate = DateTime.UtcNow,
+                Status = InvoiceStatus.Paid,
+                SubTotal = consultationFee.Value,
+                TotalAmount = consultationFee.Value,
+                PaidAmount = consultationFee.Value,
+                OutstandingAmount = 0,
+                Notes = $"Appointment #{aptNumber} - Dr. {doctorName}"
+            };
+
+            invoice.Items.Add(new InvoiceItem
+            {
+                InvoiceId = invoice.Id,
+                ItemType = "Service",
+                ItemName = $"Consultation Fee - Dr. {doctorName}",
+                Description = $"Appointment Consultation - Dr. {doctorName}",
+                Quantity = 1,
+                UnitPrice = consultationFee.Value,
+                Amount = consultationFee.Value,
+                TotalAmount = consultationFee.Value,
+                DisplayOrder = 0
+            });
+
+            _context.Invoices.Add(invoice);
+
+            // Create payment record
+            var paymentCount = await _context.Payments.CountAsync() + 1;
+            var paymentNumber = $"PAY-{DateTime.UtcNow:yyyyMMdd}-{paymentCount:D5}";
+
+            var payment = new Payment
+            {
+                PaymentNumber = paymentNumber,
+                InvoiceId = invoice.Id,
+                PatientId = request.PatientId,
+                PaymentDate = DateTime.UtcNow,
+                Amount = consultationFee.Value,
+                PaymentMethod = PaymentMethod.Cash,
+                Status = PaymentStatus.Completed,
+                Notes = $"Appointment #{aptNumber} payment"
+            };
+            _context.Payments.Add(payment);
+
+            // Link appointment to invoice
+            appointment.IsBilled = true;
+            appointment.InvoiceId = invoice.Id;
+            await _context.SaveChangesAsync();
+        }
 
         return Ok(Result<object>.Success(new { id = appointment.Id, appointmentNumber = appointment.AppointmentNumber }));
     }

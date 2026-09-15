@@ -51,8 +51,8 @@
   <section *ngIf="patient.phone || patient.alternatePhone || patient.email || patient.address || patient.city || patient.state || patient.country">
     <h3>Contact Information</h3>
     <div class="grid">
-      <div class="field" *ngIf="patient.phone"><label>Phone</label><span>{{ patient.phone }}</span></div>
-      <div class="field" *ngIf="patient.alternatePhone"><label>Alternate phone</label><span>{{ patient.alternatePhone }}</span></div>
+<div class="field" *ngIf="patient.phone"><label>Phone</label><span>{{ patient.phone | phone }}</span></div>
+          <div class="field" *ngIf="patient.alternatePhone"><label>Alternate phone</label><span>{{ patient.alternatePhone | phone }}</span></div>
       <div class="field" *ngIf="patient.email"><label>Email</label><span>{{ patient.email }}</span></div>
       <div class="field" *ngIf="patient.address"><label>Address</label><span>{{ patient.address }}</span></div>
       <div class="field" *ngIf="patient.city"><label>City</label><span>{{ patient.city }}</span></div>

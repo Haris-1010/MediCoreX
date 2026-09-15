@@ -24,7 +24,7 @@ interface PatientSearchResult {
         <mat-option *ngFor="let patient of searchResults" [value]="patient">
           <div class="patient-option">
             <span class="name">{{ patient.fullName }}</span>
-            <span class="details">MRN: {{ patient.mrn }} | {{ patient.phone }}</span>
+            <span class="details">MRN: {{ patient.mrn }} | {{ patient.phone | phone }}</span>
           </div>
         </mat-option>
         <mat-option *ngIf="searchResults.length === 0 && searchControl.value" disabled>

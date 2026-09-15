@@ -371,14 +371,22 @@ export class SidebarComponent implements OnInit, OnDestroy {
     const query = this.searchQuery().toLowerCase().trim();
     const menu = this.navigation.menu();
 
-    if (!query) {
-      return menu;
-    }
+    if (!query) return menu;
 
-    return menu.filter(item => {
-      if (item.label.toLowerCase().includes(query)) return true;
-      return item.children?.some(child => child.label.toLowerCase().includes(query)) ?? false;
-    });
+    const results: NavItem[] = [];
+    for (const item of menu) {
+      if (item.children) {
+        const matchedChildren = item.children.filter(c => c.label.toLowerCase().includes(query));
+        if (matchedChildren.length > 0) {
+          results.push({ ...item, children: matchedChildren, expanded: true });
+        } else if (item.label.toLowerCase().includes(query)) {
+          results.push({ ...item, expanded: true });
+        }
+      } else if (item.label.toLowerCase().includes(query)) {
+        results.push(item);
+      }
+    }
+    return results;
   });
   private destroy$ = new Subject<void>();
 

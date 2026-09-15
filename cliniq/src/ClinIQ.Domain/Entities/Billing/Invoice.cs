@@ -43,6 +43,7 @@ public class Invoice : BranchEntity
     public Guid? PackageId { get; set; }
 
     // Discount Details
+    public Guid? DiscountId { get; set; }
     public string? DiscountReason { get; set; }
     public Guid? DiscountApprovedById { get; set; }
 

@@ -105,8 +105,19 @@
           <mat-icon>widgets</mat-icon>
           <div>
             <h3>Modules</h3>
-            <p>{{ selectedFeatures.length }} selected — these determine which parts of the app the organization can access.</p>
+            <p>{{ selectedFeatures.length }} of {{ availableFeatures.length }} selected — these determine which parts of the app the organization can access.</p>
           </div>
+        </div>
+
+        <div class="give-all-bar">
+          <div class="give-all-text">
+            <strong>Give All Permissions</strong>
+            <span>Enable every module for this organization at once.</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" [checked]="hasAllFeatures()" (change)="toggleAllFeatures()">
+            <span class="toggle-slider"></span>
+          </label>
         </div>
 
         <div class="features-grid">

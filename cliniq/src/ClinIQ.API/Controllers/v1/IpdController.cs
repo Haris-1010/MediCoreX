@@ -1,4 +1,5 @@
 using ClinIQ.Domain.Enums;
+using ClinIQ.Domain.Interfaces;
 using ClinIQ.Infrastructure.Data;
 using ClinIQ.Shared.Models;
 using ClinIQ.API.Authorization;
@@ -14,25 +15,38 @@ namespace ClinIQ.API.Controllers.v1;
 public class IpdController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly ITenantService _tenantService;
 
-    public IpdController(ApplicationDbContext context)
+    public IpdController(ApplicationDbContext context, ITenantService tenantService)
     {
         _context = context;
+        _tenantService = tenantService;
     }
 
     [HttpGet("stats")]
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsView)]
     public async Task<IActionResult> GetStats()
     {
-        var totalAdmitted = await _context.Admissions.CountAsync(a => !a.IsDeleted && a.Status == AdmissionStatus.Admitted);
-        var totalBeds = await _context.Beds.CountAsync(b => !b.IsDeleted);
-        var occupiedBeds = await _context.Beds.CountAsync(b => !b.IsDeleted && b.Status == BedStatus.Occupied);
-        var todayDischarges = await _context.Admissions.CountAsync(a => !a.IsDeleted && a.DischargeDate.HasValue && a.DischargeDate.Value.Date == DateTime.UtcNow.Date);
-        var todayAdmissions = await _context.Admissions.CountAsync(a => !a.IsDeleted && a.AdmissionDate.Date == DateTime.UtcNow.Date);
+        var tenantId = _tenantService.GetCurrentTenantId();
+
+        var totalAdmitted = await _context.Admissions.IgnoreQueryFilters()
+            .CountAsync(a => !a.IsDeleted && a.Status == AdmissionStatus.Admitted
+                && (!tenantId.HasValue || a.TenantId == tenantId.Value));
+        var totalBeds = await _context.Beds.IgnoreQueryFilters()
+            .CountAsync(b => !b.IsDeleted && (!tenantId.HasValue || b.TenantId == tenantId.Value));
+        var occupiedBeds = await _context.Beds.IgnoreQueryFilters()
+            .CountAsync(b => !b.IsDeleted && b.Status == BedStatus.Occupied
+                && (!tenantId.HasValue || b.TenantId == tenantId.Value));
+        var todayDischarges = await _context.Admissions.IgnoreQueryFilters()
+            .CountAsync(a => !a.IsDeleted && a.DischargeDate.HasValue && a.DischargeDate.Value.Date == DateTime.UtcNow.Date
+                && (!tenantId.HasValue || a.TenantId == tenantId.Value));
+        var todayAdmissions = await _context.Admissions.IgnoreQueryFilters()
+            .CountAsync(a => !a.IsDeleted && a.AdmissionDate.Date == DateTime.UtcNow.Date
+                && (!tenantId.HasValue || a.TenantId == tenantId.Value));
 
         return Ok(Result<object>.Success(new
         {
-            totalAdmitted,
+            totalAdmissions = totalAdmitted,
             totalBeds,
             occupiedBeds,
             availableBeds = totalBeds - occupiedBeds,
@@ -46,21 +60,44 @@ public class IpdController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsView)]
     public async Task<IActionResult> GetWardsOverview()
     {
-        var wards = await _context.Wards
-            .Where(w => !w.IsDeleted && w.IsActive)
+        var tenantId = _tenantService.GetCurrentTenantId();
+
+        var wardIds = await _context.Wards.IgnoreQueryFilters()
+            .Where(w => !w.IsDeleted && w.IsActive && (!tenantId.HasValue || w.TenantId == tenantId.Value))
             .OrderBy(w => w.DisplayOrder)
-            .Select(w => new
+            .Select(w => w.Id)
+            .ToListAsync();
+
+        var wards = new List<object>();
+        foreach (var wid in wardIds)
+        {
+            var w = await _context.Wards.IgnoreQueryFilters().FirstAsync(x => x.Id == wid);
+            var roomIds = await _context.Rooms.IgnoreQueryFilters()
+                .Where(r => r.WardId == wid && !r.IsDeleted)
+                .Select(r => r.Id)
+                .ToListAsync();
+            var total = 0;
+            var occupied = 0;
+            var available = 0;
+            foreach (var rid in roomIds)
+            {
+                total += await _context.Beds.IgnoreQueryFilters().CountAsync(b => b.RoomId == rid && !b.IsDeleted);
+                occupied += await _context.Beds.IgnoreQueryFilters().CountAsync(b => b.RoomId == rid && !b.IsDeleted && b.Status == BedStatus.Occupied);
+                available += await _context.Beds.IgnoreQueryFilters().CountAsync(b => b.RoomId == rid && !b.IsDeleted && b.Status == BedStatus.Available);
+            }
+
+            wards.Add(new
             {
                 w.Id,
                 w.Name,
                 w.Code,
                 WardType = w.WardType.ToString(),
-                TotalBeds = w.Rooms.SelectMany(r => r.Beds).Count(b => !b.IsDeleted),
-                OccupiedBeds = w.Rooms.SelectMany(r => r.Beds).Count(b => !b.IsDeleted && b.Status == BedStatus.Occupied),
-                AvailableBeds = w.Rooms.SelectMany(r => r.Beds).Count(b => !b.IsDeleted && b.Status == BedStatus.Available),
-                RoomCount = w.Rooms.Count(r => !r.IsDeleted)
-            })
-            .ToListAsync();
+                total,
+                occupied,
+                available,
+                RoomCount = roomIds.Count
+            });
+        }
 
         return Ok(Result<object>.Success(wards));
     }
@@ -69,8 +106,10 @@ public class IpdController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsView)]
     public async Task<IActionResult> GetRecentAdmissions()
     {
-        var admissions = await _context.Admissions
-            .Where(a => !a.IsDeleted)
+        var tenantId = _tenantService.GetCurrentTenantId();
+
+        var admissions = await _context.Admissions.IgnoreQueryFilters()
+            .Where(a => !a.IsDeleted && (!tenantId.HasValue || a.TenantId == tenantId.Value))
             .OrderByDescending(a => a.AdmissionDate)
             .Take(10)
             .Select(a => new
@@ -83,8 +122,8 @@ public class IpdController : ControllerBase
                 a.AdmissionDate,
                 Type = a.AdmissionType.ToString(),
                 Status = a.Status.ToString(),
-                Ward = _context.Wards.Where(w => w.Id == a.CurrentWardId).Select(w => w.Name).FirstOrDefault(),
-                Bed = _context.Beds.Where(b => b.Id == a.CurrentBedId).Select(b => b.BedNumber).FirstOrDefault()
+                Ward = _context.Wards.IgnoreQueryFilters().Where(w => w.Id == a.CurrentWardId).Select(w => w.Name).FirstOrDefault(),
+                BedNumber = _context.Beds.IgnoreQueryFilters().Where(b => b.Id == a.CurrentBedId).Select(b => b.BedNumber).FirstOrDefault()
             })
             .ToListAsync();
 
@@ -95,8 +134,11 @@ public class IpdController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsView)]
     public async Task<IActionResult> GetAdmittedPatients()
     {
-        var patients = await _context.Admissions
-            .Where(a => !a.IsDeleted && a.Status == AdmissionStatus.Admitted)
+        var tenantId = _tenantService.GetCurrentTenantId();
+
+        var patients = await _context.Admissions.IgnoreQueryFilters()
+            .Where(a => !a.IsDeleted && a.Status == AdmissionStatus.Admitted
+                && (!tenantId.HasValue || a.TenantId == tenantId.Value))
             .OrderByDescending(a => a.AdmissionDate)
             .Select(a => new
             {
@@ -107,9 +149,9 @@ public class IpdController : ControllerBase
                 DoctorName = _context.Users.Where(u => u.Id == a.AttendingDoctorId).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
                 DoctorId = a.AttendingDoctorId,
                 a.AdmissionDate,
-                Ward = _context.Wards.Where(w => w.Id == a.CurrentWardId).Select(w => w.Name).FirstOrDefault(),
+                Ward = _context.Wards.IgnoreQueryFilters().Where(w => w.Id == a.CurrentWardId).Select(w => w.Name).FirstOrDefault(),
                 WardId = a.CurrentWardId,
-                Bed = _context.Beds.Where(b => b.Id == a.CurrentBedId).Select(b => b.BedNumber).FirstOrDefault(),
+                Bed = _context.Beds.IgnoreQueryFilters().Where(b => b.Id == a.CurrentBedId).Select(b => b.BedNumber).FirstOrDefault(),
                 BedId = a.CurrentBedId,
                 a.AdmissionReason
             })

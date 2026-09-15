@@ -11,31 +11,17 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
   selector: 'app-header',
   template: `
     <mat-toolbar class="header-toolbar" color="primary">
-      <button mat-icon-button (click)="menuToggle.emit()">
+      <!-- Menu Button -->
+      <button mat-icon-button (click)="menuToggle.emit()" class="menu-btn">
         <mat-icon>menu</mat-icon>
       </button>
 
-      <span class="spacer"></span>
+      <!-- Hospital Name (Tenant Branding) - Centered -->
+      <div class="hospital-name-container">
+        <span class="hospital-name">{{ tenant?.name || 'ClinIQ' }}</span>
+      </div>
 
-      <!-- Shortcuts -->
-      <button mat-button [matMenuTriggerFor]="shortcutsMenu" class="shortcuts-btn">
-        <span>Shortcuts</span>
-        <mat-icon>arrow_drop_down</mat-icon>
-      </button>
-      <mat-menu #shortcutsMenu="matMenu">
-        <button mat-menu-item routerLink="/dashboard">
-          <mat-icon>dashboard</mat-icon>
-          <span>Dashboard</span>
-        </button>
-        <button mat-menu-item routerLink="/patients">
-          <mat-icon>people</mat-icon>
-          <span>Patients</span>
-        </button>
-        <button mat-menu-item routerLink="/appointments">
-          <mat-icon>event</mat-icon>
-          <span>Appointments</span>
-        </button>
-      </mat-menu>
+      <span class="spacer"></span>
 
       <!-- Branch Selector -->
       <button mat-button [matMenuTriggerFor]="branchMenu" class="branch-selector" *ngIf="branches.length > 1">
@@ -58,10 +44,17 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
         <span class="user-name">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
         <mat-icon>arrow_drop_down</mat-icon>
       </button>
-      <mat-menu #userMenu="matMenu">
+      <mat-menu #userMenu="matMenu" class="user-dropdown">
         <div class="user-info" mat-menu-item disabled>
-          <strong>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</strong>
-          <small>{{ currentUser?.email }}</small>
+          <div class="user-info-row">
+            <div class="user-info-avatar">
+              {{ getUserInitials() }}
+            </div>
+            <div class="user-info-text">
+              <strong>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</strong>
+              <small>{{ currentUser?.email }}</small>
+            </div>
+          </div>
         </div>
         <mat-divider></mat-divider>
         <button mat-menu-item routerLink="/profile">
@@ -88,152 +81,229 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
       left: 0;
       right: 0;
       z-index: 1000;
-      background: white;
-      color: #333;
-      border-bottom: 1px solid #e0e0e0;
-    }
-
-    .brand {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #1a237e;
-      display: block;
-    }
-
-    .brand-container {
+      background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+      color: #1e293b;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(102,126,234,0.08);
+      padding: 0 16px;
+      height: 64px;
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
+      align-items: center;
+      border-bottom: 1px solid rgba(102,126,234,0.1);
     }
 
-    .org-name {
-      font-size: 0.65rem;
-      color: #666;
-      font-weight: 400;
-      margin-top: 0.1rem;
+    .menu-btn {
+      color: #475569;
+      margin-right: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .menu-btn:hover {
+      background: #f1f5f9;
+      color: #667eea;
+    }
+
+    .hospital-name-container {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      max-width: calc(100% - 280px);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .hospital-name {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      border-radius: 25px;
+      padding: 6px 24px;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35);
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
     }
 
     .spacer {
       flex: 1;
     }
 
-    .shortcuts-btn {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      margin: 0;
-      color: #1a237e;
-      background: #e8eaf6;
-      border: 1px solid #9fa8da;
-      font-weight: 500;
-    }
-
-    .shortcuts-btn:hover {
-      background: #c5cae9;
-    }
-
     .branch-selector {
-      margin-right: 1rem;
+      color: #475569;
+      margin-right: 16px;
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 4px 12px;
+      min-height: 36px;
+      transition: all 0.2s ease;
+      border: 1px solid #e2e8f0;
     }
 
-    .notification-btn {
-      margin-right: 0.5rem;
+    .branch-selector:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
     }
 
     .user-menu-btn {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      width: 180px;
-      min-width: 180px;
-      gap: 0.5rem;
-      justify-content: flex-start;
+      gap: 10px;
+      background: rgba(255,255,255,0.7);
+      border-radius: 28px;
+      padding: 3px 16px 3px 3px;
+      min-height: 40px;
+      max-height: 40px;
+      min-width: 0;
+      transition: all 0.2s ease;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+      white-space: nowrap;
+      line-height: 40px;
+    }
+
+    .user-menu-btn:hover {
+      background: #ffffff;
+      border-color: #c7d2fe;
+      box-shadow: 0 2px 10px rgba(102,126,234,0.12);
+    }
+
+    .user-menu-btn .mat-mdc-button-touch-target,
+    .user-menu-btn .mdc-button__label,
+    .user-menu-btn .mat-focus-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+      max-width: 100%;
+      width: 100%;
+      white-space: nowrap;
     }
 
     .user-avatar {
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #ffffff;
+      border: none;
+      flex-shrink: 0;
+      margin-right: 10px;
+    }
+
+    .user-name {
+      font-weight: 600;
+      font-size: 13px;
+      color: #334155;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1;
+      flex-shrink: 1;
+    }
+
+    .user-menu-btn mat-icon {
+      color: #94a3b8;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      flex-shrink: 0;
+    }
+
+    .user-info {
+      display: block;
+      padding: 0;
+      height: auto;
+      line-height: normal;
+    }
+
+    .user-info-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+    }
+
+    .user-info-avatar {
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 0.875rem;
-      font-weight: 500;
-      color: white;
+      font-weight: 700;
+      color: #ffffff;
+      flex-shrink: 0;
     }
 
-    .user-name {
-      flex: 1;
-      width: 100px;
-      max-width: 100px;
+    .user-info-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .user-info-text strong {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e293b;
+      white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .user-info-text small {
+      font-size: 12px;
+      color: #64748b;
       white-space: nowrap;
-      color: #333;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .user-info {
-      display: flex;
-      flex-direction: column;
-      padding: 0.5rem 1rem;
-    }
-
-    .user-info small {
-      color: #666;
-      font-size: 0.75rem;
-    }
-
-    .notification-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.5rem 1rem;
-      font-weight: 500;
-    }
-
-    .notification-content {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .notification-title {
-      font-weight: 500;
-    }
-
-    .notification-message {
-      font-size: 0.75rem;
-      color: #666;
-    }
-
-    .notification-time {
-      font-size: 0.625rem;
-      color: #999;
-    }
-
-    .unread {
-      background: #e3f2fd;
-    }
-
-    .no-notifications {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem;
-      color: #666;
-    }
-
-    .view-all {
-      text-align: center;
-      color: #3f51b5;
-    }
-
-    .settings-btn {
-      color: #666;
+    mat-menu {
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
     }
 
     @media (max-width: 768px) {
-      .user-name, .branch-selector span, .sms-credit, .shortcuts-btn {
+      .user-name, .branch-selector span {
         display: none;
+      }
+
+      .hospital-name-container {
+        max-width: calc(100% - 160px);
+      }
+
+      .hospital-name {
+        font-size: 14px;
+        padding: 4px 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hospital-name-container {
+        max-width: calc(100% - 100px);
+      }
+
+      .hospital-name {
+        font-size: 13px;
+        padding: 3px 12px;
       }
     }
   `]

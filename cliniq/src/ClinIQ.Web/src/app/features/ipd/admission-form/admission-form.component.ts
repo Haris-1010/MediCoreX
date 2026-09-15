@@ -23,7 +23,7 @@ import { NotificationService } from '../../../core/services/notification.service
           <h3>Admission Details</h3>
           <div class="form-row">
             <mat-form-field appearance="outline"><mat-label>Admission Type</mat-label>
-              <mat-select formControlName="admissionType"><mat-option value="Elective">Elective</mat-option><mat-option value="Emergency">Emergency</mat-option><mat-option value="Transfer">Transfer</mat-option></mat-select>
+              <mat-select formControlName="admissionType"><mat-option value="Planned">Planned</mat-option><mat-option value="Emergency">Emergency</mat-option><mat-option value="Transfer">Transfer</mat-option><mat-option value="Referral">Referral</mat-option></mat-select>
             </mat-form-field>
             <mat-form-field appearance="outline"><mat-label>Attending Doctor</mat-label>
               <mat-select formControlName="doctorId"><mat-option *ngFor="let d of doctors" [value]="d.id">Dr. {{ d.fullName }}</mat-option></mat-select>
@@ -63,14 +63,18 @@ export class AdmissionFormComponent implements OnInit {
 
   ngOnInit() {
     this.form = this.fb.group({
-      patientId: ['', Validators.required], patientSearch: [''], admissionType: ['Elective', Validators.required],
+      patientId: ['', Validators.required], patientSearch: [''], admissionType: ['Planned', Validators.required],
       doctorId: ['', Validators.required], wardId: ['', Validators.required], bedId: ['', Validators.required],
       admissionReason: ['', Validators.required], provisionalDiagnosis: ['']
     });
-    this.api.get<any[]>('v1/doctors').subscribe(r => this.doctors = r);
-    this.api.get<any[]>('v1/wards').subscribe(r => this.wards = r);
+    this.api.get<any>('v1/doctors').subscribe(r => {
+      this.doctors = r.items || r;
+    });
+    this.api.get<any>('v1/wards').subscribe(r => {
+      this.wards = Array.isArray(r) ? r : [];
+    });
     this.form.get('patientSearch')?.valueChanges.subscribe(val => {
-      if (typeof val === 'string' && val.length >= 2) this.api.get<any[]>('v1/patients/search', { term: val }).subscribe(r => this.filteredPatients = r);
+      if (typeof val === 'string' && val.length >= 2) this.api.get<any>('v1/patients/search', { term: val }).subscribe(r => this.filteredPatients = Array.isArray(r) ? r : []);
     });
   }
 
@@ -81,7 +85,17 @@ export class AdmissionFormComponent implements OnInit {
   submit() {
     if (this.form.invalid) return;
     this.saving = true;
-    this.api.post('v1/admissions', this.form.value).subscribe({
+    const v = this.form.value;
+    const payload = {
+      patientId: v.patientId,
+      doctorId: v.doctorId,
+      admissionType: v.admissionType,
+      wardId: v.wardId || null,
+      bedId: v.bedId || null,
+      admissionReason: v.admissionReason,
+      provisionalDiagnosis: v.provisionalDiagnosis || null
+    };
+    this.api.post('v1/admissions', payload).subscribe({
       next: () => { this.notification.success('Patient admitted successfully'); this.router.navigate(['/ipd/admissions']); },
       error: () => this.saving = false
     });

@@ -10,10 +10,10 @@ import { ApiService } from '../../../core/services/api.service';
         <button mat-raised-button color="primary" routerLink="invoices/new"><mat-icon>add</mat-icon> New Invoice</button>
       </app-page-header>
       <div class="stats-grid">
-        <div class="stat-card"><mat-icon>receipt</mat-icon><div><h3>{{ stats.todayRevenue | currency }}</h3><p>Today's Revenue</p></div></div>
-        <div class="stat-card"><mat-icon>pending</mat-icon><div><h3>{{ stats.pendingAmount | currency }}</h3><p>Pending</p></div></div>
+        <div class="stat-card"><mat-icon>receipt</mat-icon><div><h3>{{ stats.todayRevenue | currencyFormat }}</h3><p>Today's Revenue</p></div></div>
+        <div class="stat-card"><mat-icon>account_balance_wallet</mat-icon><div><h3>{{ stats.totalReceivables | currencyFormat }}</h3><p>Total Receivables</p></div></div>
         <div class="stat-card"><mat-icon>assignment</mat-icon><div><h3>{{ stats.todayInvoices }}</h3><p>Today's Invoices</p></div></div>
-        <div class="stat-card warn"><mat-icon>warning</mat-icon><div><h3>{{ stats.overdueAmount | currency }}</h3><p>Overdue</p></div></div>
+        <div class="stat-card warn"><mat-icon>warning</mat-icon><div><h3>{{ stats.overdueAmount | currencyFormat }}</h3><p>Overdue</p></div></div>
       </div>
       <div class="dashboard-grid">
         <div class="card">
@@ -21,7 +21,7 @@ import { ApiService } from '../../../core/services/api.service';
           <div class="invoice-list">
             <div class="invoice-item" *ngFor="let inv of recentInvoices" [routerLink]="['invoices', inv.id]">
               <div class="info"><strong>{{ inv.invoiceNumber }}</strong><span>{{ inv.patientName }}</span></div>
-              <div class="amount">{{ inv.totalAmount | currency }}</div>
+              <div class="amount">{{ inv.totalAmount | currencyFormat }}</div>
               <app-status-badge [status]="inv.status"></app-status-badge>
             </div>
           </div>
@@ -30,7 +30,7 @@ import { ApiService } from '../../../core/services/api.service';
         <div class="card">
           <h3>Payment Methods</h3>
           <div class="payment-breakdown">
-            <div class="method" *ngFor="let m of paymentMethods"><span>{{ m.method }}</span><strong>{{ m.amount | currency }}</strong><span class="percent">{{ m.percentage }}%</span></div>
+            <div class="method" *ngFor="let m of paymentMethods"><span>{{ m.method }}</span><strong>{{ m.amount | currencyFormat }}</strong><span class="percent">{{ m.percentage }}%</span></div>
           </div>
         </div>
       </div>
@@ -52,7 +52,7 @@ import { ApiService } from '../../../core/services/api.service';
     .method .percent { color: #666; font-size: 0.875rem; }`]
 })
 export class BillingDashboardComponent implements OnInit {
-  stats = { todayRevenue: 0, pendingAmount: 0, todayInvoices: 0, overdueAmount: 0 };
+  stats = { todayRevenue: 0, pendingAmount: 0, totalReceivables: 0, todayInvoices: 0, overdueAmount: 0, invoiceCount: 0 };
   recentInvoices: any[] = [];
   paymentMethods: any[] = [];
 

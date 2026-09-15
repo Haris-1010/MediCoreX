@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { TenantService } from '../../../core/services/tenant.service';
 
 @Component({
   standalone: false,
@@ -43,7 +44,7 @@ import { NotificationService } from '../../../core/services/notification.service
                   <input matInput type="number" formControlName="slotDuration">
                 </mat-form-field>
                 <mat-form-field appearance="outline">
-                  <mat-label>Fee (Rs.)</mat-label>
+                  <mat-label>Fee ({{ currencySymbol }})</mat-label>
                   <input matInput type="number" min="0" formControlName="consultationFee">
                 </mat-form-field>
                 <button mat-icon-button color="warn" type="button" (click)="removeSlot(i)"><mat-icon>delete</mat-icon></button>
@@ -67,9 +68,12 @@ export class DoctorScheduleComponent implements OnInit {
   selectedDoctorId: string | null = null;
   scheduleForm!: FormGroup;
   saving = false;
+  currencySymbol = '$';
   days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-  constructor(private fb: FormBuilder, private api: ApiService, private notification: NotificationService) {}
+  constructor(private fb: FormBuilder, private api: ApiService, private notification: NotificationService, private tenantService: TenantService) {
+    this.currencySymbol = tenantService.getCurrencySymbol();
+  }
 
   ngOnInit() {
     this.scheduleForm = this.fb.group({ slots: this.fb.array([]) });

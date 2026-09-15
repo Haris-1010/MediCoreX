@@ -300,7 +300,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           totalPatients: data.totalPatients,
           totalAppointments: (data as any).totalAppointments ?? (data as any).todayAppointments ?? (data as any).patientVisits ?? 0,
           newItemsRequired: (data as any).newItemsRequired ?? (data as any).activeAdmissions ?? 0,
-          amountReceivables: (data as any).amountReceivables ?? (data as any).todayRevenue ?? 0
+          amountReceivables: (data as any).amountReceivables ?? 0
         };
       },
       error: () => {}

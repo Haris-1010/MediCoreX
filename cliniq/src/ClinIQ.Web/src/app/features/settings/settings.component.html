@@ -14,7 +14,7 @@
           <mat-form-field appearance="outline" class="full-width"><mat-label>Address</mat-label><textarea matInput formControlName="address" rows="2"></textarea></mat-form-field>
           <h3>Regional Settings</h3>
           <div class="form-row">
-            <mat-form-field appearance="outline"><mat-label>Currency</mat-label><mat-select formControlName="currency"><mat-option value="USD">USD</mat-option><mat-option value="EUR">EUR</mat-option><mat-option value="GBP">GBP</mat-option><mat-option value="INR">INR</mat-option><mat-option value="PKR">PKR</mat-option></mat-select></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Currency</mat-label><input matInput [matAutocomplete]="currencyAuto" formControlName="currency" placeholder="Type or select currency..."><mat-autocomplete #currencyAuto="matAutocomplete"><mat-option *ngFor="let c of filteredCurrencies" [value]="c.code"><strong>{{ c.symbol }}</strong>&nbsp;&nbsp;{{ c.code }} — {{ c.name }}</mat-option></mat-autocomplete></mat-form-field>
             <mat-form-field appearance="outline"><mat-label>Date Format</mat-label><mat-select formControlName="dateFormat"><mat-option value="MM/dd/yyyy">MM/dd/yyyy</mat-option><mat-option value="dd/MM/yyyy">dd/MM/yyyy</mat-option><mat-option value="yyyy-MM-dd">yyyy-MM-dd</mat-option></mat-select></mat-form-field>
           </div>
           <div class="form-actions"><button mat-raised-button color="primary" type="submit">Save Changes</button></div>
@@ -37,6 +37,7 @@
         <mat-form-field appearance="outline"><mat-label>Invoice Prefix</mat-label><input matInput [(ngModel)]="billingSettings.invoicePrefix"></mat-form-field>
         <mat-form-field appearance="outline"><mat-label>Default Tax %</mat-label><input matInput type="number" [(ngModel)]="billingSettings.defaultTax"></mat-form-field>
         <mat-form-field appearance="outline"><mat-label>Payment Due Days</mat-label><input matInput type="number" [(ngModel)]="billingSettings.paymentDueDays"></mat-form-field>
+        <div class="form-actions"><button mat-raised-button color="primary" type="button" (click)="saveBilling()">Save Billing Settings</button></div>
       </div>
     </mat-tab>
 

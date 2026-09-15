@@ -9,16 +9,18 @@ import { ItemListComponent } from './item-list/item-list.component';
 import { ItemDialogComponent } from './item-dialog/item-dialog.component';
 import { PurchaseOrdersComponent } from './purchase-orders/purchase-orders.component';
 import { StockAdjustmentComponent } from './stock-adjustment/stock-adjustment.component';
+import { SuppliersComponent } from './suppliers/suppliers.component';
 
 const routes: Routes = [
   { path: '', component: InventoryDashboardComponent },
   { path: 'items', component: ItemListComponent },
   { path: 'purchase-orders', component: PurchaseOrdersComponent },
-  { path: 'adjustments', component: StockAdjustmentComponent }
+  { path: 'adjustments', component: StockAdjustmentComponent },
+  { path: 'suppliers', component: SuppliersComponent }
 ];
 
 @NgModule({
-  declarations: [InventoryDashboardComponent, ItemListComponent, ItemDialogComponent, PurchaseOrdersComponent, StockAdjustmentComponent],
+  declarations: [InventoryDashboardComponent, ItemListComponent, ItemDialogComponent, PurchaseOrdersComponent, StockAdjustmentComponent, SuppliersComponent],
   imports: [CommonModule, SharedModule, LayoutModule, RouterModule.forChild(routes)]
 })
 export class InventoryModule { }

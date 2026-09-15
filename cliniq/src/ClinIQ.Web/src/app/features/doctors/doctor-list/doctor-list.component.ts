@@ -24,7 +24,7 @@ import { PermissionService } from '../../../core/services/permission.service';
           <div class="doctor-card" *ngFor="let d of doctors" (click)="gotoEdit(d)">
             <div class="avatar">{{ d.initials || 'DR' }}</div>
             <div class="info"><h4>Dr. {{ d.fullName }}</h4><p class="spec">{{ d.specialization }}</p><p class="dept">{{ d.departmentName || 'General' }}</p></div>
-            <div class="meta"><span class="phone"><mat-icon>phone</mat-icon> {{ d.phoneNumber || d.phone || 'N/A' }}</span><app-status-badge [status]="d.status"></app-status-badge>
+            <div class="meta"><span class="phone"><mat-icon>phone</mat-icon> {{ (d.phoneNumber || d.phone || 'N/A') | phone }}</span><app-status-badge [status]="d.status"></app-status-badge>
               <button mat-icon-button color="warn" aria-label="Delete doctor" (click)="onDeleteDoctor($event, d.id)"><mat-icon>delete</mat-icon></button>
             </div>
           </div>

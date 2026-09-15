@@ -19,28 +19,95 @@ import { ApiService } from '../../../core/services/api.service';
           <h3>{{ currentDate | date:'MMMM yyyy' }}</h3>
           <button mat-icon-button (click)="nextMonth()"><mat-icon>chevron_right</mat-icon></button>
           <button mat-stroked-button (click)="goToToday()">Today</button>
+          <div class="legend">
+            <span class="legend-item"><span class="dot" style="background:#2196f3"></span>Scheduled</span>
+            <span class="legend-item"><span class="dot" style="background:#ff9800"></span>Checked In</span>
+            <span class="legend-item"><span class="dot" style="background:#4caf50"></span>Completed</span>
+            <span class="legend-item"><span class="dot" style="background:#f44336"></span>Cancelled</span>
+          </div>
         </div>
         <div class="calendar-grid">
           <div class="day-header" *ngFor="let day of weekDays">{{ day }}</div>
-          <div class="calendar-day" *ngFor="let day of calendarDays" [class.other-month]="!day.currentMonth" [class.today]="day.isToday" (click)="selectDate(day)">
+          <div class="calendar-day" *ngFor="let day of calendarDays"
+               [class.other-month]="!day.currentMonth"
+               [class.today]="day.isToday"
+               [class.has-appointments]="day.appointments?.length"
+               (click)="selectDate(day)">
             <span class="day-number">{{ day.date.getDate() }}</span>
-            <div class="appointments" *ngIf="day.appointments?.length">
-              <div class="appointment-dot" *ngFor="let a of day.appointments.slice(0, 3)" [style.background]="getStatusColor(a.status)"></div>
-              <span *ngIf="day.appointments.length > 3" class="more">+{{ day.appointments.length - 3 }}</span>
+            <div class="day-appointments" *ngIf="day.appointments?.length">
+              <div class="apt-chip" *ngFor="let a of day.appointments.slice(0, 3)"
+                   [style.border-left-color]="getStatusColor(a.status)">
+                <div class="apt-info">
+                  <span class="apt-time">{{ a.startTime || '00:00' }}</span>
+                  <span class="apt-name">{{ a.patientName || a.title }}</span>
+                  <span class="apt-doctor" *ngIf="a.doctorName">Dr. {{ a.doctorName }}</span>
+                </div>
+              </div>
+              <div class="more-count" *ngIf="day.appointments.length > 3">
+                +{{ day.appointments.length - 3 }} more
+              </div>
             </div>
           </div>
         </div>
       </div>
     </app-main-layout>
   `,
-  styles: [`.card { background: white; padding: 1.5rem; border-radius: 8px; }
-    .calendar-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; } .calendar-header h3 { margin: 0; min-width: 200px; text-align: center; }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e0e0e0; }
-    .day-header { background: #f5f5f5; padding: 0.5rem; text-align: center; font-weight: 600; font-size: 0.875rem; }
-    .calendar-day { background: white; min-height: 80px; padding: 0.5rem; cursor: pointer; } .calendar-day:hover { background: #f5f5f5; }
-    .calendar-day.other-month { color: #ccc; } .calendar-day.today { background: #e3f2fd; }
-    .day-number { font-weight: 500; } .appointments { display: flex; gap: 2px; margin-top: 0.25rem; flex-wrap: wrap; }
-    .appointment-dot { width: 8px; height: 8px; border-radius: 50%; } .more { font-size: 0.625rem; color: #666; }`]
+  styles: [`
+    .card { background: white; padding: 1.5rem; border-radius: 8px; }
+
+    .calendar-header {
+      display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    .calendar-header h3 { margin: 0; min-width: 200px; text-align: center; font-size: 1.1rem; color: #1a237e; }
+
+    .legend {
+      margin-left: auto; display: flex; gap: 1rem; font-size: 0.75rem; color: #666;
+    }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+    .calendar-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e0e0e0; border-radius: 8px; overflow: hidden;
+    }
+
+    .day-header {
+      background: #1a237e; color: white; padding: 0.5rem; text-align: center;
+      font-weight: 600; font-size: 0.8rem; text-transform: uppercase;
+    }
+
+    .calendar-day {
+      background: white; min-height: 100px; padding: 0.4rem; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .calendar-day:hover { background: #f5f5f5; }
+    .calendar-day.other-month { background: #fafafa; }
+    .calendar-day.other-month .day-number { color: #bbb; }
+    .calendar-day.today { background: #e3f2fd; }
+    .calendar-day.today .day-number { color: #1565c0; font-weight: 700; }
+    .calendar-day.has-appointments { background: #fafbff; }
+
+    .day-number { font-weight: 500; font-size: 0.85rem; display: block; margin-bottom: 2px; }
+
+    .day-appointments { display: flex; flex-direction: column; gap: 2px; }
+
+    .apt-chip {
+      display: flex; align-items: center; gap: 4px;
+      padding: 2px 4px; border-radius: 3px;
+      border-left: 3px solid #2196f3;
+      background: #f5f7ff;
+      font-size: 0.65rem;
+      line-height: 1.3;
+      overflow: hidden;
+    }
+    .apt-info { display: flex; flex-direction: column; overflow: hidden; }
+    .apt-time { font-weight: 600; color: #3f51b5; }
+    .apt-name { color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .apt-doctor { color: #7986cb; font-size: 0.6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .more-count {
+      font-size: 0.65rem; color: #5c6bc0; font-weight: 600; padding: 1px 4px;
+    }
+  `]
 })
 export class AppointmentCalendarComponent implements OnInit {
   currentDate = new Date();
@@ -80,8 +147,16 @@ export class AppointmentCalendarComponent implements OnInit {
     this.api.get<any[]>('v1/appointments/calendar', { start: start.toISOString(), end: end.toISOString() }).subscribe(r => {
       const items = this.normalizeList<any>(r);
       items.forEach(a => {
-        const day = this.calendarDays.find(d => d.date.toDateString() === new Date(a.appointmentDate).toDateString());
-        if (day) day.appointments.push(a);
+        const day = this.calendarDays.find(d => d.date.toDateString() === new Date(a.appointmentDate || a.start).toDateString());
+        if (day) {
+          const startTime = a.start ? new Date(a.start) : null;
+          day.appointments.push({
+            ...a,
+            startTime: startTime ? startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '',
+            patientName: a.title ? a.title.split(' - ')[0] : a.patientName || '',
+            doctorName: a.title ? a.title.split(' - ')[1] : a.doctorName || ''
+          });
+        }
       });
     });
   }

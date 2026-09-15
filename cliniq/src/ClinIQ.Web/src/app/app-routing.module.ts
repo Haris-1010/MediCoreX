@@ -59,6 +59,12 @@ const routes: Routes = [
     data: { permission: 'Billing.View' }
   },
   {
+    path: 'services',
+    loadChildren: () => import('./features/services/services.module').then(m => m.ServicesModule),
+    canActivate: [AuthGuard, permissionGuard],
+    data: { permission: 'Services.View' }
+  },
+  {
     path: 'inventory',
     loadChildren: () => import('./features/inventory/inventory.module').then(m => m.InventoryModule),
     canActivate: [AuthGuard, permissionGuard],
@@ -69,6 +75,12 @@ const routes: Routes = [
     loadChildren: () => import('./features/pharmacy/pharmacy.module').then(m => m.PharmacyModule),
     canActivate: [AuthGuard, permissionGuard],
     data: { permission: 'Pharmacy.View' }
+  },
+  {
+    path: 'services',
+    loadChildren: () => import('./features/services/services.module').then(m => m.ServicesModule),
+    canActivate: [AuthGuard, permissionGuard],
+    data: { permission: 'Services.View' }
   },
   {
     path: 'laboratory',
@@ -117,6 +129,12 @@ const routes: Routes = [
     loadChildren: () => import('./features/reports/reports.module').then(m => m.ReportsModule),
     canActivate: [AuthGuard, permissionGuard],
     data: { permission: 'Reports.View' }
+  },
+  {
+    path: 'insurance',
+    loadChildren: () => import('./features/insurance/insurance.module').then(m => m.InsuranceModule),
+    canActivate: [AuthGuard, permissionGuard],
+    data: { permission: 'Insurance.View' }
   },
   {
     path: 'settings',

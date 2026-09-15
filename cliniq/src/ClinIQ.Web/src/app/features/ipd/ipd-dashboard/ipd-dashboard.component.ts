@@ -8,6 +8,9 @@ import { ApiService } from '../../../core/services/api.service';
     <app-main-layout>
       <app-page-header title="IPD Dashboard" subtitle="In-Patient Department" [breadcrumbs]="[{ label: 'Dashboard', route: '/dashboard' }, { label: 'IPD' }]">
         <button mat-raised-button color="primary" routerLink="admit"><mat-icon>add</mat-icon> New Admission</button>
+        <button mat-stroked-button routerLink="wards"><mat-icon>hotel</mat-icon> Ward Management</button>
+        <button mat-stroked-button routerLink="rooms"><mat-icon>meeting_room</mat-icon> Room Management</button>
+        <button mat-stroked-button routerLink="beds"><mat-icon>bed</mat-icon> Bed Board</button>
       </app-page-header>
 
       <div class="stats-grid">
@@ -59,8 +62,27 @@ export class IpdDashboardComponent implements OnInit {
   constructor(private api: ApiService) {}
 
   ngOnInit() {
-    this.api.get<any>('v1/ipd/stats').subscribe(r => this.stats = r);
-    this.api.get<any[]>('v1/ipd/wards/overview').subscribe(r => this.wards = r);
-    this.api.get<any[]>('v1/ipd/admissions/recent').subscribe(r => this.recentAdmissions = r);
+    this.loadData();
+  }
+
+  loadData() {
+    this.api.get<any>('v1/ipd/stats').subscribe({
+      next: (r) => {
+        const data = (r as any)?.data ?? r;
+        if (data) this.stats = data;
+      }
+    });
+
+    this.api.get<any>('v1/ipd/wards/overview').subscribe({
+      next: (r) => {
+        this.wards = Array.isArray(r) ? r : ((r as any)?.data ?? []);
+      }
+    });
+
+    this.api.get<any>('v1/ipd/admissions/recent').subscribe({
+      next: (r) => {
+        this.recentAdmissions = Array.isArray(r) ? r : ((r as any)?.data ?? []);
+      }
+    });
   }
 }

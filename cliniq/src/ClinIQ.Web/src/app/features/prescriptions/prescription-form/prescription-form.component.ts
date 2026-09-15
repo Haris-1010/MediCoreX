@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { PrescriptionItemDialogComponent } from '../item-dialog/prescription-item-dialog.component';
 
 @Component({
   standalone: false,
@@ -16,50 +18,24 @@ import { NotificationService } from '../../../core/services/notification.service
 
       <div class="form-card">
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
-          <div class="form-grid">
-            <div class="col-6">
-              <mat-form-field appearance="outline">
-                <mat-label>Patient *</mat-label>
-                <input matInput [matAutocomplete]="patientAuto" formControlName="patientSearch" placeholder="Search patient by name or MRN...">
-                <mat-autocomplete #patientAuto="matAutocomplete" [displayWith]="displayPatient" (optionSelected)="onPatientSelected($event)">
-                  <mat-option *ngFor="let p of filteredPatients" [value]="p">
-                    {{ p.fullName }} ({{ p.mrn }})
-                  </mat-option>
-                </mat-autocomplete>
-                <mat-error *ngIf="form.get('patientId')?.hasError('required')">Patient is required</mat-error>
-              </mat-form-field>
+        <div class="form-grid">
+         <div class="col-4">
+         <mat-form-field appearance="outline">
+         <mat-label>Patient *</mat-label>
+          <input matInput [matAutocomplete]="patientAuto" formControlName="patientSearch" placeholder="Search patient by name or MRN..."> <mat-autocomplete #patientAuto="matAutocomplete" [displayWith]="displayPatient" (optionSelected)="onPatientSelected($event)"> <mat-option *ngFor="let p of filteredPatients" [value]="p"> {{ p.fullName }} ({{ p.mrn }})
+           </mat-option>
+           </mat-autocomplete>
+           <mat-error *ngIf="form.get('patientId')?.hasError('required')"> Patient is required </mat-error> </mat-form-field> </div>
+           <div class="col-4"> <mat-form-field appearance="outline"> <mat-label>Doctor *</mat-label> <input matInput [matAutocomplete]="doctorAuto" formControlName="doctorSearch" placeholder="Search doctor by name or specialty...">
+            <mat-autocomplete #doctorAuto="matAutocomplete" [displayWith]="displayDoctor" (optionSelected)="onDoctorSelected($event)"> <mat-option *ngFor="let d of filteredDoctors" [value]="d"> Dr. {{ d.fullName }} <span *ngIf="d.specialization"> - {{ d.specialization }} </span> </mat-option> </mat-autocomplete> <mat-error *ngIf="form.get('doctorId')?.hasError('required')"> Doctor is required </mat-error> </mat-form-field>
             </div>
-
-            <div class="col-6">
-              <mat-form-field appearance="outline">
-                <mat-label>Doctor *</mat-label>
-                <input matInput [matAutocomplete]="doctorAuto" formControlName="doctorSearch" placeholder="Search doctor by name or specialty...">
-                <mat-autocomplete #doctorAuto="matAutocomplete" [displayWith]="displayDoctor" (optionSelected)="onDoctorSelected($event)">
-                  <mat-option *ngFor="let d of filteredDoctors" [value]="d">
-                    Dr. {{ d.fullName }} <span *ngIf="d.specialization"> - {{ d.specialization }}</span>
-                  </mat-option>
-                </mat-autocomplete>
-                <mat-error *ngIf="form.get('doctorId')?.hasError('required')">Doctor is required</mat-error>
-              </mat-form-field>
-            </div>
-
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Diagnosis</mat-label>
-              <textarea matInput formControlName="diagnosis" rows="2" placeholder="Primary diagnosis"></textarea>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>General Instructions</mat-label>
-              <textarea matInput formControlName="generalInstructions" rows="2" placeholder="General notes for the patient"></textarea>
-            </mat-form-field>
-
+            <div class="col-4">
+             <mat-form-field appearance="outline"> <mat-label>Valid Date</mat-label> <input matInput [matDatepicker]="validUntilPicker" formControlName="validUntil"> <mat-datepicker-toggle matSuffix [for]="validUntilPicker"> </mat-datepicker-toggle> <mat-datepicker #validUntilPicker></mat-datepicker> </mat-form-field> </div>
+             <div class="col-6"> <mat-form-field appearance="outline"> <mat-label>Diagnoses</mat-label> <textarea matInput formControlName="diagnosis" rows="3" placeholder="Enter diagnosis..."></textarea>
+            </mat-form-field> </div> <div class="col-6">
             <mat-form-field appearance="outline">
-              <mat-label>Valid Until</mat-label>
-              <input matInput [matDatepicker]="validUntilPicker" formControlName="validUntil">
-              <mat-datepicker-toggle matSuffix [for]="validUntilPicker"></mat-datepicker-toggle>
-              <mat-datepicker #validUntilPicker></mat-datepicker>
-            </mat-form-field>
-          </div>
+            <mat-label>General Instruction</mat-label>
+            <textarea matInput formControlName="generalInstructions" rows="3" placeholder="General instructions for the patient..."></textarea> </mat-form-field> </div> </div>
 
           <!-- Medicines Section -->
           <div class="medicines-section">
@@ -79,9 +55,20 @@ import { NotificationService } from '../../../core/services/notification.service
                   </button>
                 </div>
                 <div class="medicine-grid">
-                  <mat-form-field appearance="outline">
+                  <mat-form-field appearance="outline" class="medicine-name-field">
                     <mat-label>Medicine Name *</mat-label>
-                    <input matInput formControlName="medicineName" placeholder="e.g. Amoxicillin">
+                    <input matInput [matAutocomplete]="medAuto" formControlName="medicineName" placeholder="Search inventory items..." (input)="onMedicineSearch($event, i)">
+                    <mat-autocomplete #medAuto="matAutocomplete" [displayWith]="displayMedicine" (optionSelected)="onMedicineSelected($event, i)">
+                      <mat-option *ngFor="let m of filteredMedicines[i]" [value]="m">
+                        <div class="med-option">
+                          <strong>{{ m.name }}</strong>
+                          <span class="med-meta">{{ m.code }} | {{ m.currentStock }} in stock | {{ m.sellingPrice | currencyFormat }}</span>
+                        </div>
+                      </mat-option>
+                    </mat-autocomplete>
+                    <button matSuffix mat-icon-button type="button" matTooltip="Create new inventory item" (click)="openCreateItem(i)">
+                      <mat-icon>add_circle</mat-icon>
+                    </button>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline">
@@ -166,104 +153,41 @@ import { NotificationService } from '../../../core/services/notification.service
       </div>
     </app-main-layout>
   `,
- styles: [`
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
+  styles: [`
+    .form-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .col-4 { grid-column: span 4; } .col-6 { grid-column: span 6; }
+    .form-grid mat-form-field, .col-4 mat-form-field, .col-6 mat-form-field { width: 100%; }
+    .full-width { width: 100%; grid-column: 1 / -1; }
 
-  .col-6 {
-    grid-column: span 1;
-  }
-
-  .form-grid mat-form-field,
-  .col-6 mat-form-field {
-    width: 100%;
-  }
-
-  .full-width {
-    width: 100%;
-    grid-column: 1 / -1;
-  }
-
-  .medicines-section {
-    margin-bottom: 1.5rem;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 1rem;
-  }
-
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-
-  .section-header h3 {
-    margin: 0;
-    color: #1a237e;
-  }
-
-  .medicine-card {
-    border: 1px solid #e8e8e8;
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    background: #fafafa;
-  }
-
-  .medicine-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-  }
-
-  .medicine-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 0.75rem;
-  }
-
-  .medicine-grid mat-form-field {
-    width: 100%;
-  }
-
-  .timing-checkboxes {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    grid-column: 1 / -1;
-  }
-
-  .timing-checkboxes mat-label {
-    font-size: 0.85rem;
-    color: #666;
-  }
-
-  .empty-medicines {
-    text-align: center;
-    padding: 2rem;
-    color: #999;
-  }
-
-  .form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #e0e0e0;
-  }
-
-  @media (max-width: 768px) {
-    .form-grid {
-      grid-template-columns: 1fr;
+    .medicines-section {
+      margin-bottom: 1.5rem; border: 1px solid #e0e0e0; border-radius: 8px; padding: 1rem;
     }
-  }
-`]
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .section-header h3 { margin: 0; color: #1a237e; }
+
+    .medicine-card {
+      border: 1px solid #e8e8e8; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; background: #fafafa;
+    }
+    .medicine-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    .medicine-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
+    .medicine-grid mat-form-field { width: 100%; }
+    .medicine-name-field { grid-column: 1 / -1; }
+
+    .med-option { display: flex; flex-direction: column; }
+    .med-option strong { font-size: 0.9rem; }
+    .med-meta { font-size: 0.75rem; color: #666; margin-top: 2px; }
+
+    .timing-checkboxes { display: flex; align-items: center; gap: 0.75rem; grid-column: 1 / -1; }
+    .timing-checkboxes mat-label { font-size: 0.85rem; color: #666; }
+
+    .empty-medicines { text-align: center; padding: 2rem; color: #999; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 1rem; padding-top: 1rem; border-top: 1px solid #e0e0e0; }
+
+    @media (max-width: 768px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .col-4, .col-6 { grid-column: span 1; }
+    }
+  `]
 })
 export class PrescriptionFormComponent implements OnInit {
   form!: FormGroup;
@@ -272,13 +196,15 @@ export class PrescriptionFormComponent implements OnInit {
   prescriptionId: string | null = null;
   filteredPatients: any[] = [];
   filteredDoctors: any[] = [];
+  filteredMedicines: any[][] = [];
 
   constructor(
     private fb: FormBuilder,
     private api: ApiService,
     private router: Router,
     private route: ActivatedRoute,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private dialog: MatDialog
   ) {}
 
   get itemsArray(): FormArray { return this.form.get('items') as FormArray; }
@@ -348,12 +274,60 @@ export class PrescriptionFormComponent implements OnInit {
     return d ? `Dr. ${d.fullName || ''}${d.specialization ? ' - ' + d.specialization : ''}` : '';
   }
 
+  displayMedicine(m: any): string {
+    if (!m) return '';
+    if (typeof m === 'string') return m;
+    return m.name || '';
+  }
+
   onPatientSelected(e: any) {
     this.form.patchValue({ patientId: e.option.value.id });
   }
 
   onDoctorSelected(e: any) {
     this.form.patchValue({ doctorId: e.option.value.id });
+  }
+
+  onMedicineSearch(event: Event, index: number) {
+    const term = (event.target as HTMLInputElement).value || '';
+    if (term.length >= 2) {
+      this.api.get<any[]>('v1/inventory/items/search', { term }).subscribe(r => {
+        this.filteredMedicines[index] = this.normalizeList(r);
+      });
+    } else {
+      this.filteredMedicines[index] = [];
+    }
+  }
+
+  onMedicineSelected(e: any, index: number) {
+    const item = e.option.value;
+    const ctrl = this.itemsArray.at(index);
+    ctrl.patchValue({
+      itemId: item.id,
+      genericName: item.genericName || ctrl.get('genericName')?.value || '',
+      strength: item.strength || ctrl.get('strength')?.value || '',
+      form: item.form || item.unit || ctrl.get('form')?.value || 'Tablet',
+    });
+  }
+
+  openCreateItem(index: number) {
+    const dialogRef = this.dialog.open(PrescriptionItemDialogComponent, {
+      width: '500px',
+      data: {}
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        const ctrl = this.itemsArray.at(index);
+        ctrl.patchValue({
+          itemId: result.id,
+          medicineName: result.name,
+          genericName: result.genericName || '',
+          strength: result.strength || '',
+          form: result.form || 'Tablet',
+        });
+      }
+    });
   }
 
   loadPrescription() {
@@ -379,7 +353,10 @@ export class PrescriptionFormComponent implements OnInit {
   }
 
   addMedicine(data?: any) {
+    const idx = this.itemsArray.length;
+    this.filteredMedicines[idx] = [];
     this.itemsArray.push(this.fb.group({
+      itemId: [data?.itemId || ''],
       medicineName: [data?.medicineName || '', Validators.required],
       genericName: [data?.genericName || ''],
       strength: [data?.strength || ''],
@@ -402,35 +379,39 @@ export class PrescriptionFormComponent implements OnInit {
     }));
   }
 
-  removeMedicine(index: number) { this.itemsArray.removeAt(index); }
+  removeMedicine(index: number) {
+    this.itemsArray.removeAt(index);
+    this.filteredMedicines.splice(index, 1);
+  }
 
   onSubmit() {
     if (this.saving) return;
 
-  if (!this.form.get('patientId')?.value) {
-    this.notification.error('Please select a patient');
-    return;
-  }
+    if (!this.form.get('patientId')?.value) {
+      this.notification.error('Please select a patient');
+      return;
+    }
 
-  if (!this.form.get('doctorId')?.value) {
-    this.notification.error('Please select a doctor');
-    return;
-  }
+    if (!this.form.get('doctorId')?.value) {
+      this.notification.error('Please select a doctor');
+      return;
+    }
 
-  // Medicine required check
-  if (!this.itemsArray.length) {
-    this.notification.error('Please add at least one medicine');
-    return;
-  }
+    if (!this.itemsArray.length) {
+      this.notification.error('Please add at least one medicine');
+      return;
+    }
 
-  // Agar medicine hai lekin name empty hai
-  const hasInvalidMedicine = this.itemsArray.controls.some(
-    ctrl => !ctrl.get('medicineName')?.value?.trim()
-  );
-  if (hasInvalidMedicine) {
-    this.notification.error('Please enter medicine name for all items');
-    return;
-  }
+    const hasInvalidMedicine = this.itemsArray.controls.some(ctrl => {
+      const v = ctrl.get('medicineName')?.value;
+      if (!v) return true;
+      const name = typeof v === 'object' ? v?.name : v;
+      return !name?.trim();
+    });
+    if (hasInvalidMedicine) {
+      this.notification.error('Please enter medicine name for all items');
+      return;
+    }
     this.saving = true;
     const formValue = this.form.getRawValue();
     const payload = {
@@ -441,7 +422,12 @@ export class PrescriptionFormComponent implements OnInit {
       dietaryAdvice: formValue.dietaryAdvice,
       lifestyleAdvice: formValue.lifestyleAdvice,
       validUntil: formValue.validUntil,
-      items: formValue.items
+      items: formValue.items.map((item: any) => ({
+        ...item,
+        medicineName: typeof item.medicineName === 'object' ? item.medicineName?.name || '' : item.medicineName || '',
+        itemId: item.itemId || null,
+        quantity: item.quantity || null
+      }))
     };
     const request = this.isEditMode
       ? this.api.put('v1/prescriptions', this.prescriptionId!, payload)
