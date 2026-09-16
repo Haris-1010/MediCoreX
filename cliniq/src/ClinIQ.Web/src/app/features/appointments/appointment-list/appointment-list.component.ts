@@ -38,7 +38,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
 
         <table mat-table [dataSource]="appointments" matSort>
           <ng-container matColumnDef="date"><th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th><td mat-cell *matCellDef="let a">{{ a.appointmentDate | date:'mediumDate' }}</td></ng-container>
-          <ng-container matColumnDef="time"><th mat-header-cell *matHeaderCellDef>Time</th><td mat-cell *matCellDef="let a">{{ a.startTime }} - {{ a.endTime }}</td></ng-container>
+          <ng-container matColumnDef="time"><th mat-header-cell *matHeaderCellDef>Time</th><td mat-cell *matCellDef="let a">{{ formatTime(a.startTime) }} - {{ formatTime(a.endTime) }}</td></ng-container>
           <ng-container matColumnDef="patient"><th mat-header-cell *matHeaderCellDef mat-sort-header>Patient</th><td mat-cell *matCellDef="let a">{{ a.patientName }}</td></ng-container>
           <ng-container matColumnDef="doctor"><th mat-header-cell *matHeaderCellDef mat-sort-header>Doctor</th><td mat-cell *matCellDef="let a">Dr. {{ a.doctorName }}</td></ng-container>
           <ng-container matColumnDef="type"><th mat-header-cell *matHeaderCellDef>Type</th><td mat-cell *matCellDef="let a">{{ a.appointmentType || a.type }}</td></ng-container>
@@ -142,6 +142,17 @@ export class AppointmentListComponent implements OnInit {
 
   hasActiveFilters(): boolean {
     return !!(this.searchTerm || this.filterStatus || this.startDate || this.endDate);
+  }
+
+  formatTime(time: string): string {
+    if (!time) return '';
+    if (time.includes(':')) {
+      const [hours, minutes] = time.split(':');
+      const h = parseInt(hours, 10);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      return `${h % 12 || 12}:${minutes} ${ampm}`;
+    }
+    return time;
   }
 
   clearFilters(): void {

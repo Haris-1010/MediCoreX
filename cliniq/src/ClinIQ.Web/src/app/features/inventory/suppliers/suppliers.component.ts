@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { ApiService, PagedResult } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TenantService } from '../../../core/services/tenant.service';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: false,
@@ -88,7 +90,7 @@ export class SuppliersComponent implements OnInit {
   form!: FormGroup;
   currencySymbol = '$';
 
-  constructor(private api: ApiService, private fb: FormBuilder, private notification: NotificationService, private tenantService: TenantService) {
+  constructor(private api: ApiService, private fb: FormBuilder, private notification: NotificationService, private tenantService: TenantService, private dialog: MatDialog) {
     this.currencySymbol = tenantService.getCurrencySymbol();
   }
 
@@ -143,7 +145,14 @@ export class SuppliersComponent implements OnInit {
   }
 
   deleteSupplier(id: string) {
-    if (!confirm('Delete this supplier?')) return;
-    this.api.delete('v1/suppliers', id).subscribe({ next: () => { this.notification.success('Supplier deleted'); this.load(); } });
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Supplier', message: 'Are you sure you want to delete this supplier? This action cannot be undone.', confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete('v1/suppliers', id).subscribe({ next: () => { this.notification.success('Supplier deleted'); this.load(); } });
+      }
+    });
   }
 }

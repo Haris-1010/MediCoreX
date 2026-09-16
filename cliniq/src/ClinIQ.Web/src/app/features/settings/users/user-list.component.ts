@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { PasswordResetDialogComponent } from './password-reset-dialog/password-reset-dialog.component';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: false,
@@ -177,12 +178,18 @@ export class UserListComponent implements OnInit {
   }
 
   deleteUser(id: string) {
-    if (confirm('Are you sure you want to delete this user?')) {
-      this.api.delete<any>('v1/users', id).subscribe({
-        next: () => this.loadUsers(),
-        error: () => alert('Failed to delete user')
-      });
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete User', message: 'Are you sure you want to delete this user? This action cannot be undone.', confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete<any>('v1/users', id).subscribe({
+          next: () => this.loadUsers(),
+          error: () => alert('Failed to delete user')
+        });
+      }
+    });
   }
 
   goToPage(page: number) {

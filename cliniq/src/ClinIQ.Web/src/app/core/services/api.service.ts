@@ -144,6 +144,8 @@ export class ApiService {
       errorMessage = error.error.message;
     } else if (error instanceof HttpErrorResponse && error.error?.message) {
       errorMessage = error.error.message;
+    } else if (error instanceof HttpErrorResponse && error.error?.title) {
+      errorMessage = error.error.title;
     } else if (error instanceof HttpErrorResponse && error.error?.errors?.length) {
       errorMessage = error.error.errors.join(', ');
     } else if (error instanceof HttpErrorResponse && typeof error.error === 'string') {

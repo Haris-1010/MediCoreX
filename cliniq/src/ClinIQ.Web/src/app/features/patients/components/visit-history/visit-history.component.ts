@@ -14,16 +14,17 @@ import { ApiService } from '../../../../core/services/api.service';
       <div class="visit-list" *ngIf="!loading && visits.length > 0">
         <div class="visit-item" *ngFor="let visit of visits">
           <div class="visit-date">
-            <span class="day">{{ visit.date | date:'dd' }}</span>
-            <span class="month">{{ visit.date | date:'MMM yyyy' }}</span>
+            <span class="day">{{ (visit.visitDate || visit.createdAt) | date:'dd' }}</span>
+            <span class="month">{{ (visit.visitDate || visit.createdAt) | date:'MMM yyyy' }}</span>
           </div>
           <div class="visit-content">
             <div class="visit-header">
-              <h4>{{ visit.type }}</h4>
+              <span class="visit-type">{{ visit.type }}</span>
               <app-status-badge [status]="visit.status"></app-status-badge>
             </div>
             <p class="doctor">Dr. {{ visit.doctorName }} - {{ visit.department }}</p>
-            <p class="diagnosis" *ngIf="visit.diagnosis">{{ visit.diagnosis }}</p>
+            <p class="complaint" *ngIf="visit.chiefComplaint">{{ visit.chiefComplaint }}</p>
+            <p class="diagnosis" *ngIf="visit.diagnosis"><strong>Diagnosis:</strong> {{ visit.diagnosis }}</p>
           </div>
           <button mat-icon-button [routerLink]="['/visits', visit.id]"><mat-icon>chevron_right</mat-icon></button>
         </div>
@@ -41,9 +42,10 @@ import { ApiService } from '../../../../core/services/api.service';
     .visit-date .month { display: block; font-size: 0.75rem; color: #666; }
     .visit-content { flex: 1; }
     .visit-header { display: flex; align-items: center; gap: 0.5rem; }
-    .visit-header h4 { margin: 0; }
+    .visit-type { background: #e8eaf6; color: #3f51b5; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
     .doctor { margin: 0.25rem 0; font-size: 0.875rem; color: #666; }
-    .diagnosis { margin: 0; font-size: 0.875rem; }
+    .complaint { margin: 0.25rem 0; font-size: 0.875rem; color: #555; }
+    .diagnosis { margin: 0.25rem 0; font-size: 0.875rem; color: #333; }
   `]
 })
 export class VisitHistoryComponent implements OnInit {

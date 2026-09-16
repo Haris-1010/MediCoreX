@@ -120,13 +120,13 @@ export class TenantService {
   }
 
   getCurrencySymbol(): string {
-    const currency = this.getSetting('currency') || 'USD';
+    const currency = this.getSetting('currency') || 'PKR';
     try {
       const parts = new Intl.NumberFormat('en-US', { style: 'currency', currency }).formatToParts(0);
       const symbolPart = parts.find(p => p.type === 'currency');
-      return symbolPart ? symbolPart.value : '$';
+      return symbolPart ? symbolPart.value : 'Rs.';
     } catch {
-      return '$';
+      return 'Rs.';
     }
   }
 
@@ -136,7 +136,7 @@ export class TenantService {
         id: '',
         name: '',
         code: '',
-        settings: {         currency: 'USD', timezone: 'UTC', dateFormat: 'dd/MM/yyyy', timeFormat: 'hh:mm a', appointmentDuration: 30, workingHours: { startTime: '09:00', endTime: '17:00', workingDays: [1, 2, 3, 4, 5] }, features: [] }
+        settings: {         currency: 'PKR', timezone: 'UTC', dateFormat: 'dd/MM/yyyy', timeFormat: 'hh:mm a', appointmentDuration: 30, workingHours: { startTime: '09:00', endTime: '17:00', workingDays: [1, 2, 3, 4, 5] }, features: [] }
       };
     }
     return {

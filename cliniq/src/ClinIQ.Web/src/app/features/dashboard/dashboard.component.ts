@@ -319,7 +319,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           id: appointment.id,
           patientName: appointment.patientName || 'Unknown patient',
           doctorName: appointment.doctorName || 'Unassigned',
-          time: appointment.startTime || '',
+          time: this.formatTime(appointment.startTime || ''),
           status: appointment.status || 'Scheduled',
           type: appointment.type || appointment.appointmentType || 'Appointment'
         }));
@@ -330,6 +330,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.todayAppointments = [];
       }
     });
+  }
+
+  formatTime(time: string): string {
+    if (!time) return '';
+    if (time.includes(':')) {
+      const [hours, minutes] = time.split(':');
+      const h = parseInt(hours, 10);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      return `${h % 12 || 12}:${minutes} ${ampm}`;
+    }
+    return time;
   }
 
   private setupRealtimeUpdates(): void {

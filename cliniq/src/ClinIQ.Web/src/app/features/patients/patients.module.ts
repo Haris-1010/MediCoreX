@@ -28,7 +28,6 @@ const routes: Routes = [
     PatientListComponent,
     PatientDetailComponent,
     PatientFormComponent,
-    PatientPrintComponent,
     PatientSearchComponent,
     PatientCardComponent,
     MedicalHistoryComponent,
@@ -40,7 +39,8 @@ const routes: Routes = [
     CommonModule,
     SharedModule,
     LayoutModule,
-    RouterModule.forChild(routes)
+    RouterModule.forChild(routes),
+    PatientPrintComponent
   ]
 })
 export class PatientsModule { }

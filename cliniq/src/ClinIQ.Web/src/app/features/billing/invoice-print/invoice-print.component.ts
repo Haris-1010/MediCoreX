@@ -1,22 +1,30 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { MatDialog } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../../core/services/api.service';
 import { TenantService } from '../../../core/services/tenant.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { PrintBrandHeaderComponent } from '../../../shared/components/print-brand-header/print-brand-header.component';
+import { SharedModule } from '../../../shared/shared.module';
 
 @Component({
-  standalone: false,
+  standalone: true,
   selector: 'app-invoice-print',
+  imports: [CommonModule, RouterModule, MatDialogModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, PrintBrandHeaderComponent, SharedModule],
   template: `
     <div class="print-container" *ngIf="invoice">
-      <div class="brand" *ngIf="branding?.logoUrl || branding?.name">
-        <img *ngIf="branding?.logoUrl" [src]="branding?.logoUrl" alt="logo" class="brand-logo">
-        <div class="brand-info">
-          <h2>{{ branding?.name || 'Hospital Name' }}</h2>
-          <p *ngIf="branding?.phone">{{ branding?.phone }}</p>
-          <p *ngIf="branding?.address">{{ branding?.address }}</p>
-        </div>
-      </div>
+      <app-print-brand-header
+        [logoUrl]="branding?.logoUrl || null"
+        [orgName]="branding?.name || null"
+        [phone]="branding?.phone || null"
+        [address]="branding?.address || null">
+      </app-print-brand-header>
 
       <div class="invoice-header">
         <div class="invoice-title">
@@ -26,7 +34,7 @@ import { NotificationService } from '../../../core/services/notification.service
         <div class="invoice-meta">
           <p><strong>Date:</strong> {{ invoice.invoiceDate | date:'mediumDate' }}</p>
           <p *ngIf="invoice.dueDate"><strong>Due Date:</strong> {{ invoice.dueDate | date:'mediumDate' }}</p>
-          <p><strong>Status:</strong> <app-status-badge [status]="invoice.status"></app-status-badge></p>
+          <p><strong>Status:</strong> <span class="status-badge" [ngClass]="getStatusClass(invoice.status)">{{ invoice.status }}</span></p>
         </div>
       </div>
 
@@ -91,14 +99,18 @@ import { NotificationService } from '../../../core/services/notification.service
   `,
   styles: [`
     .print-container { max-width: 800px; margin: 0 auto; padding: 2rem; background: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; }
-    .brand { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #1a237e; }
-    .brand-logo { max-width: 80px; max-height: 80px; }
-    .brand-info h2 { margin: 0; color: #1a237e; font-size: 1.5rem; }
-    .brand-info p { margin: 2px 0; color: #666; font-size: 0.85rem; }
     .invoice-header { display: flex; justify-content: space-between; margin-bottom: 2rem; }
     .invoice-title h1 { margin: 0; color: #1a237e; font-size: 2rem; letter-spacing: 2px; }
     .invoice-number { margin: 4px 0 0; color: #666; font-size: 1.1rem; }
     .invoice-meta p { margin: 4px 0; font-size: 0.9rem; }
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+    .status-badge.pending { background: #fff3e0; color: #e65100; }
+    .status-badge.paid { background: #e8f5e9; color: #2e7d32; }
+    .status-badge.overdue { background: #ffebee; color: #c62828; }
+    .status-badge.cancelled { background: #f5f5f5; color: #616161; }
+    .status-badge.refunded { background: #e3f2fd; color: #1565c0; }
+    .status-badge.partial { background: #fff8e1; color: #f9a825; }
+    .status-badge.draft { background: #f5f5f5; color: #757575; }
     .patient-info { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; }
     .info-row { display: flex; gap: 0.5rem; margin-bottom: 0.25rem; font-size: 0.9rem; }
     .info-row .label { font-weight: 600; min-width: 80px; }
@@ -131,8 +143,20 @@ export class InvoicePrintComponent implements OnInit {
     private router: Router,
     private api: ApiService,
     private tenantService: TenantService,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private dialog: MatDialog
   ) {}
+
+  getStatusClass(status: string): string {
+    const s = (status || '').toLowerCase();
+    if (['pending', 'partial'].includes(s)) return 'pending';
+    if (s === 'paid') return 'paid';
+    if (s === 'overdue') return 'overdue';
+    if (s === 'cancelled') return 'cancelled';
+    if (s === 'refunded') return 'refunded';
+    if (s === 'draft') return 'draft';
+    return 'pending';
+  }
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -148,14 +172,20 @@ export class InvoicePrintComponent implements OnInit {
   print() { window.print(); }
 
   deleteInvoice() {
-    if (!confirm(`Delete invoice ${this.invoice?.invoiceNumber}? This action cannot be undone.`)) return;
-
-    this.api.delete<any>('v1/invoices', this.invoice.id).subscribe({
-      next: () => {
-        this.notification.success('Invoice deleted successfully');
-        this.router.navigate(['/billing/invoices']);
-      },
-      error: () => { this.notification.error('Failed to delete invoice'); }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Invoice', message: `Are you sure you want to delete invoice ${this.invoice?.invoiceNumber}? This action cannot be undone.`, confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete<any>('v1/invoices', this.invoice.id).subscribe({
+          next: () => {
+            this.notification.success('Invoice deleted successfully');
+            this.router.navigate(['/billing/invoices']);
+          },
+          error: () => { this.notification.error('Failed to delete invoice'); }
+        });
+      }
     });
   }
 }

@@ -32,6 +32,7 @@ public static class Permissions
     public const string AppointmentsCancel = "appointments.cancel";
     public const string AppointmentsConfirm = "appointments.confirm";
     public const string AppointmentsCheckIn = "appointments.checkin";
+    public const string AppointmentsDelete = "appointments.delete";
 
     // Visits
     public const string VisitsView = "visits.view";

@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { ApiService, PagedResult } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { PermissionService } from '../../../core/services/permission.service';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: false,
@@ -48,7 +50,7 @@ export class DoctorListComponent implements OnInit {
   deletingIds = new Set<string>();
   canViewDepartments = false;
 
-  constructor(private api: ApiService, private router: Router, private notification: NotificationService, private permissions: PermissionService) {}
+  constructor(private api: ApiService, private router: Router, private notification: NotificationService, private permissions: PermissionService, private dialog: MatDialog) {}
 
   ngOnInit() {
     this.canViewDepartments = this.permissions.has('departments.view');
@@ -83,18 +85,25 @@ export class DoctorListComponent implements OnInit {
 
   onDeleteDoctor(e: Event, id: string) {
     e.stopPropagation();
-    if (!confirm('Delete this doctor?')) return;
-    if (this.deletingIds.has(id)) return;
-    this.deletingIds.add(id);
-    this.api.delete(`v1/doctors`, id).subscribe({
-      next: () => {
-        this.deletingIds.delete(id);
-        this.doctors = this.doctors.filter(d => d.id !== id);
-        try { this.notification.success('Doctor deleted'); } catch { }
-      },
-      error: () => {
-        this.deletingIds.delete(id);
-        try { this.notification.error('Delete failed'); } catch { alert('Delete failed'); }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Doctor', message: 'Are you sure you want to delete this doctor? This action cannot be undone.', confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        if (this.deletingIds.has(id)) return;
+        this.deletingIds.add(id);
+        this.api.delete(`v1/doctors`, id).subscribe({
+          next: () => {
+            this.deletingIds.delete(id);
+            this.doctors = this.doctors.filter(d => d.id !== id);
+            try { this.notification.success('Doctor deleted'); } catch { }
+          },
+          error: () => {
+            this.deletingIds.delete(id);
+            try { this.notification.error('Delete failed'); } catch { alert('Delete failed'); }
+          }
+        });
       }
     });
   }

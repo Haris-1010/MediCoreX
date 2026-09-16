@@ -6,19 +6,16 @@
 </div>
 
 <div class="print-sheet" *ngIf="patient">
-  <div class="sheet-head">
-    <div class="brand">
-      <div class="brand-line">
-        <img *ngIf="branding?.logoUrl" [src]="branding?.logoUrl" alt="logo" class="brand-logo">
-        <span>{{ branding?.name || 'MediCoreX Hospital' }}</span>
-      </div>
-      <small *ngIf="branding?.website || branding?.phone">{{ branding?.website || '' }}{{ (branding?.website && branding?.phone) ? ' • ' : '' }}{{ branding?.phone || '' }}</small>
-      <small *ngIf="branding?.address">{{ branding?.address }}</small>
-    </div>
-    <div class="doc-title">
-      <h1>Patient Record</h1>
-      <p>Issued {{ formatDate(issuedAt) }}</p>
-    </div>
+  <app-print-brand-header
+    [logoUrl]="branding?.logoUrl || null"
+    [orgName]="branding?.name || null"
+    [phone]="branding?.phone || null"
+    [address]="branding?.address || null">
+  </app-print-brand-header>
+
+  <div class="doc-title">
+    <h1>Patient Record</h1>
+    <p>Issued {{ formatDate(issuedAt) }}</p>
   </div>
 
   <div class="ident">

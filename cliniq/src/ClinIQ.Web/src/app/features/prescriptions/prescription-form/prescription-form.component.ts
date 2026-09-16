@@ -194,6 +194,7 @@ export class PrescriptionFormComponent implements OnInit {
   isEditMode = false;
   saving = false;
   prescriptionId: string | null = null;
+  admissionId: string | null = null;
   filteredPatients: any[] = [];
   filteredDoctors: any[] = [];
   filteredMedicines: any[][] = [];
@@ -210,8 +211,10 @@ export class PrescriptionFormComponent implements OnInit {
   get itemsArray(): FormArray { return this.form.get('items') as FormArray; }
 
   ngOnInit() {
+    this.admissionId = this.route.snapshot.queryParamMap.get('admissionId');
+    const patientId = this.route.snapshot.queryParamMap.get('patientId');
     this.form = this.fb.group({
-      patientId: ['', Validators.required],
+      patientId: [patientId || '', Validators.required],
       patientSearch: [''],
       doctorId: ['', Validators.required],
       doctorSearch: [''],
@@ -225,6 +228,12 @@ export class PrescriptionFormComponent implements OnInit {
 
     this.setupPatientSearch();
     this.setupDoctorSearch();
+
+    if (patientId) {
+      this.api.get<any>(`v1/patients/${patientId}`).subscribe({
+        next: (p) => { this.form.patchValue({ patientSearch: { id: p.id, fullName: p.fullName || (p.firstName + ' ' + p.lastName), mrn: p.mrn } }); }
+      });
+    }
 
     this.prescriptionId = this.route.snapshot.paramMap.get('id');
     if (this.prescriptionId) {
@@ -417,6 +426,7 @@ export class PrescriptionFormComponent implements OnInit {
     const payload = {
       patientId: formValue.patientId,
       doctorId: formValue.doctorId,
+      admissionId: this.admissionId,
       diagnosis: formValue.diagnosis,
       generalInstructions: formValue.generalInstructions,
       dietaryAdvice: formValue.dietaryAdvice,

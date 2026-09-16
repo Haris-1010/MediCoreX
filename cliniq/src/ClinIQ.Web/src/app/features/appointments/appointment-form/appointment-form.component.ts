@@ -5,6 +5,7 @@ import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TenantService } from '../../../core/services/tenant.service';
 import { MatDialog } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: false,
@@ -15,6 +16,9 @@ import { MatDialog } from '@angular/material/dialog';
         [breadcrumbs]="[{ label: 'Dashboard', route: '/dashboard' }, { label: 'Appointments', route: '/appointments' }, { label: isEditMode ? 'Edit' : 'New' }]">
         <button mat-icon-button *ngIf="isEditMode" (click)="printAppointment()" matTooltip="Print Appointment">
           <mat-icon>print</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" *ngIf="isEditMode" (click)="deleteAppointment()" matTooltip="Delete Appointment">
+          <mat-icon>delete</mat-icon>
         </button>
       </app-page-header>
 
@@ -519,6 +523,30 @@ export class AppointmentFormComponent implements OnInit {
     if (this.appointmentId) {
       window.open(`/appointments/${this.appointmentId}/print`, '_blank');
     }
+  }
+
+  deleteAppointment(): void {
+    if (!this.appointmentId) return;
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Appointment',
+        message: 'Are you sure you want to delete this appointment? This action cannot be undone.',
+        confirmText: 'Delete',
+        confirmColor: 'warn'
+      }
+    });
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.api.delete('v1/appointments', this.appointmentId!).subscribe({
+          next: () => {
+            this.notification.success('Appointment deleted successfully');
+            this.router.navigate(['/appointments']);
+          },
+          error: () => this.notification.error('Failed to delete appointment')
+        });
+      }
+    });
   }
 
   onSubmit() {

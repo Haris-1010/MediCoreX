@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { ApiService, PagedResult } from '../../../core/services/api.service';
 import { PermissionService } from '../../../core/services/permission.service';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: false,
@@ -46,7 +48,7 @@ export class StaffListComponent implements OnInit {
   roles: any[] = [];
   canViewRoles = false;
 
-  constructor(private api: ApiService, private router: Router, private permissions: PermissionService) {}
+  constructor(private api: ApiService, private router: Router, private permissions: PermissionService, private dialog: MatDialog) {}
 
   ngOnInit() {
     this.canViewRoles = this.permissions.has('roles.view');
@@ -73,10 +75,17 @@ export class StaffListComponent implements OnInit {
   editStaff(id: string) { this.router.navigate(['/staff/edit', id]); }
 
   deleteStaff(id: string): void {
-    if (!confirm('Are you sure you want to delete this staff member?')) return;
-    this.api.delete<any>('v1/staff', id).subscribe({
-      next: () => this.load(),
-      error: () => alert('Failed to delete staff member')
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Staff', message: 'Are you sure you want to delete this staff member? This action cannot be undone.', confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete<any>('v1/staff', id).subscribe({
+          next: () => this.load(),
+          error: () => alert('Failed to delete staff member')
+        });
+      }
     });
   }
 

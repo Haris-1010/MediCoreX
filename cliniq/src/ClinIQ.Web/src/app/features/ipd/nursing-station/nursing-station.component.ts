@@ -3,6 +3,8 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { TenantService } from '../../../core/services/tenant.service';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: false,
@@ -114,9 +116,15 @@ import { NotificationService } from '../../../core/services/notification.service
                   </div>
                   <div class="med-details">
                     <span *ngIf="med.dosage"><mat-icon>science</mat-icon> {{ med.dosage }}</span>
-                    <span *ngIf="med.frequency"><mat-icon>schedule</mat-icon> {{ med.frequency }}</span>
+                    <span *ngIf="med.frequency"><mat-icon>schedule</mat-icon> {{ formatFrequency(med.frequency) }}</span>
                     <span *ngIf="med.durationDays"><mat-icon>timer</mat-icon> {{ med.durationDays }} days</span>
                     <span *ngIf="med.quantity"><mat-icon>inventory_2</mat-icon> Qty: {{ med.quantity }}</span>
+                  </div>
+                  <div class="med-timing" *ngIf="med.timing">
+                    <span *ngIf="med.timing.morning" class="timing-chip">Morning</span>
+                    <span *ngIf="med.timing.afternoon" class="timing-chip">Afternoon</span>
+                    <span *ngIf="med.timing.evening" class="timing-chip">Evening</span>
+                    <span *ngIf="med.timing.night" class="timing-chip">Night</span>
                   </div>
                   <div class="med-instructions" *ngIf="med.instructions"><mat-icon>info</mat-icon> {{ med.instructions }}</div>
                 </div>
@@ -280,7 +288,9 @@ import { NotificationService } from '../../../core/services/notification.service
             <mat-form-field appearance="outline"><mat-label>Pain Score</mat-label>
               <mat-select formControlName="painScore">
                 <mat-option value="">N/A</mat-option>
-                <mat-option *ngFor="let i of [0,1,2,3,4,5,6,7,8,9,10]" [value]="i">{{ i }}</mat-option>
+                <mat-option *ngFor="let i of [0,1,2,3,4,5,6,7,8,9,10]" [value]="i.toString()">
+  {{ i }}
+</mat-option>
               </mat-select>
             </mat-form-field>
             <mat-form-field appearance="outline"><mat-label>Fall Risk</mat-label>
@@ -406,6 +416,8 @@ import { NotificationService } from '../../../core/services/notification.service
     .med-details span { display: flex; align-items: center; gap: 0.25rem; }
     .med-details mat-icon, .med-instructions mat-icon { font-size: 14px; width: 14px; height: 14px; }
     .med-instructions { margin-top: 0.5rem; font-size: 0.85rem; color: #888; display: flex; align-items: center; gap: 0.25rem; }
+    .med-timing { display: flex; gap: 0.4rem; margin-top: 0.4rem; }
+    .timing-chip { background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 500; }
 
     .notes-list { display: flex; flex-direction: column; gap: 1rem; }
     .note-card { background: #f8f9fa; border-radius: 8px; padding: 1rem 1.25rem; border-left: 4px solid #9c27b0; }
@@ -469,13 +481,15 @@ export class NursingStationComponent implements OnInit {
   saving = false;
   editingVitals: any = null;
   editingNote: any = null;
+  branding: any = null;
 
   private ioIntakeDesc = ['IV Fluid', 'Oral Fluid', 'Blood Transfusion', 'TPS', 'Ringer Lactate', 'Other'];
   private ioOutputDesc = ['Urine', 'Emesis', 'Drain', 'Stool', 'Insensible Loss', 'Other'];
 
-  constructor(private fb: FormBuilder, private api: ApiService, private dialog: MatDialog, private notification: NotificationService) {}
+  constructor(private fb: FormBuilder, private api: ApiService, private dialog: MatDialog, private notification: NotificationService, private tenantService: TenantService) {}
 
   ngOnInit() {
+    this.tenantService.loadTenant().subscribe(t => this.branding = t);
     this.vitalsForm = this.fb.group({
       systolicBP: ['', Validators.required], diastolicBP: ['', Validators.required],
       pulse: ['', Validators.required], temperature: ['', Validators.required], spO2: ['', Validators.required],
@@ -514,7 +528,8 @@ export class NursingStationComponent implements OnInit {
     if (!this.selectedPatient) return;
     const id = this.selectedPatient.id;
     this.api.get<any>(`v1/nursing/vitals/${id}`).subscribe({
-      next: (r) => { this.vitalsHistory = Array.isArray(r) ? r : ((r as any)?.data ?? []); }
+      next: (r) => { this.vitalsHistory = Array.isArray(r) ? r : ((r as any)?.data ?? []); },
+      error: (err) => { this.vitalsHistory = []; this.notification.error('Failed to load vitals: ' + (err?.message || 'Unknown error')); }
     });
     this.api.get<any>('v1/nursing/medications', { admissionId: id }).subscribe({
       next: (r) => {
@@ -525,10 +540,12 @@ export class NursingStationComponent implements OnInit {
             this.medications.push(item);
           });
         });
-      }
+      },
+      error: (err) => { this.medications = []; this.notification.error('Failed to load medications: ' + (err?.message || 'Unknown error')); }
     });
     this.api.get<any>('v1/nursing/notes', { admissionId: id }).subscribe({
-      next: (r) => { this.nursingNotes = Array.isArray(r) ? r : ((r as any)?.data ?? []); }
+      next: (r) => { this.nursingNotes = Array.isArray(r) ? r : ((r as any)?.data ?? []); },
+      error: (err) => { this.nursingNotes = []; this.notification.error('Failed to load notes: ' + (err?.message || 'Unknown error')); }
     });
     this.loadIO();
   }
@@ -536,11 +553,23 @@ export class NursingStationComponent implements OnInit {
   loadIO() {
     if (!this.selectedPatient) return;
     this.api.get<any>('v1/nursing/intake-output', { admissionId: this.selectedPatient.id }).subscribe({
-      next: (r) => { this.ioRecords = Array.isArray(r) ? r : ((r as any)?.data ?? []); }
+      next: (r) => { this.ioRecords = Array.isArray(r) ? r : ((r as any)?.data ?? []); },
+      error: (err) => { this.ioRecords = []; this.notification.error('Failed to load intake/output: ' + (err?.message || 'Unknown error')); }
     });
   }
 
   getInitials(name: string): string { return name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '?'; }
+
+  formatFrequency(freq: string): string {
+    const map: Record<string, string> = {
+      'OnceDaily': 'Once Daily', 'TwiceDaily': 'Twice Daily', 'ThriceDaily': 'Thrice Daily',
+      'FourTimesDaily': '4 Times Daily', 'EveryFourHours': 'Every 4 Hours', 'EverySixHours': 'Every 6 Hours',
+      'EveryEightHours': 'Every 8 Hours', 'EveryTwelveHours': 'Every 12 Hours', 'BeforeMeals': 'Before Meals',
+      'AfterMeals': 'After Meals', 'AtBedtime': 'At Bedtime', 'AsNeeded': 'As Needed', 'Weekly': 'Weekly', 'Custom': 'Custom'
+    };
+    return map[freq] || freq;
+  }
+
   isBpHigh(v: any): boolean { return v.systolicBP > 140 || v.diastolicBP > 90; }
 
   // ── Vitals ──
@@ -573,26 +602,36 @@ export class NursingStationComponent implements OnInit {
       weight: v.weight ? +v.weight : null, height: v.height ? +v.height : null,
       bloodSugar: v.bloodSugar ? +v.bloodSugar : null, bloodSugarType: v.bloodSugarType || null, notes: v.notes || null
     };
-    const req = this.editingVitals
+    const isEdit = !!this.editingVitals;
+    const req = isEdit
       ? this.api.put('v1/nursing/vitals', this.editingVitals.id, payload)
       : this.api.post('v1/nursing/vitals', payload);
     req.subscribe({
-      next: () => { this.saving = false; this.dialog.closeAll(); this.loadPatientData(); this.notification.success(this.editingVitals ? 'Vitals updated' : 'Vitals recorded'); },
-      error: () => this.saving = false
+      next: () => { this.saving = false; this.dialog.closeAll(); this.loadPatientData(); this.notification.success(isEdit ? 'Vitals updated' : 'Vitals recorded'); },
+      error: (err) => { this.saving = false; this.notification.error('Failed to save vitals: ' + (err?.message || 'Unknown error')); }
     });
   }
 
   deleteVitals(v: any) {
-    if (!confirm('Delete this vitals record?')) return;
-    this.api.delete('v1/nursing/vitals', v.id).subscribe({
-      next: () => { this.loadPatientData(); this.notification.success('Vitals deleted'); }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Vitals Record', message: 'Are you sure you want to delete this vitals record? This action cannot be undone.', confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete('v1/nursing/vitals', v.id).subscribe({
+          next: () => { this.loadPatientData(); this.notification.success('Vitals deleted'); },
+          error: (err) => { this.notification.error('Failed to delete vitals: ' + (err?.message || 'Unknown error')); }
+        });
+      }
     });
   }
 
   // ── Medications ──
   markDispensed(med: any) {
     this.api.patch('v1/nursing/medications', med.id, { isDispensed: true }).subscribe({
-      next: () => { med.isDispensed = true; this.notification.success('Marked as administered'); }
+      next: () => { med.isDispensed = true; this.notification.success('Marked as administered'); },
+      error: (err) => { this.notification.error('Failed to mark medication: ' + (err?.message || 'Unknown error')); }
     });
   }
 
@@ -614,23 +653,82 @@ export class NursingStationComponent implements OnInit {
   }
 
   saveNote() {
-    if (this.noteForm.invalid || !this.selectedPatient) return;
-    this.saving = true;
-    const v = this.noteForm.value;
-    const payload = { patientId: this.selectedPatient.patientId, admissionId: this.selectedPatient.id, ...v };
-    const req = this.editingNote
-      ? this.api.put('v1/nursing/notes', this.editingNote.id, payload)
-      : this.api.post('v1/nursing/notes', payload);
-    req.subscribe({
-      next: () => { this.saving = false; this.dialog.closeAll(); this.loadPatientData(); this.notification.success(this.editingNote ? 'Note updated' : 'Note added'); },
-      error: () => this.saving = false
-    });
-  }
+
+  if (this.noteForm.invalid || !this.selectedPatient) return;
+
+  this.saving = true;
+
+  const v = this.noteForm.value;
+
+  const payload: any = {
+
+    patientId: this.selectedPatient.patientId,
+    admissionId: this.selectedPatient.id,
+
+    shift: v.shift || null,
+    assessment: v.assessment || null,
+    interventions: v.interventions || null,
+    patientResponse: v.patientResponse || null,
+    carePlan: v.carePlan || null,
+    painScore: v.painScore || null,
+    fallRisk: v.fallRisk || null,
+    mobility: v.mobility || null,
+    diet: v.diet || null,
+    notes: v.notes || null
+
+  };
+
+  const isEdit = !!this.editingNote;
+
+  const req = isEdit
+    ? this.api.put('v1/nursing/notes', this.editingNote.id, payload)
+    : this.api.post('v1/nursing/notes', payload);
+
+  req.subscribe({
+
+    next: () => {
+
+      this.saving = false;
+
+      this.dialog.closeAll();
+
+      this.loadPatientData();
+
+      this.notification.success(
+        isEdit ? 'Note updated' : 'Note added'
+      );
+
+    },
+
+    error: (err) => {
+
+      this.saving = false;
+
+      console.error('Save Note Error:', err);
+
+      this.notification.error(
+        'Failed to save note: ' +
+        (err?.error?.message || err?.message || 'Unknown error')
+      );
+
+    }
+
+  });
+
+}
 
   deleteNote(n: any) {
-    if (!confirm('Delete this nursing note?')) return;
-    this.api.delete('v1/nursing/notes', n.id).subscribe({
-      next: () => { this.loadPatientData(); this.notification.success('Note deleted'); }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Nursing Note', message: 'Are you sure you want to delete this nursing note? This action cannot be undone.', confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete('v1/nursing/notes', n.id).subscribe({
+          next: () => { this.loadPatientData(); this.notification.success('Note deleted'); },
+          error: (err) => { this.notification.error('Failed to delete note: ' + (err?.message || 'Unknown error')); }
+        });
+      }
     });
   }
 
@@ -652,19 +750,241 @@ export class NursingStationComponent implements OnInit {
     };
     this.api.post('v1/nursing/intake-output', payload).subscribe({
       next: () => { this.saving = false; this.dialog.closeAll(); this.loadIO(); this.notification.success('Intake/Output recorded'); },
-      error: () => this.saving = false
+      error: (err) => { this.saving = false; this.notification.error('Failed to save intake/output: ' + (err?.message || 'Unknown error')); }
     });
   }
 
   deleteIO(r: any) {
-    if (!confirm('Delete this record?')) return;
-    this.api.delete('v1/nursing/intake-output', r.id, { admissionId: this.selectedPatient.id }).subscribe({
-      next: () => { this.loadIO(); this.notification.success('Record deleted'); }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Record', message: 'Are you sure you want to delete this intake/output record? This action cannot be undone.', confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete('v1/nursing/intake-output', r.id, { admissionId: this.selectedPatient.id }).subscribe({
+          next: () => { this.loadIO(); this.notification.success('Record deleted'); },
+          error: (err) => { this.notification.error('Failed to delete record: ' + (err?.message || 'Unknown error')); }
+        });
+      }
     });
   }
 
   getTotalIntake(): number { return this.ioRecords.filter(r => r.type === 'Intake').reduce((sum, r) => sum + (r.amount || 0), 0); }
   getTotalOutput(): number { return this.ioRecords.filter(r => r.type === 'Output').reduce((sum, r) => sum + (r.amount || 0), 0); }
 
-  print() { window.print(); }
+  print() {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const p = this.selectedPatient;
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+    let vitalsHtml = '';
+    this.vitalsHistory.forEach(v => {
+      vitalsHtml += `
+        <tr>
+          <td>${v.recordedAt ? new Date(v.recordedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}</td>
+          <td>${v.bloodPressure || '-'}</td>
+          <td>${v.pulse || '-'}</td>
+          <td>${v.temperature || '-'}</td>
+          <td>${v.spO2 || '-'}</td>
+          <td>${v.respiratoryRate || '-'}</td>
+          <td>${v.weight || '-'}</td>
+          <td>${v.bloodSugar || '-'}</td>
+          <td>${v.notes || '-'}</td>
+        </tr>`;
+    });
+
+    let medsHtml = '';
+    this.medications.forEach(m => {
+      medsHtml += `
+        <tr>
+          <td>${m.medicineName || '-'}</td>
+          <td>${m.dosage || '-'}</td>
+          <td>${m.frequency || '-'}</td>
+          <td>${m.durationDays ? m.durationDays + ' days' : '-'}</td>
+          <td>${m.instructions || '-'}</td>
+          <td>${m.isDispensed ? 'Yes' : 'No'}</td>
+        </tr>`;
+    });
+
+    let notesHtml = '';
+    this.nursingNotes.forEach(n => {
+      notesHtml += `
+        <div class="note-block">
+          <div class="note-header-line">
+            <span class="shift-badge">${n.shift || '-'}</span>
+            <span class="note-date">${n.noteDate ? new Date(n.noteDate).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}</span>
+          </div>
+          ${n.assessment ? `<div class="note-field"><strong>Assessment:</strong> ${n.assessment}</div>` : ''}
+          ${n.interventions ? `<div class="note-field"><strong>Interventions:</strong> ${n.interventions}</div>` : ''}
+          ${n.patientResponse ? `<div class="note-field"><strong>Patient Response:</strong> ${n.patientResponse}</div>` : ''}
+          ${n.carePlan ? `<div class="note-field"><strong>Care Plan:</strong> ${n.carePlan}</div>` : ''}
+          ${n.notes ? `<div class="note-field"><strong>Notes:</strong> ${n.notes}</div>` : ''}
+          <div class="note-obs">
+            ${n.painScore ? `<span>Pain: ${n.painScore}</span>` : ''}
+            ${n.fallRisk ? `<span>Fall Risk: ${n.fallRisk}</span>` : ''}
+            ${n.mobility ? `<span>Mobility: ${n.mobility}</span>` : ''}
+            ${n.diet ? `<span>Diet: ${n.diet}</span>` : ''}
+          </div>
+        </div>`;
+    });
+
+    let ioHtml = '';
+    if (this.ioRecords.length > 0) {
+      ioHtml = `
+        <div class="io-summary-print">
+          <div class="io-box"><strong>Total Intake:</strong> ${this.getTotalIntake()} mL</div>
+          <div class="io-box"><strong>Total Output:</strong> ${this.getTotalOutput()} mL</div>
+          <div class="io-box"><strong>Balance:</strong> ${this.getTotalIntake() - this.getTotalOutput()} mL</div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Type</th><th>Description</th><th>Amount (mL)</th><th>Time</th><th>Notes</th></tr></thead>
+          <tbody>
+            ${this.ioRecords.map(r => `
+              <tr>
+                <td><span class="type-chip ${r.type === 'Intake' ? 'intake' : 'output'}">${r.type}</span></td>
+                <td>${r.description || '-'}</td>
+                <td>${r.amount || 0}</td>
+                <td>${r.recordedAt ? new Date(r.recordedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}</td>
+                <td>${r.notes || '-'}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Nursing Station - ${p.patientName}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1a1a2e; padding: 30px; background: #fff; }
+          
+          .print-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #3f51b5; padding-bottom: 15px; margin-bottom: 20px; }
+          .brand { display: flex; align-items: center; gap: 12px; }
+          .brand-icon { width: 48px; height: 48px; background: linear-gradient(135deg, #3f51b5, #5c6bc0); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 700; }
+          .brand-text h1 { font-size: 22px; color: #3f51b5; letter-spacing: 1px; }
+          .brand-text p { font-size: 11px; color: #666; letter-spacing: 0.5px; }
+          .print-meta { text-align: right; font-size: 11px; color: #666; }
+          .print-meta strong { color: #333; }
+
+          .patient-banner { background: linear-gradient(135deg, #e8eaf6, #f5f5ff); border: 1px solid #c5cae9; border-radius: 8px; padding: 15px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+          .patient-banner h2 { font-size: 18px; color: #1a237e; margin-bottom: 4px; }
+          .patient-banner .info-row { display: flex; gap: 20px; font-size: 12px; color: #555; }
+          .patient-banner .info-row span { display: flex; align-items: center; gap: 4px; }
+          .patient-banner .info-row strong { color: #333; }
+
+          .section { margin-bottom: 20px; page-break-inside: avoid; }
+          .section-title { font-size: 14px; font-weight: 700; color: #fff; background: #3f51b5; padding: 6px 14px; border-radius: 4px; margin-bottom: 10px; display: inline-block; letter-spacing: 0.5px; }
+          
+          .data-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+          .data-table th { background: #e8eaf6; color: #1a237e; padding: 8px 10px; text-align: left; font-weight: 600; border-bottom: 2px solid #3f51b5; }
+          .data-table td { padding: 6px 10px; border-bottom: 1px solid #eee; }
+          .data-table tr:nth-child(even) { background: #fafbff; }
+          .data-table tr:hover { background: #f0f0ff; }
+
+          .note-block { border-left: 3px solid #9c27b0; padding: 10px 14px; margin-bottom: 10px; background: #faf5ff; border-radius: 0 6px 6px 0; }
+          .note-header-line { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+          .shift-badge { background: #9c27b0; color: white; padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; }
+          .note-date { font-size: 10px; color: #888; }
+          .note-field { font-size: 11px; margin-bottom: 4px; color: #333; }
+          .note-field strong { color: #555; }
+          .note-obs { display: flex; gap: 12px; font-size: 10px; color: #777; margin-top: 6px; }
+
+          .io-summary-print { display: flex; gap: 15px; margin-bottom: 12px; }
+          .io-box { flex: 1; text-align: center; padding: 8px; border-radius: 6px; font-size: 11px; }
+          .io-box:nth-child(1) { background: #e3f2fd; color: #1565c0; }
+          .io-box:nth-child(2) { background: #fce4ec; color: #c62828; }
+          .io-box:nth-child(3) { background: #e8f5e9; color: #2e7d32; }
+
+          .type-chip { padding: 1px 8px; border-radius: 8px; font-size: 9px; font-weight: 600; }
+          .type-chip.intake { background: #e3f2fd; color: #1565c0; }
+          .type-chip.output { background: #fce4ec; color: #c62828; }
+
+          .print-footer { margin-top: 30px; border-top: 2px solid #e0e0e0; padding-top: 12px; display: flex; justify-content: space-between; font-size: 10px; color: #999; }
+          .print-footer .signature-line { border-top: 1px solid #333; width: 200px; text-align: center; padding-top: 4px; margin-top: 30px; font-size: 11px; color: #333; }
+
+          .empty-section { text-align: center; color: #aaa; font-style: italic; padding: 10px; font-size: 11px; }
+
+          @media print {
+            body { padding: 15px; }
+            .no-print { display: none !important; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-header">
+          <div class="brand">
+            ${this.branding?.logoUrl ? `<img src="${this.branding.logoUrl}" alt="logo" style="max-width: 48px; max-height: 48px; border-radius: 8px;">` : `<div class="brand-icon">${this.branding?.name ? this.branding.name.charAt(0) : 'C'}</div>`}
+            <div class="brand-text">
+              <h1>${this.branding?.name || 'ClinIQ'}</h1>
+              <p>${this.branding?.phone ? this.branding.phone + (this.branding.address ? ' • ' + this.branding.address : '') : 'Healthcare Management System'}</p>
+            </div>
+          </div>
+          <div class="print-meta">
+            <div><strong>Date:</strong> ${dateStr}</div>
+            <div><strong>Time:</strong> ${timeStr}</div>
+            <div><strong>Nurse:</strong> Nursing Station</div>
+          </div>
+        </div>
+
+        <div class="patient-banner">
+          <div>
+            <h2>${p.patientName || 'Unknown Patient'}</h2>
+            <div class="info-row">
+              <span><strong>Ward:</strong> ${p.ward || '-'}</span>
+              <span><strong>Bed:</strong> ${p.bed || '-'}</span>
+              <span><strong>Doctor:</strong> Dr. ${p.doctorName || '-'}</span>
+              <span><strong>Admitted:</strong> ${p.admissionDate ? new Date(p.admissionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}</span>
+            </div>
+          </div>
+        </div>
+
+        ${this.vitalsHistory.length > 0 ? `
+        <div class="section">
+          <div class="section-title">VITALS HISTORY</div>
+          <table class="data-table">
+            <thead><tr><th>Date/Time</th><th>BP (mmHg)</th><th>Pulse (bpm)</th><th>Temp (&deg;F)</th><th>SpO2 (%)</th><th>RR (/min)</th><th>Weight (kg)</th><th>Sugar (mg/dL)</th><th>Notes</th></tr></thead>
+            <tbody>${vitalsHtml}</tbody>
+          </table>
+        </div>` : ''}
+
+        ${this.medications.length > 0 ? `
+        <div class="section">
+          <div class="section-title">MEDICATIONS</div>
+          <table class="data-table">
+            <thead><tr><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration</th><th>Instructions</th><th>Administered</th></tr></thead>
+            <tbody>${medsHtml}</tbody>
+          </table>
+        </div>` : ''}
+
+        ${this.nursingNotes.length > 0 ? `
+        <div class="section">
+          <div class="section-title">NURSING NOTES</div>
+          ${notesHtml}
+        </div>` : ''}
+
+        ${this.ioRecords.length > 0 ? `
+        <div class="section">
+          <div class="section-title">INTAKE / OUTPUT</div>
+          ${ioHtml}
+        </div>` : ''}
+
+        <div class="print-footer">
+          <div>Generated by ${this.branding?.name || 'ClinIQ'} Healthcare Management System</div>
+          <div class="signature-line">Nurse Signature</div>
+        </div>
+
+        <script>
+          window.onload = function() { window.print(); window.close(); }
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
 }

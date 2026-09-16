@@ -43,6 +43,7 @@ public static class PermissionCatalog
         new(Permissions.AppointmentsCancel,  "Cancel",   "Appointments", "Clinical", 40),
         new(Permissions.AppointmentsConfirm, "Confirm",  "Appointments", "Clinical", 50),
         new(Permissions.AppointmentsCheckIn, "Check In", "Appointments", "Clinical", 60),
+        new(Permissions.AppointmentsDelete,  "Delete",   "Appointments", "Clinical", 70),
 
         // ---- Visits ----
         new(Permissions.VisitsView,   "View",   "Visits", "Clinical", 10),

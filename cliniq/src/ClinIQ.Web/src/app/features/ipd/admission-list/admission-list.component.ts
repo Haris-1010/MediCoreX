@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { ApiService, PagedResult } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TenantService, Tenant } from '../../../core/services/tenant.service';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: false,
@@ -154,7 +156,7 @@ export class AdmissionListComponent implements OnInit {
   branding: Tenant | null = null;
   today = new Date();
 
-  constructor(private api: ApiService, private notification: NotificationService, private tenantService: TenantService) {}
+  constructor(private api: ApiService, private notification: NotificationService, private tenantService: TenantService, private dialog: MatDialog) {}
 
   ngOnInit() { this.load(); this.api.get<any>('v1/wards').subscribe(r => this.wards = Array.isArray(r) ? r : []); this.tenantService.loadTenant().subscribe(t => this.branding = t); }
 
@@ -174,9 +176,16 @@ export class AdmissionListComponent implements OnInit {
   }
 
   deleteAdmission(a: any) {
-    if (!confirm(`Delete admission ${a.admissionNumber} for ${a.patientName}?`)) return;
-    this.api.delete('v1/admissions', a.id).subscribe({
-      next: () => { this.notification.success('Admission deleted'); this.load(); }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Admission', message: `Are you sure you want to delete admission ${a.admissionNumber} for ${a.patientName}? This action cannot be undone.`, confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete('v1/admissions', a.id).subscribe({
+          next: () => { this.notification.success('Admission deleted'); this.load(); }
+        });
+      }
     });
   }
 }

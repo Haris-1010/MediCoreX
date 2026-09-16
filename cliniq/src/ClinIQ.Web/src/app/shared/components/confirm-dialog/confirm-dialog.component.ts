@@ -28,10 +28,24 @@ export interface ConfirmDialogData {
   `,
   styles: [`
     mat-dialog-content {
-      min-width: 300px;
+      min-width: 320px;
+      padding: 16px 24px;
+    }
+    mat-dialog-content p {
+      font-size: 0.9rem;
+      color: #555;
+      line-height: 1.5;
+      margin: 0;
     }
     mat-dialog-actions {
-      padding: 16px 0;
+      padding: 12px 24px 16px;
+      gap: 8px;
+    }
+    h2[mat-dialog-title] {
+      padding: 16px 24px 0;
+      margin: 0;
+      font-size: 1.1rem;
+      color: #1a237e;
     }
   `]
 })

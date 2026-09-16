@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: false,
@@ -401,15 +402,22 @@ export class WardManagementComponent implements OnInit {
   }
 
   deleteWard(ward: any) {
-    if (!confirm(`Delete ward "${ward.name}"?`)) return;
-    this.api.delete('v1/wards', ward.id).subscribe({
-      next: () => {
-        this.notification.success('Ward deleted');
-        if (this.selectedWard?.id === ward.id) {
-          this.selectedWard = null;
-          this.wardRooms = [];
-        }
-        this.loadWards();
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Ward', message: `Are you sure you want to delete ward "${ward.name}"? This will also remove all rooms and beds.`, confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete('v1/wards', ward.id).subscribe({
+          next: () => {
+            this.notification.success('Ward deleted');
+            if (this.selectedWard?.id === ward.id) {
+              this.selectedWard = null;
+              this.wardRooms = [];
+            }
+            this.loadWards();
+          }
+        });
       }
     });
   }
@@ -467,12 +475,19 @@ export class WardManagementComponent implements OnInit {
   }
 
   deleteRoom(room: any) {
-    if (!confirm(`Delete room "${room.roomNumber}"?`)) return;
-    this.api.delete('v1/wards/rooms', room.id).subscribe({
-      next: () => {
-        this.notification.success('Room deleted');
-        this.loadWards();
-        if (this.selectedWard) this.selectWard(this.selectedWard);
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Room', message: `Are you sure you want to delete room "${room.roomNumber}"? This will also remove all beds in this room.`, confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete('v1/wards/rooms', room.id).subscribe({
+          next: () => {
+            this.notification.success('Room deleted');
+            this.loadWards();
+            if (this.selectedWard) this.selectWard(this.selectedWard);
+          }
+        });
       }
     });
   }

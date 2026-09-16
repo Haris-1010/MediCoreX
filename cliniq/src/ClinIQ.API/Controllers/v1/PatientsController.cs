@@ -322,8 +322,12 @@ public class PatientsController : ControllerBase
             {
                 v.Id,
                 v.CreatedAt,
+                v.VisitDate,
+                Type = v.VisitType.ToString(),
+                Status = v.IsCompleted ? "Completed" : "Active",
                 DoctorName = _context.Users.Where(u => u.Id == v.DoctorId).Select(u => (u.FirstName + " " + u.LastName).Trim()).FirstOrDefault() ?? "Unknown",
                 v.ChiefComplaint,
+                Diagnosis = v.Diagnoses,
                 Department = _context.Departments.Where(d => d.Id == v.DepartmentId).Select(d => d.Name).FirstOrDefault() ?? "General"
             })
             .ToListAsync();
@@ -333,9 +337,51 @@ public class PatientsController : ControllerBase
 
     [HttpGet("{id:guid}/medical-history")]
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.PatientsView)]
-    public IActionResult GetMedicalHistory(Guid id)
+    public async Task<IActionResult> GetMedicalHistory(Guid id)
     {
-        return Ok(Result<object[]>.Success(Array.Empty<object>()));
+        var visits = await _context.Visits
+            .Where(v => v.PatientId == id && !v.IsDeleted)
+            .OrderByDescending(v => v.CreatedAt)
+            .Select(v => new
+            {
+                Type = "Visit",
+                Date = v.CreatedAt,
+                Diagnosis = v.Diagnoses,
+                DoctorName = _context.Users.Where(u => u.Id == v.DoctorId).Select(u => (u.FirstName + " " + u.LastName).Trim()).FirstOrDefault() ?? "Unknown",
+                ChiefComplaint = v.ChiefComplaint,
+                Treatment = v.Plan,
+                Notes = v.ClinicalNotes
+            })
+            .ToListAsync();
+
+        var prescriptions = await _context.Prescriptions
+            .Where(p => p.PatientId == id && !p.IsDeleted)
+            .OrderByDescending(p => p.PrescriptionDate)
+            .Select(p => new
+            {
+                Type = "Prescription",
+                Date = p.PrescriptionDate,
+                Diagnosis = p.Diagnosis,
+                DoctorName = _context.Users.Where(u => u.Id == p.DoctorId).Select(u => (u.FirstName + " " + u.LastName).Trim()).FirstOrDefault() ?? "Unknown",
+                ChiefComplaint = (string?)null,
+                Treatment = (string?)null,
+                Medicines = p.Items.Select(i => new
+                {
+                    i.MedicineName,
+                    i.Dosage,
+                    Frequency = i.Frequency.ToString(),
+                    i.DurationDays,
+                    i.Quantity,
+                    i.Instructions,
+                    Timing = new { i.Morning, i.Afternoon, i.Evening, i.Night }
+                }).ToList(),
+                Notes = p.GeneralInstructions
+            })
+            .ToListAsync();
+
+        var combined = visits.Cast<object>().Concat(prescriptions.Cast<object>()).ToList();
+
+        return Ok(Result<object[]>.Success(combined.ToArray()));
     }
 
     private static DateTime? ResolveDateOfBirth(DateTime? dateOfBirth, int? age)

@@ -1,21 +1,26 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { ApiService } from '../../../core/services/api.service';
 import { TenantService } from '../../../core/services/tenant.service';
+import { PrintBrandHeaderComponent } from '../../../shared/components/print-brand-header/print-brand-header.component';
 
 @Component({
-  standalone: false,
+  standalone: true,
   selector: 'app-prescription-print',
+  imports: [CommonModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, HasPermissionDirective, PrintBrandHeaderComponent],
   template: `
     <div class="print-container" *ngIf="prescription">
-      <div class="brand" *ngIf="branding?.logoUrl || branding?.name">
-        <img *ngIf="branding?.logoUrl" [src]="branding?.logoUrl" alt="logo" class="brand-logo">
-        <div class="brand-info">
-          <h2>{{ branding?.name || 'Hospital Name' }}</h2>
-          <p *ngIf="branding?.phone">{{ branding?.phone }}</p>
-          <p *ngIf="branding?.address">{{ branding?.address }}</p>
-        </div>
-      </div>
+      <app-print-brand-header
+        [logoUrl]="branding?.logoUrl || null"
+        [orgName]="branding?.name || null"
+        [phone]="branding?.phone || null"
+        [address]="branding?.address || null">
+      </app-print-brand-header>
 
       <div class="rx-header">
         <div class="rx-title">
@@ -113,10 +118,6 @@ import { TenantService } from '../../../core/services/tenant.service';
   `,
   styles: [`
     .print-container { max-width: 800px; margin: 0 auto; padding: 2rem; background: white; }
-    .brand { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #1a237e; }
-    .brand-logo { max-width: 60px; max-height: 60px; }
-    .brand-info h2 { margin: 0; color: #1a237e; font-size: 1.25rem; }
-    .brand-info p { margin: 2px 0; color: #666; font-size: 0.8rem; }
     .rx-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
     .rx-title h1 { margin: 0; color: #1a237e; font-size: 1.5rem; }
     .rx-number { margin: 4px 0 0; color: #666; font-size: 0.9rem; }

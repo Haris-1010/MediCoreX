@@ -158,8 +158,45 @@ public class DashboardController : ControllerBase
 
     [HttpGet("bed-stats")]
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.DashboardView)]
-    public IActionResult GetBedStats()
+    public async Task<IActionResult> GetBedStats()
     {
-        return Ok(Result<object[]>.Success(Array.Empty<object>()));
+        var wards = await _context.Wards
+            .Where(w => !w.IsDeleted && w.IsActive)
+            .OrderBy(w => w.DisplayOrder)
+            .ToListAsync();
+
+        var result = new List<object>();
+
+        foreach (var ward in wards)
+        {
+            var roomIds = await _context.Rooms
+                .Where(r => r.WardId == ward.Id && !r.IsDeleted)
+                .Select(r => r.Id)
+                .ToListAsync();
+
+            var total = 0;
+            var occupied = 0;
+            var available = 0;
+            var maintenance = 0;
+
+            foreach (var rid in roomIds)
+            {
+                total += await _context.Beds.CountAsync(b => b.RoomId == rid && !b.IsDeleted);
+                occupied += await _context.Beds.CountAsync(b => b.RoomId == rid && !b.IsDeleted && b.Status == Domain.Enums.BedStatus.Occupied);
+                available += await _context.Beds.CountAsync(b => b.RoomId == rid && !b.IsDeleted && b.Status == Domain.Enums.BedStatus.Available);
+                maintenance += await _context.Beds.CountAsync(b => b.RoomId == rid && !b.IsDeleted && b.Status == Domain.Enums.BedStatus.Maintenance);
+            }
+
+            result.Add(new
+            {
+                ward = ward.Name,
+                total,
+                occupied,
+                available,
+                maintenance
+            });
+        }
+
+        return Ok(Result<object[]>.Success(result.ToArray()));
     }
 }

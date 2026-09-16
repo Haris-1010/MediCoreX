@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../../core/services/api.service';
 import { ClinicalService } from '../models/service.model';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: false,
@@ -41,7 +43,7 @@ export class ServiceListComponent implements OnInit {
   searchTerm = '';
   columns = ['name', 'category', 'price', 'durationMinutes', 'isActive', 'actions'];
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private dialog: MatDialog) {}
 
   ngOnInit() {
     this.loadServices();
@@ -61,9 +63,15 @@ export class ServiceListComponent implements OnInit {
   }
 
   deleteService(service: ClinicalService) {
-    if (confirm(`Delete service "${service.name}"?`)) {
-      this.api.delete('v1/services', service.id).subscribe(() => this.loadServices());
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Service', message: `Are you sure you want to delete service "${service.name}"? This action cannot be undone.`, confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete('v1/services', service.id).subscribe(() => this.loadServices());
+      }
+    });
   }
 
   getCategoryLabel(name: string | null | undefined): string {

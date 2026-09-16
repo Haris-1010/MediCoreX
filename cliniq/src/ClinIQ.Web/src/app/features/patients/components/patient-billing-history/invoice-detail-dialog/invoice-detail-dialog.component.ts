@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTabsModule } from '@angular/material/tabs';
-import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { SharedModule } from '../../../../../shared/shared.module';
 import { ApiService } from '../../../../../core/services/api.service';
 
@@ -23,8 +23,7 @@ interface InvoiceDetailDialogData {
     MatDividerModule,
     MatTabsModule,
     SharedModule,
-    DatePipe,
-    CurrencyPipe
+    DatePipe
   ],
   template: `
     <div class="invoice-detail-dialog">

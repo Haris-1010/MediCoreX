@@ -21,7 +21,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [AppointmentListComponent, AppointmentFormComponent, AppointmentCalendarComponent, AppointmentPrintComponent, DoctorScheduleComponent],
-  imports: [CommonModule, SharedModule, LayoutModule, RouterModule.forChild(routes)]
+  declarations: [AppointmentListComponent, AppointmentFormComponent, AppointmentCalendarComponent, DoctorScheduleComponent],
+  imports: [CommonModule, SharedModule, LayoutModule, RouterModule.forChild(routes), AppointmentPrintComponent]
 })
 export class AppointmentsModule { }

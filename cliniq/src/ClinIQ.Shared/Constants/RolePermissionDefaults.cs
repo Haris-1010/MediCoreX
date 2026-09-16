@@ -24,7 +24,7 @@ public static class RolePermissionDefaults
                 Permissions.OpdView,
                 Permissions.IpdView,
                 Permissions.EmergencyView,
-                Permissions.AppointmentsView, Permissions.AppointmentsCreate, Permissions.AppointmentsEdit, Permissions.AppointmentsCancel, Permissions.AppointmentsConfirm, Permissions.AppointmentsCheckIn,
+                Permissions.AppointmentsView, Permissions.AppointmentsCreate, Permissions.AppointmentsEdit, Permissions.AppointmentsCancel, Permissions.AppointmentsConfirm, Permissions.AppointmentsCheckIn, Permissions.AppointmentsDelete,
                 Permissions.VisitsView, Permissions.VisitsCreate, Permissions.VisitsEdit, Permissions.VisitsDelete,
                 Permissions.EmrView, Permissions.EmrEdit, Permissions.EmrViewConfidential,
                 Permissions.PrescriptionsView, Permissions.PrescriptionsCreate, Permissions.PrescriptionsEdit, Permissions.PrescriptionsDelete, Permissions.PrescriptionsDispense, Permissions.PrescriptionsPrint,
@@ -55,7 +55,7 @@ public static class RolePermissionDefaults
             {
                 Permissions.PatientsView, Permissions.PatientsCreate, Permissions.PatientsEdit,
                 Permissions.AppointmentsView, Permissions.AppointmentsCreate, Permissions.AppointmentsEdit,
-                Permissions.AppointmentsCancel, Permissions.AppointmentsConfirm,
+                Permissions.AppointmentsCancel, Permissions.AppointmentsConfirm, Permissions.AppointmentsDelete,
                 Permissions.AdmissionsView, Permissions.AdmissionsCreate, Permissions.AdmissionsEdit,
                 Permissions.AdmissionsDischarge, Permissions.AdmissionsTransfer,
                 Permissions.BedsView, Permissions.BedsManage, Permissions.BedsAllocate,
@@ -78,7 +78,7 @@ public static class RolePermissionDefaults
             {
                 Permissions.PatientsView, Permissions.PatientsCreate, Permissions.PatientsEdit,
                 Permissions.AppointmentsView, Permissions.AppointmentsCreate, Permissions.AppointmentsEdit,
-                Permissions.AppointmentsCancel, Permissions.AppointmentsConfirm, Permissions.AppointmentsCheckIn,
+                Permissions.AppointmentsCancel, Permissions.AppointmentsConfirm, Permissions.AppointmentsCheckIn, Permissions.AppointmentsDelete,
                 Permissions.VisitsView, Permissions.VisitsCreate,
                 Permissions.ServicesView, Permissions.ServicesCreate,
                 Permissions.BillingView, Permissions.BillingCreate, Permissions.BillingDiscount,
@@ -117,7 +117,7 @@ public static class RolePermissionDefaults
             {
                 Permissions.PatientsView, Permissions.PatientsCreate, Permissions.PatientsEdit,
                 Permissions.AppointmentsView, Permissions.AppointmentsCreate, Permissions.AppointmentsEdit,
-                Permissions.AppointmentsCancel, Permissions.AppointmentsConfirm, Permissions.AppointmentsCheckIn,
+                Permissions.AppointmentsCancel, Permissions.AppointmentsConfirm, Permissions.AppointmentsCheckIn, Permissions.AppointmentsDelete,
                 Permissions.BillingView, Permissions.BillingCreate,
                 Permissions.PaymentsView, Permissions.PaymentsCreate
             },

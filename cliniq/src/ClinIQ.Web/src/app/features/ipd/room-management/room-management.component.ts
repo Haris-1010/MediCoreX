@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: false,
@@ -337,9 +338,16 @@ export class RoomManagementComponent implements OnInit {
   }
 
   deleteRoom(room: any) {
-    if (!confirm(`Delete room "${room.roomNumber}"?`)) return;
-    this.api.delete('v1/wards/rooms', room.id).subscribe({
-      next: () => { this.notification.success('Room deleted'); this.loadRooms(); }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Room', message: `Are you sure you want to delete room "${room.roomNumber}"? This action cannot be undone.`, confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete('v1/wards/rooms', room.id).subscribe({
+          next: () => { this.notification.success('Room deleted'); this.loadRooms(); }
+        });
+      }
     });
   }
 

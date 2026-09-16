@@ -1,7 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../../core/services/api.service';
 import { TenantService, Tenant } from '../../../core/services/tenant.service';
+import { PrintBrandHeaderComponent } from '../../../shared/components/print-brand-header/print-brand-header.component';
+import { SharedModule } from '../../../shared/shared.module';
 
 interface PatientPrint {
   id: string;
@@ -38,30 +44,27 @@ interface PatientPrint {
 }
 
 @Component({
-  standalone: false,
+  standalone: true,
   selector: 'app-patient-print',
+  imports: [CommonModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, PrintBrandHeaderComponent, SharedModule],
   templateUrl: './patient-print.component.html',
   styles: [`
     :host { display: block; background: white; color: #111; font-family: 'Segoe UI', Arial, sans-serif; }
     .print-sheet { max-width: 820px; margin: 0 auto; padding: 28px 36px; }
-    .sheet-head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #102b35; padding-bottom: 14px; margin-bottom: 18px; }
-    .brand { font-size: 20px; font-weight: 800; color: #102b35; }
-    .brand .brand-line { display: flex; align-items: center; gap: 8px; }
-    .brand .brand-logo { max-width: 40px; max-height: 40px; border-radius: 6px; object-fit: contain; }
-    .brand small { display: block; font-size: 11px; color: #64748b; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
-    .doc-title { text-align: right; }
-    .doc-title h1 { margin: 0; font-size: 18px; text-transform: uppercase; letter-spacing: .04em; color: #102b35; }
+
+    .doc-title { text-align: right; margin-bottom: 24px; }
+    .doc-title h1 { margin: 0; font-size: 18px; text-transform: uppercase; letter-spacing: .04em; color: #1a237e; }
     .doc-title p { margin: 2px 0 0; font-size: 11px; color: #64748b; }
 
     .ident { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; margin-bottom: 20px; }
-    .avatar { width: 74px; height: 74px; border-radius: 50%; background: #102b35; color: #f0b35b; display: grid; place-items: center; font-size: 26px; font-weight: 700; }
+    .avatar { width: 74px; height: 74px; border-radius: 50%; background: #1a237e; color: #fff; display: grid; place-items: center; font-size: 26px; font-weight: 700; }
     .ident h2 { margin: 0 0 4px; font-size: 22px; }
     .chips { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; }
     .chip { padding: 2px 10px; border-radius: 999px; background: #eef5f5; color: #164b4f; font-weight: 600; }
     .chip.blood { background: #fdecea; color: #b42318; }
 
     section { margin-bottom: 16px; }
-    section h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #102b35; border-bottom: 1px solid #dce5e5; padding-bottom: 6px; margin: 0 0 10px; }
+    section h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #1a237e; border-bottom: 1px solid #dce5e5; padding-bottom: 6px; margin: 0 0 10px; }
     .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 20px; }
     .field label { display: block; font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
     .field span { font-size: 13px; font-weight: 600; }

@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: false,
@@ -119,7 +121,7 @@ export class SettingsComponent implements OnInit {
   ];
   filteredCurrencies = [...this.currencies];
 
-  constructor(private fb: FormBuilder, private api: ApiService, private notification: NotificationService) {}
+  constructor(private fb: FormBuilder, private api: ApiService, private notification: NotificationService, private dialog: MatDialog) {}
 
   ngOnInit() {
     this.generalForm = this.fb.group({ organizationName: [''], phone: [''], email: [''], address: [''], currency: ['USD'], dateFormat: ['MM/dd/yyyy'] });
@@ -275,18 +277,32 @@ export class SettingsComponent implements OnInit {
   }
 
   deleteUser(user: any) {
-    if (!confirm(`Delete user ${user.email}?`)) return;
-    this.api.delete<any>('v1/users', user.id).subscribe({
-      next: () => { this.notification.success('User deleted'); this.loadUsers(); },
-      error: (err) => this.notification.error(this.extractError(err))
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete User', message: `Are you sure you want to delete user ${user.email}? This action cannot be undone.`, confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete<any>('v1/users', user.id).subscribe({
+          next: () => { this.notification.success('User deleted'); this.loadUsers(); },
+          error: (err) => this.notification.error(this.extractError(err))
+        });
+      }
     });
   }
 
   resetPassword(user: any) {
-    if (!confirm(`Reset password for ${user.email} to ChangeMe@123?`)) return;
-    this.api.post<any>(`v1/users/${user.id}/reset-password`, {}).subscribe({
-      next: () => this.notification.success('Password reset to ChangeMe@123'),
-      error: (err) => this.notification.error(this.extractError(err))
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Reset Password', message: `Are you sure you want to reset the password for ${user.email} to ChangeMe@123?`, confirmText: 'Reset', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.post<any>(`v1/users/${user.id}/reset-password`, {}).subscribe({
+          next: () => this.notification.success('Password reset to ChangeMe@123'),
+          error: (err) => this.notification.error(this.extractError(err))
+        });
+      }
     });
   }
 
@@ -349,10 +365,17 @@ export class SettingsComponent implements OnInit {
   }
 
   deleteRole(role: any) {
-    if (!confirm(`Delete role ${role.name}?`)) return;
-    this.api.delete<any>('v1/roles', role.id).subscribe({
-      next: () => { this.notification.success('Role deleted'); this.loadRoles(); },
-      error: (err) => this.notification.error(this.extractError(err))
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Role', message: `Are you sure you want to delete role "${role.name}"? This action cannot be undone.`, confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete<any>('v1/roles', role.id).subscribe({
+          next: () => { this.notification.success('Role deleted'); this.loadRoles(); },
+          error: (err) => this.notification.error(this.extractError(err))
+        });
+      }
     });
   }
 

@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { MatDatepicker } from '@angular/material/datepicker';
 import { ApiService, PagedResult } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TenantService } from '../../../core/services/tenant.service';
@@ -17,7 +18,7 @@ import { TenantService } from '../../../core/services/tenant.service';
       <div class="card" *ngIf="!showCreate && !selectedOrder && !showReceiveDialog">
         <div class="filters">
           <app-search-input placeholder="Search POs..." (search)="onSearch($event)"></app-search-input>
-          <mat-form-field appearance="outline"><mat-label>Status</mat-label><mat-select [(value)]="filterStatus" (selectionChange)="load()"><mat-option value="">All</mat-option><mat-option value="Draft">Draft</mat-option><mat-option value="Approved">Approved</mat-option><mat-option value="Ordered">Ordered</mat-option><mat-option value="Received">Received</mat-option></mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Status</mat-label><mat-select [(value)]="filterStatus" (selectionChange)="load()"><mat-option value="">All</mat-option><mat-option value="Draft">Draft</mat-option><mat-option value="Approved">Approved</mat-option><mat-option value="Ordered">Ordered</mat-option><mat-option value="PartiallyReceived">Partially Received</mat-option><mat-option value="Received">Received</mat-option></mat-select></mat-form-field>
         </div>
         <table mat-table [dataSource]="orders">
           <ng-container matColumnDef="poNumber"><th mat-header-cell *matHeaderCellDef>PO Number</th><td mat-cell *matCellDef="let o">{{ o.poNumber }}</td></ng-container>
@@ -26,7 +27,7 @@ import { TenantService } from '../../../core/services/tenant.service';
           <ng-container matColumnDef="items"><th mat-header-cell *matHeaderCellDef>Items</th><td mat-cell *matCellDef="let o">{{ o.itemCount }}</td></ng-container>
           <ng-container matColumnDef="total"><th mat-header-cell *matHeaderCellDef>Total</th><td mat-cell *matCellDef="let o">{{ o.totalAmount | currencyFormat }}</td></ng-container>
           <ng-container matColumnDef="status"><th mat-header-cell *matHeaderCellDef>Status</th><td mat-cell *matCellDef="let o"><app-status-badge [status]="o.status"></app-status-badge></td></ng-container>
-          <ng-container matColumnDef="actions"><th mat-header-cell *matHeaderCellDef></th><td mat-cell *matCellDef="let o"><button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button><mat-menu #menu="matMenu"><button mat-menu-item (click)="viewOrder(o.id)"><mat-icon>visibility</mat-icon> View</button><button mat-menu-item *ngIf="o.status === 'Approved' || o.status === 'Draft'" (click)="viewOrder(o.id)"><mat-icon>local_shipping</mat-icon> Receive</button><button mat-menu-item (click)="printOrder(o.id)"><mat-icon>print</mat-icon> Print</button></mat-menu></td></ng-container>
+          <ng-container matColumnDef="actions"><th mat-header-cell *matHeaderCellDef></th><td mat-cell *matCellDef="let o"><button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button><mat-menu #menu="matMenu"><button mat-menu-item (click)="viewOrder(o.id)"><mat-icon>visibility</mat-icon> View</button><button mat-menu-item *ngIf="o.status === 'Approved' || o.status === 'Draft' || o.status === 'Ordered' || o.status === 'PartiallyReceived'" (click)="viewOrder(o.id)"><mat-icon>local_shipping</mat-icon> Receive</button><button mat-menu-item (click)="printOrder(o.id)"><mat-icon>print</mat-icon> Print</button></mat-menu></td></ng-container>
           <tr mat-header-row *matHeaderRowDef="columns"></tr>
           <tr mat-row *matRowDef="let row; columns: columns;"></tr>
         </table>
@@ -129,7 +130,7 @@ import { TenantService } from '../../../core/services/tenant.service';
         <div class="po-total">Grand Total: <strong>{{ selectedOrder.totalAmount | currencyFormat }}</strong></div>
         <div class="form-actions">
           <button mat-stroked-button (click)="selectedOrder = null">Back to List</button>
-          <button mat-stroked-button *ngIf="selectedOrder.status === 'Approved' || selectedOrder.status === 'Draft'" (click)="openReceiveDialog()">
+          <button mat-stroked-button *ngIf="selectedOrder.status === 'Approved' || selectedOrder.status === 'Draft' || selectedOrder.status === 'Ordered' || selectedOrder.status === 'PartiallyReceived'" (click)="openReceiveDialog()">
             <mat-icon>local_shipping</mat-icon> Receive Order
           </button>
           <button mat-raised-button color="primary" (click)="printOrder(selectedOrder.id)"><mat-icon>print</mat-icon> Print</button>
@@ -138,45 +139,105 @@ import { TenantService } from '../../../core/services/tenant.service';
 
       <!-- Receive PO Dialog -->
       <div class="card receive-card" *ngIf="showReceiveDialog">
-        <div class="section-header">
-          <div class="section-icon receive-icon"><mat-icon>inventory_2</mat-icon></div>
-          <div>
-            <h3 class="section-title">Receive - {{ selectedOrder.poNumber }}</h3>
-            <span class="section-sub">Enter batch numbers and expiry dates for each item</span>
+        <div class="receive-header">
+          <div class="receive-header-left">
+            <div class="receive-icon-wrap">
+              <mat-icon>inventory_2</mat-icon>
+            </div>
+            <div>
+              <h3 class="section-title">Receive Order</h3>
+              <span class="section-sub">{{ selectedOrder.poNumber }} &bull; {{ selectedOrder.supplierName }}</span>
+            </div>
+          </div>
+          <div class="receive-header-right">
+            <span class="receive-badge">{{ receiveItems.length }} item{{ receiveItems.length !== 1 ? 's' : '' }}</span>
           </div>
         </div>
 
         <div class="receive-items">
-          <div *ngFor="let item of receiveItems; let ri = index" class="receive-item-card">
-            <div class="receive-item-header">
-              <div class="receive-item-info">
-                <strong>{{ item.itemName }}</strong>
-                <span class="ordered-qty">Ordered: {{ item.orderedQuantity }}</span>
+          <div *ngFor="let item of receiveItems; let ri = index" class="receive-item-card" [class.partial-received]="item.receiveQty < item.orderedQuantity && item.receiveQty > 0">
+            <div class="item-card-header">
+              <div class="item-card-title">
+                <span class="item-number">#{{ ri + 1 }}</span>
+                <span class="item-name">{{ item.itemName }}</span>
               </div>
-              <mat-form-field appearance="outline" class="receive-qty-field">
-                <mat-label>Receive Qty</mat-label>
-                <input matInput type="number" [(ngModel)]="receiveItems[ri].receiveQty" min="0" [max]="item.orderedQuantity">
-              </mat-form-field>
+              <div class="qty-chips">
+                <span class="chip chip-ordered">Ordered: {{ item.orderedQuantity }}</span>
+                <span class="chip chip-received" *ngIf="item.receiveQty < item.orderedQuantity">Pending: {{ item.orderedQuantity - item.receiveQty }}</span>
+              </div>
             </div>
-            <div class="receive-item-fields">
-              <mat-form-field appearance="outline" class="flex-field">
-                <mat-label>Batch Number</mat-label>
-                <input matInput [(ngModel)]="receiveItems[ri].batchNumber" placeholder="e.g. BATCH-001">
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="flex-field">
-                <mat-label>Expiry Date</mat-label>
-                <input matInput type="date" [(ngModel)]="receiveItems[ri].expiryDateStr">
-              </mat-form-field>
+
+            <div class="item-card-fields">
+              <div class="field-group">
+                <label class="field-label">
+                  <mat-icon>numbers</mat-icon> Receive Qty
+                </label>
+                <mat-form-field appearance="outline" class="field-input qty-input ">
+                  <input matInput type="number" [(ngModel)]="receiveItems[ri].receiveQty" min="0" [max]="item.orderedQuantity">
+                  <span matSuffix  >of {{ item.orderedQuantity }}</span>
+                </mat-form-field>
+              </div>
+              <div class="field-group">
+                <label class="field-label">
+                  <mat-icon>payments</mat-icon> Cost Price
+                </label>
+                <mat-form-field appearance="outline" class="field-input price-input">
+                  <input matInput type="number" [(ngModel)]="receiveItems[ri].costPrice" min="0" step="0.01">
+                  <span matPrefix>{{ currencySymbol }}&nbsp;</span>
+                </mat-form-field>
+              </div>
+              <div class="field-group">
+                <label class="field-label">
+                  <mat-icon>batch_prediction</mat-icon> Batch Number
+                </label>
+                <mat-form-field appearance="outline" class="field-input batch-input">
+                  <input matInput [(ngModel)]="receiveItems[ri].batchNumber" placeholder="e.g. BATCH-001">
+                </mat-form-field>
+              </div>
+              <div class="field-group">
+                <label class="field-label">
+                  <mat-icon>event</mat-icon> Expiry Date
+                </label>
+                <mat-form-field appearance="outline" class="field-input expiry-input">
+                  <input matInput [matDatepicker]="sharedExpiryPicker" [value]="receiveItems[ri].expiryDateObj" (dateChange)="onExpiryDateChange($event, ri)" placeholder="Select date" readonly>
+                  <mat-datepicker-toggle matSuffix [for]="sharedExpiryPicker" (click)="activeExpiryIndex = ri"></mat-datepicker-toggle>
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="item-card-footer">
+              <span class="line-total" *ngIf="item.costPrice && item.receiveQty">
+                Line Total: <strong>{{ currencySymbol }}{{ (item.costPrice * item.receiveQty).toFixed(2) }}</strong>
+              </span>
             </div>
           </div>
         </div>
 
+        <mat-datepicker #sharedExpiryPicker></mat-datepicker>
+
+        <div class="receive-summary">
+          <div class="summary-row">
+            <span>Total Items Receiving</span>
+            <strong>{{ getReceivingItemCount() }} of {{ receiveItems.length }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Total Quantity</span>
+            <strong>{{ getTotalReceiveQty() }} units</strong>
+          </div>
+          <div class="summary-row total">
+            <span>Estimated Total Cost</span>
+            <strong>{{ currencySymbol }}{{ getReceiveTotalCost() | number:'1.2-2' }}</strong>
+          </div>
+        </div>
+
         <div class="form-actions">
-          <button mat-stroked-button (click)="showReceiveDialog = false">Cancel</button>
-          <button mat-raised-button color="primary" (click)="confirmReceive()" [disabled]="receiving">
+          <button mat-stroked-button (click)="showReceiveDialog = false">
+            <mat-icon>close</mat-icon> Cancel
+          </button>
+          <button mat-raised-button color="primary" (click)="confirmReceive()" [disabled]="receiving || getTotalReceiveQty() === 0">
             <mat-icon *ngIf="!receiving">check_circle</mat-icon>
             <mat-spinner *ngIf="receiving" diameter="18"></mat-spinner>
-            {{ receiving ? 'Receiving...' : 'Confirm Receive' }}
+            {{ receiving ? 'Processing...' : 'Confirm Receive' }}
           </button>
         </div>
       </div>
@@ -236,26 +297,86 @@ import { TenantService } from '../../../core/services/tenant.service';
     /* Receive Dialog Styles */
     .receive-card { border: 1.5px solid #c5cae9; background: #fafbff; }
 
+    .receive-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 2px solid #e8eaf6;
+    }
+    .receive-header-left { display: flex; align-items: center; gap: 0.75rem; }
+    .receive-icon-wrap {
+      width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #2e7d32, #66bb6a); color: white;
+    }
+    .receive-icon-wrap mat-icon { font-size: 22px; width: 22px; height: 22px; }
+    .receive-badge {
+      background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px;
+      font-size: 0.78rem; font-weight: 600;
+    }
+
     .receive-items { margin-bottom: 1rem; }
 
     .receive-item-card {
-      background: white; border: 1px solid #e8eaf6; border-radius: 8px;
-      padding: 0.75rem 1rem; margin-bottom: 0.6rem;
+      background: white; border: 1px solid #e0e0e0; border-left: 4px solid #3f51b5;
+      border-radius: 8px; padding: 1.25rem 1.5rem; margin-bottom: 0.75rem; transition: all 0.2s;
     }
-    .receive-item-header {
-      display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;
-    }
-    .receive-item-info { flex: 1; }
-    .receive-item-info strong { color: #1a237e; display: block; }
-    .ordered-qty { font-size: 0.78rem; color: #7986cb; }
-    .receive-qty-field { width: 100px; }
-    ::ng-deep .receive-qty-field .mat-mdc-form-field-subscript-wrapper { display: none; }
+    .receive-item-card:hover { border-color: #3f51b5; box-shadow: 0 2px 8px rgba(63, 81, 181, 0.1); }
+    .receive-item-card.partial-received { border-left-color: #ff9800; }
 
-    .receive-item-fields { display: flex; gap: 0.6rem; }
-    .flex-field { flex: 1; }
+    .item-card-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;
+    }
+    .item-card-title { display: flex; align-items: center; gap: 0.5rem; }
+    .item-number {
+      background: #e8eaf6; color: #3f51b5; width: 24px; height: 24px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700;
+    }
+    .item-name { font-weight: 600; color: #1a237e; font-size: 0.9rem; }
+    .qty-chips { display: flex; gap: 0.4rem; }
+    .chip {
+      padding: 2px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 600;
+    }
+    .chip-ordered { background: #e8eaf6; color: #3f51b5; }
+    .chip-received { background: #fff3e0; color: #e65100; }
+
+    .item-card-fields { display: flex; gap: 1rem; flex-wrap: wrap; padding: 0.5rem 0; }
+    .field-group { flex: 1; min-width: 140px; padding: 0.25rem 0; }
+    .field-label {
+      display: flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: 600;
+      color: #7986cb; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;
+    }
+    .field-label mat-icon { font-size: 13px; width: 13px; height: 13px; }
+    .qty-input { width: 100%; }
+    .price-input { width: 100%; }
+    .batch-input { width: 100%; }
+    .expiry-input { width: 100%; }
+
+    ::ng-deep .receive-item-card .mat-mdc-form-field-subscript-wrapper { display: none; }
+    ::ng-deep .receive-item-card .mat-mdc-form-field { font-size: 0.85rem; }
+    ::ng-deep .receive-item-card .mat-mdc-form-field-infix { padding-top: 8px; padding-bottom: 8px; }
+
+    .item-card-footer {
+      margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed #e0e0e0; text-align: right;
+    }
+    .line-total { font-size: 0.82rem; color: #555; }
+    .line-total strong { color: #2e7d32; }
+
+    .receive-summary {
+      background: white; border: 1px solid #e0e0e0; border-radius: 8px;
+      padding: 1.25rem 1.5rem; margin-bottom: 1rem;
+    }
+    .summary-row {
+      display: flex; justify-content: space-between; padding: 0.35rem 0;
+      font-size: 0.85rem; color: #666;
+    }
+    .summary-row strong { color: #1a237e; }
+    .summary-row.total {
+      border-top: 2px solid #3f51b5; margin-top: 0.5rem; padding-top: 0.75rem; font-size: 1rem;
+    }
+    .summary-row.total strong { color: #2e7d32; font-size: 1.1rem; }
   `]
 })
 export class PurchaseOrdersComponent implements OnInit {
+  @ViewChild('sharedExpiryPicker') sharedExpiryPicker!: MatDatepicker<any>;
+
   orders: any[] = [];
   columns = ['poNumber', 'supplier', 'date', 'items', 'total', 'status', 'actions'];
   totalCount = 0; pageSize = 10; pageIndex = 0; searchTerm = ''; filterStatus = '';
@@ -267,6 +388,7 @@ export class PurchaseOrdersComponent implements OnInit {
   showReceiveDialog = false;
   receiveItems: any[] = [];
   receiving = false;
+  activeExpiryIndex = 0;
 
   branding: any = null;
   currencySymbol = '$';
@@ -403,10 +525,29 @@ export class PurchaseOrdersComponent implements OnInit {
     this.receiveItems = (this.selectedOrder.items || []).map((item: any) => ({
       ...item,
       batchNumber: item.batchNumber || '',
-      expiryDateStr: item.expiryDate ? new Date(item.expiryDate).toISOString().split('T')[0] : '',
-      receiveQty: item.orderedQuantity
+      expiryDateObj: item.expiryDate ? new Date(item.expiryDate) : null,
+      costPrice: item.unitPrice || 0,
+      receiveQty: item.orderedQuantity - (item.receivedQuantity || 0)
     }));
     this.showReceiveDialog = true;
+  }
+
+  getReceivingItemCount(): number {
+    return this.receiveItems.filter(i => i.receiveQty > 0).length;
+  }
+
+  onExpiryDateChange(event: any, index: number) {
+    if (event.value) {
+      this.receiveItems[index].expiryDateObj = event.value;
+    }
+  }
+
+  getTotalReceiveQty(): number {
+    return this.receiveItems.reduce((sum, i) => sum + (i.receiveQty || 0), 0);
+  }
+
+  getReceiveTotalCost(): number {
+    return this.receiveItems.reduce((sum, i) => sum + ((i.costPrice || 0) * (i.receiveQty || 0)), 0);
   }
 
   confirmReceive() {
@@ -415,8 +556,9 @@ export class PurchaseOrdersComponent implements OnInit {
       items: this.receiveItems.map(i => ({
         purchaseOrderItemId: i.id,
         batchNumber: i.batchNumber || null,
-        expiryDate: i.expiryDateStr ? i.expiryDateStr : null,
-        receivedQuantity: i.receiveQty
+        expiryDate: i.expiryDateObj ? new Date(i.expiryDateObj).toISOString().split('T')[0] : null,
+        receivedQuantity: i.receiveQty,
+        costPrice: i.costPrice || 0
       }))
     }).subscribe({
       next: () => {

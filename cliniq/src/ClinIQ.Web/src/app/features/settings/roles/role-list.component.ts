@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../../core/services/api.service';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: false,
@@ -83,7 +85,7 @@ import { ApiService } from '../../../core/services/api.service';
 export class RoleListComponent implements OnInit {
   roles: any[] = [];
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(private api: ApiService, private router: Router, private dialog: MatDialog) {}
 
   ngOnInit() {
     this.loadRoles();
@@ -107,11 +109,17 @@ export class RoleListComponent implements OnInit {
   }
 
   deleteRole(id: string) {
-    if (confirm('Are you sure you want to delete this role?')) {
-      this.api.delete<any>('v1/roles', id).subscribe({
-        next: () => this.loadRoles(),
-        error: () => alert('Failed to delete role')
-      });
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Role', message: 'Are you sure you want to delete this role? This action cannot be undone.', confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete<any>('v1/roles', id).subscribe({
+          next: () => this.loadRoles(),
+          error: () => alert('Failed to delete role')
+        });
+      }
+    });
   }
 }

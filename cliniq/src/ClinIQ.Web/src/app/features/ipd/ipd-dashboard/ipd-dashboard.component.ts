@@ -15,6 +15,7 @@ import { ApiService } from '../../../core/services/api.service';
 
       <div class="stats-grid">
         <div class="stat-card"><mat-icon>hotel</mat-icon><div><h3>{{ stats.totalAdmissions }}</h3><p>Active Admissions</p></div></div>
+        <div class="stat-card"><mat-icon>bed</mat-icon><div><h3>{{ stats.totalBeds }}</h3><p>Total Beds</p></div></div>
         <div class="stat-card"><mat-icon>bed</mat-icon><div><h3>{{ stats.availableBeds }}</h3><p>Available Beds</p></div></div>
         <div class="stat-card"><mat-icon>login</mat-icon><div><h3>{{ stats.todayAdmissions }}</h3><p>Today's Admissions</p></div></div>
         <div class="stat-card"><mat-icon>logout</mat-icon><div><h3>{{ stats.todayDischarges }}</h3><p>Today's Discharges</p></div></div>
@@ -42,7 +43,7 @@ import { ApiService } from '../../../core/services/api.service';
       </div>
     </app-main-layout>
   `,
-  styles: [`.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  styles: [`.stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
     .stat-card { display: flex; align-items: center; gap: 1rem; background: white; padding: 1.5rem; border-radius: 8px; }
     .stat-card mat-icon { font-size: 40px; width: 40px; height: 40px; color: #3f51b5; }
     .stat-card h3 { margin: 0; font-size: 1.75rem; } .stat-card p { margin: 0; color: #666; }
@@ -55,7 +56,7 @@ import { ApiService } from '../../../core/services/api.service';
     .meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; } .meta span { font-size: 0.75rem; color: #666; }`]
 })
 export class IpdDashboardComponent implements OnInit {
-  stats = { totalAdmissions: 0, availableBeds: 0, todayAdmissions: 0, todayDischarges: 0 };
+  stats = { totalAdmissions: 0, totalBeds: 0, availableBeds: 0, todayAdmissions: 0, todayDischarges: 0 };
   wards: any[] = [];
   recentAdmissions: any[] = [];
 

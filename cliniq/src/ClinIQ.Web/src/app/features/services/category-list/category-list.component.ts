@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { MatDialog } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: false,
@@ -144,9 +145,16 @@ export class CategoryListComponent implements OnInit {
   }
 
   deleteCategory(category: any) {
-    if (!confirm(`Delete "${category.name}"?`)) return;
-    this.api.delete('v1/service-categories', category.id).subscribe({
-      next: () => { this.notification.success('Category deleted'); this.loadCategories(); }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Category', message: `Are you sure you want to delete category "${category.name}"? This action cannot be undone.`, confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete('v1/service-categories', category.id).subscribe({
+          next: () => { this.notification.success('Category deleted'); this.loadCategories(); }
+        });
+      }
     });
   }
 }

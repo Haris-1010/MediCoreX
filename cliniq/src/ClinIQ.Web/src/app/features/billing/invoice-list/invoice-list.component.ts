@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ApiService, PagedResult } from '../../../core/services/api.service';
 import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { NotificationService } from '../../../core/services/notification.service';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: false,
@@ -118,7 +120,7 @@ export class InvoiceListComponent implements OnInit {
   totalCount = 0; pageSize = 10; pageIndex = 0; searchTerm = ''; filterStatus = ''; startDate: Date | null = null; endDate: Date | null = null;
   stats = { totalSale: 0, totalPaid: 0, totalRefunded: 0, totalReceivable: 0, totalCount: 0, paidCount: 0, pendingCount: 0, refundCount: 0 };
 
-  constructor(private api: ApiService, private router: Router, private notification: NotificationService) {}
+  constructor(private api: ApiService, private router: Router, private notification: NotificationService, private dialog: MatDialog) {}
 
   ngOnInit() { this.load(); }
 
@@ -142,21 +144,33 @@ export class InvoiceListComponent implements OnInit {
   }
 
   returnInvoice(invoice: any) {
-    if (!confirm(`Return invoice ${invoice.invoiceNumber}? This will refund the invoice and set its status to Refunded.`)) return;
-
-    this.api.post<any>(`v1/invoices/${invoice.id}/return`, { notes: 'Invoice returned' }).subscribe({
-      next: () => { this.notification.success('Invoice returned successfully'); this.load(); },
-      error: () => { this.notification.error('Failed to return invoice'); }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Return Invoice', message: `Are you sure you want to return invoice ${invoice.invoiceNumber}? This will refund the invoice and set its status to Refunded.`, confirmText: 'Return', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.post<any>(`v1/invoices/${invoice.id}/return`, { notes: 'Invoice returned' }).subscribe({
+          next: () => { this.notification.success('Invoice returned successfully'); this.load(); },
+          error: () => { this.notification.error('Failed to return invoice'); }
+        });
+      }
     });
   }
 
   deleteInvoice(invoice: any, event?: MouseEvent) {
     if (event) event.stopPropagation();
-    if (!confirm(`Delete invoice ${invoice.invoiceNumber}? This action cannot be undone.`)) return;
-
-    this.api.delete<any>(`v1/invoices`, invoice.id).subscribe({
-      next: () => { this.notification.success('Invoice deleted successfully'); this.load(); },
-      error: () => { this.notification.error('Failed to delete invoice'); }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: { title: 'Delete Invoice', message: `Are you sure you want to delete invoice ${invoice.invoiceNumber}? This action cannot be undone.`, confirmText: 'Delete', confirmColor: 'warn' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete<any>(`v1/invoices`, invoice.id).subscribe({
+          next: () => { this.notification.success('Invoice deleted successfully'); this.load(); },
+          error: () => { this.notification.error('Failed to delete invoice'); }
+        });
+      }
     });
   }
 

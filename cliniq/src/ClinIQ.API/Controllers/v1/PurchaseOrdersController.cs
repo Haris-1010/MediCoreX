@@ -287,33 +287,49 @@ public class PurchaseOrdersController : ControllerBase
             return NotFound(Result.Failure("Purchase order not found"));
 
         if (po.Status == PurchaseOrderStatus.Received || po.Status == PurchaseOrderStatus.Closed)
-            return BadRequest(Result.Failure("Purchase order already received"));
+            return BadRequest(Result.Failure("Purchase order already fully received"));
 
         if (po.Status == PurchaseOrderStatus.Cancelled || po.Status == PurchaseOrderStatus.Rejected)
             return BadRequest(Result.Failure("Cannot receive a cancelled or rejected order"));
 
-        po.Status = PurchaseOrderStatus.Received;
         po.ReceivedDate = DateTime.UtcNow;
 
         var receiveItemMap = request?.Items?
             .ToDictionary(x => x.PurchaseOrderItemId, x => x)
             ?? new Dictionary<Guid, ReceiveItemDetail>();
 
+        var allFullyReceived = true;
+
         // Update stock for each item
         foreach (var item in po.Items)
         {
+            var detail = receiveItemMap.TryGetValue(item.Id, out var d) ? d : null;
+            var receivedQty = detail?.ReceivedQuantity ?? 0;
+            var costPrice = detail?.CostPrice > 0 ? detail.CostPrice : item.UnitPrice;
+            var batchNumber = detail?.BatchNumber;
+            var expiryDate = detail?.ExpiryDate;
+
+            item.ReceivedQuantity += receivedQty;
+            item.PendingQuantity = item.OrderedQuantity - item.ReceivedQuantity;
+
+            if (item.PendingQuantity > 0)
+                allFullyReceived = false;
+
+            if (receivedQty <= 0)
+                continue;
+
             var inventoryItem = await _context.Items.FirstOrDefaultAsync(i => i.Id == item.ItemId);
             if (inventoryItem != null)
             {
                 var quantityBefore = inventoryItem.CurrentStock;
-                inventoryItem.CurrentStock += item.OrderedQuantity;
+                inventoryItem.CurrentStock += receivedQty;
 
                 // Update prices from PO
-                if (item.UnitPrice > 0)
+                if (costPrice > 0)
                 {
-                    inventoryItem.PurchasePrice = item.UnitPrice;
-                    inventoryItem.CostPrice = item.UnitPrice;
-                    inventoryItem.SellingPrice = Math.Round(item.UnitPrice * 1.3m, 2);
+                    inventoryItem.PurchasePrice = costPrice;
+                    inventoryItem.CostPrice = costPrice;
+                    inventoryItem.SellingPrice = Math.Round(costPrice * 1.3m, 2);
                 }
 
                 var warehouseId = po.WarehouseId;
@@ -324,21 +340,16 @@ public class PurchaseOrdersController : ControllerBase
                     WarehouseId = warehouseId,
                     MovementType = StockMovementType.Purchase,
                     MovementDate = DateTime.UtcNow,
-                    Quantity = item.OrderedQuantity,
+                    Quantity = receivedQty,
                     QuantityBefore = quantityBefore,
                     QuantityAfter = inventoryItem.CurrentStock,
-                    UnitPrice = item.UnitPrice,
-                    TotalAmount = item.TotalAmount,
+                    UnitPrice = costPrice,
+                    TotalAmount = costPrice * receivedQty,
                     ReferenceType = "PurchaseOrder",
                     ReferenceId = po.Id,
                     ReferenceNumber = po.PONumber
                 };
                 _context.StockMovements.Add(movement);
-
-                // Resolve batch/expiry from request only
-                var detail = receiveItemMap.TryGetValue(item.Id, out var d) ? d : null;
-                var batchNumber = detail?.BatchNumber;
-                var expiryDate = detail?.ExpiryDate;
 
                 // Always create a stock batch for tracking
                 var batch = new Domain.Entities.Inventory.StockBatch
@@ -347,20 +358,19 @@ public class PurchaseOrdersController : ControllerBase
                     WarehouseId = warehouseId,
                     BatchNumber = batchNumber ?? $"BATCH-{DateTime.UtcNow:yyyyMMddHHmmss}",
                     ExpiryDate = expiryDate,
-                    ReceivedQuantity = item.OrderedQuantity,
-                    AvailableQuantity = item.OrderedQuantity,
-                    PurchasePrice = item.UnitPrice,
+                    ReceivedQuantity = receivedQty,
+                    AvailableQuantity = receivedQty,
+                    PurchasePrice = costPrice,
                     SellingPrice = inventoryItem.SellingPrice,
                     MRP = inventoryItem.MRP,
                     PurchaseOrderId = po.Id,
                     IsActive = true
                 };
                 _context.StockBatches.Add(batch);
-
-                item.ReceivedQuantity = item.OrderedQuantity;
-                item.PendingQuantity = 0;
             }
         }
+
+        po.Status = allFullyReceived ? PurchaseOrderStatus.Received : PurchaseOrderStatus.PartiallyReceived;
 
         await _context.SaveChangesAsync();
         return Ok(Result.Success("Purchase order received and stock updated"));
@@ -377,6 +387,7 @@ public class PurchaseOrdersController : ControllerBase
         public string? BatchNumber { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public decimal ReceivedQuantity { get; set; }
+        public decimal CostPrice { get; set; }
     }
 
     public class CreatePurchaseOrderRequest

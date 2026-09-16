@@ -28,7 +28,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [BillingDashboardComponent, InvoiceListComponent, InvoiceFormComponent, InvoicePrintComponent, PaymentsListComponent, PaymentComponent, DiscountListComponent, DiscountFormComponent],
-  imports: [CommonModule, SharedModule, LayoutModule, RouterModule.forChild(routes)]
+  declarations: [BillingDashboardComponent, InvoiceListComponent, InvoiceFormComponent, PaymentsListComponent, PaymentComponent, DiscountListComponent, DiscountFormComponent],
+  imports: [CommonModule, SharedModule, LayoutModule, RouterModule.forChild(routes), InvoicePrintComponent]
 })
 export class BillingModule { }

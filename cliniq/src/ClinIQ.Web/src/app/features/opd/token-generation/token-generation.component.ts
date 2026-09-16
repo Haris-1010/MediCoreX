@@ -91,10 +91,10 @@ import { MatDialog } from '@angular/material/dialog';
                 <mat-form-field appearance="outline">
                   <mat-label>Fee Amount</mat-label>
                   <input matInput type="number" formControlName="consultationFee" min="0">
-                  <span matPrefix>PKR&nbsp;</span>
+                  <span matPrefix>{{ currencySymbol }}&nbsp;</span>
                 </mat-form-field>
                 <div class="fee-default" *ngIf="selectedDoctor?.consultationFee">
-                  Default: PKR {{ selectedDoctor.consultationFee }}
+                  Default: {{ currencySymbol }} {{ selectedDoctor.consultationFee }}
                 </div>
               </div>
             </div>
@@ -105,7 +105,7 @@ import { MatDialog } from '@angular/material/dialog';
               <div class="service-chips">
                 <mat-chip-listbox multiple (change)="onServicesChange($event)">
                   <mat-chip-option *ngFor="let svc of selectedDoctor.services" [value]="svc.id">
-                    {{ svc.name }} - PKR {{ svc.price }}
+                    {{ svc.name }} - {{ currencySymbol }} {{ svc.price }}
                   </mat-chip-option>
                 </mat-chip-listbox>
               </div>
@@ -133,7 +133,7 @@ import { MatDialog } from '@angular/material/dialog';
             <!-- Total -->
             <div class="total-bar" *ngIf="totalAmount > 0">
               <span>Total Amount</span>
-              <strong>PKR {{ totalAmount | number:'1.0-0' }}</strong>
+              <strong>{{ currencySymbol }} {{ totalAmount | number:'1.0-0' }}</strong>
             </div>
 
             <!-- Actions -->
@@ -196,16 +196,16 @@ import { MatDialog } from '@angular/material/dialog';
           <div class="receipt-totals">
             <div class="total-row">
               <span>Consultation Fee</span>
-              <span>PKR {{ generatedToken?.consultationFee | number:'1.0-0' }}</span>
+              <span>{{ currencySymbol }} {{ generatedToken?.consultationFee | number:'1.0-0' }}</span>
             </div>
             <div class="total-row" *ngFor="let svc of generatedToken?.additionalServices">
               <span>Additional Service</span>
-              <span>PKR {{ svc.price | number:'1.0-0' }}</span>
+              <span>{{ currencySymbol }} {{ svc.price | number:'1.0-0' }}</span>
             </div>
             <mat-divider *ngIf="generatedToken?.additionalServices?.length"></mat-divider>
             <div class="grand-total">
               <span>TOTAL PAID</span>
-              <span>PKR {{ generatedToken?.totalAmount | number:'1.0-0' }}</span>
+              <span>{{ currencySymbol }} {{ generatedToken?.totalAmount | number:'1.0-0' }}</span>
             </div>
           </div>
 
@@ -388,6 +388,7 @@ export class TokenGenerationComponent implements OnInit, OnDestroy {
   @ViewChild('quickAddDialog') quickAddDialog!: TemplateRef<any>;
 
   tenant: any = null;
+  currencySymbol = '$';
   private destroy$ = new Subject<void>();
   private patientSearch$ = new Subject<string>();
 
@@ -422,7 +423,10 @@ export class TokenGenerationComponent implements OnInit, OnDestroy {
       this.doctors = Array.isArray(r) ? r : ((r as any)?.data ?? []);
     });
 
-    this.tenantService.currentTenant$.pipe(takeUntil(this.destroy$)).subscribe(t => this.tenant = t);
+    this.tenantService.currentTenant$.pipe(takeUntil(this.destroy$)).subscribe(t => {
+      this.tenant = t;
+      this.currencySymbol = this.tenantService.getCurrencySymbol();
+    });
 
     // Patient search with debounce
     this.patientSearch$.pipe(

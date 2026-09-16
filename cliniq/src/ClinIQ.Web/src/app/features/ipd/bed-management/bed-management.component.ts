@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../../core/services/api.service';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: false,
@@ -54,7 +56,7 @@ import { ApiService } from '../../../core/services/api.service';
 export class BedManagementComponent implements OnInit {
   wards: any[] = []; beds: any[] = []; selectedWard: string | null = null;
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(private api: ApiService, private router: Router, private dialog: MatDialog) {}
 
   ngOnInit() {
     this.api.get<any>('v1/wards').subscribe(r => {
@@ -69,9 +71,15 @@ export class BedManagementComponent implements OnInit {
   loadBeds() { if (this.selectedWard) this.api.get<any[]>(`v1/wards/${this.selectedWard}/beds`).subscribe(r => this.beds = r); }
   selectBed(bed: any) {
     if (bed.status === 'Available') {
-      if (confirm(`Admit patient to bed ${bed.bedNumber}?`)) {
-        this.router.navigate(['/ipd/admit'], { queryParams: { bedId: bed.id } });
-      }
+      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+        width: '400px',
+        data: { title: 'Admit Patient', message: `Are you sure you want to admit a patient to bed ${bed.bedNumber}?`, confirmText: 'Admit', confirmColor: 'primary' }
+      });
+      dialogRef.afterClosed().subscribe(result => {
+        if (result) {
+          this.router.navigate(['/ipd/admit'], { queryParams: { bedId: bed.id } });
+        }
+      });
     } else if (bed.patientName) {
       alert(`Bed ${bed.bedNumber}\nType: ${bed.bedType}\nStatus: ${bed.status}\nPatient: ${bed.patientName}`);
     } else {

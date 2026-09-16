@@ -315,7 +315,7 @@ public class AppointmentsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AppointmentsCancel)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.AppointmentsDelete)]
     public async Task<IActionResult> DeleteAppointment(Guid id)
     {
         var appointment = await _context.Appointments.FindAsync(id);

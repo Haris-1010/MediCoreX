@@ -24,7 +24,6 @@ const routes: Routes = [
     PrescriptionListComponent,
     PrescriptionDetailComponent,
     PrescriptionFormComponent,
-    PrescriptionPrintComponent,
     PrescriptionItemDialogComponent
   ],
   imports: [
@@ -33,7 +32,8 @@ const routes: Routes = [
     ReactiveFormsModule,
     SharedModule,
     LayoutModule,
-    RouterModule.forChild(routes)
+    RouterModule.forChild(routes),
+    PrescriptionPrintComponent
   ]
 })
 export class PrescriptionsModule { }
