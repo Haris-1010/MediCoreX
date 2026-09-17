@@ -297,6 +297,11 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .full-w { width: 100%; }
     .flex1 { flex: 1; }
     .check-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+    ::ng-deep .mat-mdc-dialog-content { padding: 20px 24px !important; min-width: 400px; }
+    ::ng-deep .mat-mdc-dialog-actions { padding: 8px 24px 20px !important; }
+    ::ng-deep .mat-mdc-form-field { margin-bottom: 12px; }
+    ::ng-deep .mat-mdc-checkbox { margin-bottom: 4px; }
+    ::ng-deep .check-row mat-checkbox { display: flex; align-items: center; min-height: 36px; }
   `]
 })
 export class WardManagementComponent implements OnInit {
@@ -448,7 +453,11 @@ export class WardManagementComponent implements OnInit {
     const v = this.roomForm.value;
     const payload = {
       roomNumber: v.roomNumber, name: v.name || null,
-      roomType: v.roomType, capacity: v.capacity || 4
+      roomType: v.roomType, capacity: v.capacity || 4,
+      hasBathroom: v.hasBathroom || false,
+      hasTV: v.hasTV || false,
+      hasAC: v.hasAC || false,
+      isIsolation: v.isIsolation || false
     };
     if (this.editingRoom) {
       this.api.put('v1/wards/rooms', this.editingRoom.id, payload).subscribe({

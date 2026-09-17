@@ -18,13 +18,13 @@ interface PatientSearchResult {
   template: `
     <mat-form-field appearance="outline" class="search-field">
       <mat-label>Search Patient</mat-label>
-      <input matInput [formControl]="searchControl" [matAutocomplete]="auto" placeholder="Search by name, MRN, or phone">
+      <input matInput [formControl]="searchControl" [matAutocomplete]="auto" placeholder="Search by name or phone">
       <mat-icon matPrefix>search</mat-icon>
       <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onPatientSelected($event)">
         <mat-option *ngFor="let patient of searchResults" [value]="patient">
           <div class="patient-option">
             <span class="name">{{ patient.fullName }}</span>
-            <span class="details">MRN: {{ patient.mrn }} | {{ patient.phone | phone }}</span>
+            <span class="details">{{ patient.phone | phone }}</span>
           </div>
         </mat-option>
         <mat-option *ngIf="searchResults.length === 0 && searchControl.value" disabled>

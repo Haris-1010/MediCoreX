@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { PrescriptionItemDialogComponent } from '../item-dialog/prescription-item-dialog.component';
@@ -22,11 +24,11 @@ import { PrescriptionItemDialogComponent } from '../item-dialog/prescription-ite
          <div class="col-4">
          <mat-form-field appearance="outline">
          <mat-label>Patient *</mat-label>
-          <input matInput [matAutocomplete]="patientAuto" formControlName="patientSearch" placeholder="Search patient by name or MRN..."> <mat-autocomplete #patientAuto="matAutocomplete" [displayWith]="displayPatient" (optionSelected)="onPatientSelected($event)"> <mat-option *ngFor="let p of filteredPatients" [value]="p"> {{ p.fullName }} ({{ p.mrn }})
+          <input matInput [matAutocomplete]="patientAuto" formControlName="patientSearch" placeholder="Search patient by name or phone..." (focus)="onPatientFocus()" (input)="onPatientSearchInput($event)"> <mat-autocomplete #patientAuto="matAutocomplete" [displayWith]="displayPatient" (optionSelected)="onPatientSelected($event)"> <mat-option *ngFor="let p of filteredPatients" [value]="p"> {{ p.fullName }} ({{ p.phone || 'No phone' }})
            </mat-option>
            </mat-autocomplete>
            <mat-error *ngIf="form.get('patientId')?.hasError('required')"> Patient is required </mat-error> </mat-form-field> </div>
-           <div class="col-4"> <mat-form-field appearance="outline"> <mat-label>Doctor *</mat-label> <input matInput [matAutocomplete]="doctorAuto" formControlName="doctorSearch" placeholder="Search doctor by name or specialty...">
+           <div class="col-4"> <mat-form-field appearance="outline"> <mat-label>Doctor *</mat-label> <input matInput [matAutocomplete]="doctorAuto" formControlName="doctorSearch" placeholder="Search doctor by name or specialty..." (focus)="onDoctorFocus()" (input)="onDoctorSearchInput($event)">
             <mat-autocomplete #doctorAuto="matAutocomplete" [displayWith]="displayDoctor" (optionSelected)="onDoctorSelected($event)"> <mat-option *ngFor="let d of filteredDoctors" [value]="d"> Dr. {{ d.fullName }} <span *ngIf="d.specialization"> - {{ d.specialization }} </span> </mat-option> </mat-autocomplete> <mat-error *ngIf="form.get('doctorId')?.hasError('required')"> Doctor is required </mat-error> </mat-form-field>
             </div>
             <div class="col-4">
@@ -187,9 +189,13 @@ import { PrescriptionItemDialogComponent } from '../item-dialog/prescription-ite
       .form-grid { grid-template-columns: 1fr; }
       .col-4, .col-6 { grid-column: span 1; }
     }
+
+    :host ::ng-deep .mat-mdc-autocomplete-panel { max-height: 300px !important; border-radius: 8px !important; border: 1px solid #c5cae9 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option { padding: 10px 16px !important; line-height: 1.4 !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option:hover { background-color: #e8eaf6 !important; }
   `]
 })
-export class PrescriptionFormComponent implements OnInit {
+export class PrescriptionFormComponent implements OnInit, OnDestroy {
   form!: FormGroup;
   isEditMode = false;
   saving = false;
@@ -198,6 +204,9 @@ export class PrescriptionFormComponent implements OnInit {
   filteredPatients: any[] = [];
   filteredDoctors: any[] = [];
   filteredMedicines: any[][] = [];
+  allPatients: any[] = [];
+  allDoctors: any[] = [];
+  private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
@@ -252,31 +261,63 @@ export class PrescriptionFormComponent implements OnInit {
   }
 
   private setupPatientSearch() {
-    this.form.get('patientSearch')?.valueChanges.subscribe(val => {
-      if (typeof val === 'string' && val.length >= 2) {
-        this.api.get<any[]>('v1/patients/search', { term: val }).subscribe(r => {
-          this.filteredPatients = this.normalizeList(r);
-        });
-      } else {
-        this.filteredPatients = [];
-      }
-    });
+    // Loaded on focus, no API calls on type
+  }
+
+  onPatientFocus() {
+    if (this.allPatients.length === 0) {
+      this.api.get<any[]>('v1/patients/search', { limit: 1000 }).subscribe(r => {
+        this.allPatients = this.normalizeList(r);
+        this.filteredPatients = this.allPatients;
+      });
+    }
+  }
+
+  onPatientSearchInput(event: any) {
+    const term = (event.target.value || '').toLowerCase();
+    if (!term) {
+      this.filteredPatients = this.allPatients;
+      return;
+    }
+    this.filteredPatients = this.allPatients.filter(p =>
+      (p.fullName || '').toLowerCase().includes(term) ||
+      (p.phone || '').toLowerCase().includes(term) ||
+      (p.mrn || '').toLowerCase().includes(term)
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private setupDoctorSearch() {
-    this.form.get('doctorSearch')?.valueChanges.subscribe(val => {
-      if (typeof val === 'string' && val.length >= 2) {
-        this.api.get<any[]>('v1/doctors/search', { term: val }).subscribe(r => {
-          this.filteredDoctors = this.normalizeList(r);
-        });
-      } else {
-        this.filteredDoctors = [];
-      }
-    });
+    // Loaded on focus, no API calls on type
+  }
+
+  onDoctorFocus() {
+    if (this.allDoctors.length === 0) {
+      this.api.get<any[]>('v1/doctors').subscribe(r => {
+        this.allDoctors = this.normalizeList(r);
+        this.filteredDoctors = this.allDoctors;
+      });
+    }
+  }
+
+  onDoctorSearchInput(event: any) {
+    const term = (event.target.value || '').toLowerCase();
+    if (!term) {
+      this.filteredDoctors = this.allDoctors;
+      return;
+    }
+    this.filteredDoctors = this.allDoctors.filter(d =>
+      (d.fullName || '').toLowerCase().includes(term) ||
+      (d.specialization || '').toLowerCase().includes(term)
+    );
   }
 
   displayPatient(p: any): string {
-    return p ? `${p.fullName || ''} (${p.mrn || ''})` : '';
+    return p ? `${p.fullName || ''} (${p.phone || 'No phone'})` : '';
   }
 
   displayDoctor(d: any): string {

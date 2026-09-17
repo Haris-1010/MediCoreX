@@ -36,41 +36,23 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
         </button>
       </mat-menu>
 
-      <!-- User Menu -->
-      <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-btn">
+      <!-- User Name (display only, no dropdown) -->
+      <div class="user-display">
         <div class="user-avatar">
           {{ getUserInitials() }}
         </div>
         <span class="user-name">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
-        <mat-icon>arrow_drop_down</mat-icon>
+      </div>
+
+      <!-- Settings -->
+      <button mat-icon-button routerLink="/settings" class="action-btn" matTooltip="Settings">
+        <mat-icon>settings</mat-icon>
       </button>
-      <mat-menu #userMenu="matMenu" class="user-dropdown">
-        <div class="user-info" mat-menu-item disabled>
-          <div class="user-info-row">
-            <div class="user-info-avatar">
-              {{ getUserInitials() }}
-            </div>
-            <div class="user-info-text">
-              <strong>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</strong>
-              <small>{{ currentUser?.email }}</small>
-            </div>
-          </div>
-        </div>
-        <mat-divider></mat-divider>
-        <button mat-menu-item routerLink="/profile">
-          <mat-icon>person</mat-icon>
-          <span>My Profile</span>
-        </button>
-        <button mat-menu-item routerLink="/settings">
-          <mat-icon>settings</mat-icon>
-          <span>Settings</span>
-        </button>
-        <mat-divider></mat-divider>
-        <button mat-menu-item (click)="logout()">
-          <mat-icon>exit_to_app</mat-icon>
-          <span>Logout</span>
-        </button>
-      </mat-menu>
+
+      <!-- Logout -->
+      <button mat-icon-button (click)="logout()" class="action-btn logout-btn" matTooltip="Logout">
+        <mat-icon>exit_to_app</mat-icon>
+      </button>
 
     </mat-toolbar>
   `,
@@ -88,6 +70,7 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
       height: 64px;
       display: flex;
       align-items: center;
+      gap: 4px;
       border-bottom: 1px solid rgba(102,126,234,0.1);
     }
 
@@ -151,7 +134,8 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
       border-color: #cbd5e1;
     }
 
-    .user-menu-btn {
+    /* User display (no dropdown) */
+    .user-display {
       display: inline-flex;
       align-items: center;
       gap: 10px;
@@ -160,29 +144,9 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
       padding: 3px 16px 3px 3px;
       min-height: 40px;
       max-height: 40px;
-      min-width: 0;
-      transition: all 0.2s ease;
+      margin-right: 8px;
       border: 1px solid #e2e8f0;
       overflow: hidden;
-      white-space: nowrap;
-      line-height: 40px;
-    }
-
-    .user-menu-btn:hover {
-      background: #ffffff;
-      border-color: #c7d2fe;
-      box-shadow: 0 2px 10px rgba(102,126,234,0.12);
-    }
-
-    .user-menu-btn .mat-mdc-button-touch-target,
-    .user-menu-btn .mdc-button__label,
-    .user-menu-btn .mat-focus-indicator {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      overflow: hidden;
-      max-width: 100%;
-      width: 100%;
       white-space: nowrap;
     }
 
@@ -198,9 +162,7 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
       font-size: 0.8rem;
       font-weight: 700;
       color: #ffffff;
-      border: none;
       flex-shrink: 0;
-      margin-right: 10px;
     }
 
     .user-name {
@@ -212,73 +174,22 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
       text-overflow: ellipsis;
       white-space: nowrap;
       line-height: 1;
-      flex-shrink: 1;
     }
 
-    .user-menu-btn mat-icon {
-      color: #94a3b8;
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
-      min-width: 18px;
-      flex-shrink: 0;
+    /* Settings / Logout icon buttons */
+    .action-btn {
+      color: #475569;
+      transition: all 0.2s ease;
     }
 
-    .user-info {
-      display: block;
-      padding: 0;
-      height: auto;
-      line-height: normal;
+    .action-btn:hover {
+      background: #f1f5f9;
+      color: #667eea;
     }
 
-    .user-info-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-    }
-
-    .user-info-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.875rem;
-      font-weight: 700;
-      color: #ffffff;
-      flex-shrink: 0;
-    }
-
-    .user-info-text {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width: 0;
-    }
-
-    .user-info-text strong {
-      font-size: 14px;
-      font-weight: 600;
-      color: #1e293b;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .user-info-text small {
-      font-size: 12px;
-      color: #64748b;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    mat-menu {
-      border-radius: 12px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    .logout-btn:hover {
+      background: #fee2e2;
+      color: #dc2626;
     }
 
     @media (max-width: 768px) {

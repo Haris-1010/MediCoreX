@@ -1,6 +1,8 @@
-import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, TemplateRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TenantService } from '../../../core/services/tenant.service';
@@ -27,13 +29,12 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
           <div class="form-row">
             <mat-form-field appearance="outline" class="flex-grow">
               <mat-label>Patient</mat-label>
-              <input matInput [matAutocomplete]="patientAuto" formControlName="patientSearch" placeholder="Search patient by name, MRN or phone...">
+              <input matInput [matAutocomplete]="patientAuto" formControlName="patientSearch" placeholder="Search patient by name or phone..." (focus)="onPatientFocus()" (input)="onPatientSearchInput($event)">
               <mat-icon matPrefix>search</mat-icon>
               <mat-autocomplete #patientAuto="matAutocomplete" [displayWith]="displayPatient" (optionSelected)="onPatientSelected($event)">
                 <mat-option *ngFor="let p of filteredPatients" [value]="p">
                   <div class="patient-option-item">
-                    <span class="name">{{ p.fullName }}</span>
-                    <span class="details">MRN: {{ p.mrn }} | {{ p.phone || 'No phone' }}</span>
+                    <span class="name">{{ p.fullName }} ({{ p.phone || 'No phone' }})</span>
                   </div>
                 </mat-option>
                 <mat-option *ngIf="showQuickAdd" (click)="openQuickAddDialog()" class="quick-add-option">
@@ -52,7 +53,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
             <mat-icon>person</mat-icon>
             <div class="patient-info">
               <strong>{{ selectedPatient.fullName }}</strong>
-              <span>MRN: {{ selectedPatient.mrn }} | {{ selectedPatient.phone || 'No phone' }}</span>
+              <span>{{ selectedPatient.phone || 'No phone' }}</span>
             </div>
             <button mat-icon-button type="button" (click)="clearPatient()"><mat-icon>close</mat-icon></button>
           </div>
@@ -60,9 +61,19 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
           <div class="form-row">
             <mat-form-field appearance="outline">
               <mat-label>Doctor</mat-label>
-              <mat-select formControlName="doctorId" (selectionChange)="loadAvailableSlots()">
-                <mat-option *ngFor="let d of doctors" [value]="d.id">Dr. {{ d.fullName }} - {{ d.specialization }}</mat-option>
-              </mat-select>
+              <input matInput [matAutocomplete]="doctorAuto" formControlName="doctorSearch"
+                     placeholder="Search doctor by name or specialty..."
+                     (focus)="onDoctorFocus()" (input)="onDoctorInput($event)">
+              <mat-icon matPrefix>search</mat-icon>
+              <mat-autocomplete #doctorAuto="matAutocomplete" [displayWith]="displayDoctor"
+                               (optionSelected)="onDoctorSelected($event)">
+                <mat-option *ngFor="let d of filteredDoctors" [value]="d">
+                  <div class="doctor-option-item">
+                    <span class="name">Dr. {{ d.fullName }}</span>
+                    <span class="details">{{ d.specialization || '' }}</span>
+                  </div>
+                </mat-option>
+              </mat-autocomplete>
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Appointment Type</mat-label>
@@ -216,9 +227,18 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
 
     :host ::ng-deep .mat-mdc-dialog-title { display: flex; align-items: center; gap: 0.5rem; }
     .dialog-form-row { display: flex; gap: 1rem; }
+
+    :host ::ng-deep .doctor-option-item { display: flex; flex-direction: column; padding: 4px 0; }
+    :host ::ng-deep .doctor-option-item .name { font-weight: 500; }
+    :host ::ng-deep .doctor-option-item .details { font-size: 0.75rem; color: #888; }
+
+    :host ::ng-deep .mat-mdc-autocomplete-panel { max-height: 300px !important; border-radius: 8px !important; border: 1px solid #c5cae9 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option { padding: 10px 16px !important; line-height: 1.4 !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option:hover { background-color: #e8eaf6 !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option.mat-mdc-option-active { background-color: #c5cae9 !important; }
   `]
 })
-export class AppointmentFormComponent implements OnInit {
+export class AppointmentFormComponent implements OnInit, OnDestroy {
   @ViewChild('quickAddDialog') quickAddDialog!: TemplateRef<any>;
 
   form!: FormGroup;
@@ -235,6 +255,10 @@ export class AppointmentFormComponent implements OnInit {
   selectedPatient: any = null;
   searchTerm = '';
   showQuickAdd = false;
+  allPatients: any[] = [];
+  filteredDoctors: any[] = [];
+  allDoctors: any[] = [];
+  private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
@@ -264,6 +288,7 @@ export class AppointmentFormComponent implements OnInit {
       patientId: ['', Validators.required],
       patientSearch: [''],
       doctorId: ['', Validators.required],
+      doctorSearch: [''],
       appointmentType: ['Consultation', Validators.required],
       appointmentDate: ['', Validators.required],
       timeSlot: ['', Validators.required],
@@ -294,18 +319,70 @@ export class AppointmentFormComponent implements OnInit {
       if (patientIdQueryParam) this.loadPatient(patientIdQueryParam);
     });
 
-    this.form.get('patientSearch')?.valueChanges.subscribe(val => {
-      if (typeof val === 'string' && val.length >= 2) {
-        this.searchTerm = val;
-        this.api.get<any[]>('v1/patients/search', { term: val }).subscribe(r => {
-          this.filteredPatients = this.normalizeList(r);
-          this.showQuickAdd = this.filteredPatients.length === 0;
-        });
-      } else {
-        this.filteredPatients = [];
-        this.showQuickAdd = false;
-      }
-    });
+    // Patient and doctor data loaded on focus
+  }
+
+  onPatientFocus() {
+    if (this.allPatients.length === 0) {
+      this.api.get<any[]>('v1/patients/search', { limit: 1000 }).subscribe(r => {
+        this.allPatients = this.normalizeList(r);
+        this.filteredPatients = this.allPatients;
+      });
+    }
+  }
+
+  onPatientSearchInput(event: any) {
+    this.searchTerm = event.target.value || '';
+    const term = this.searchTerm.toLowerCase();
+    if (!term) {
+      this.filteredPatients = this.allPatients;
+      this.showQuickAdd = false;
+      return;
+    }
+    this.filteredPatients = this.allPatients.filter(p =>
+      (p.fullName || '').toLowerCase().includes(term) ||
+      (p.phone || '').toLowerCase().includes(term) ||
+      (p.mrn || '').toLowerCase().includes(term)
+    );
+    this.showQuickAdd = this.searchTerm.length >= 2 && this.filteredPatients.length === 0;
+  }
+
+  onDoctorFocus() {
+    if (this.allDoctors.length === 0) {
+      this.api.get<any[]>('v1/doctors').subscribe(r => {
+        this.allDoctors = this.normalizeList(r);
+        this.filteredDoctors = this.allDoctors;
+      });
+    }
+  }
+
+  onDoctorInput(event: any) {
+    const term = (event.target.value || '').toLowerCase();
+    if (!term) {
+      this.filteredDoctors = this.allDoctors;
+      return;
+    }
+    this.filteredDoctors = this.allDoctors.filter(d =>
+      (d.fullName || '').toLowerCase().includes(term) ||
+      (d.specialization || '').toLowerCase().includes(term)
+    );
+  }
+
+  displayDoctor(d: any): string {
+    if (!d) return '';
+    if (typeof d === 'string') return d;
+    return `Dr. ${d.fullName || ''} - ${d.specialization || ''}`;
+  }
+
+  onDoctorSelected(e: any) {
+    const doctor = e.option.value;
+    this.form.patchValue({ doctorId: doctor.id, doctorSearch: doctor.fullName });
+    this.loadAvailableSlots();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadDoctors(callback?: () => void) {
@@ -355,6 +432,7 @@ export class AppointmentFormComponent implements OnInit {
         patientId: a.patientId,
         patientSearch: a.patient ? { id: a.patientId, fullName: a.patientName, mrn: a.patient?.mrn, phone: a.patient?.phone } : a.patientId,
         doctorId: a.doctorId,
+        doctorSearch: a.doctorName || '',
         appointmentType: mappedType,
         appointmentDate: new Date(a.appointmentDate),
         reason: a.reason || a.chiefComplaint,
@@ -448,7 +526,7 @@ export class AppointmentFormComponent implements OnInit {
   displayPatient(p: any): string {
     if (!p) return '';
     if (typeof p === 'string') return p;
-    return `${p.fullName || p.firstName + ' ' + p.lastName || 'Patient'} (${p.mrn || p.id || ''})`;
+    return `${p.fullName || p.firstName + ' ' + p.lastName || 'Patient'} (${p.phone || 'No phone'})`;
   }
 
   onPatientSelected(e: any) {

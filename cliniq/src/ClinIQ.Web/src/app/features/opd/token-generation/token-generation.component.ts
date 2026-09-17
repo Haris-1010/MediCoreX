@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild, ElementRef, OnDestroy, TemplateRef } from
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
-import { takeUntil, debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import { ApiService } from '../../../core/services/api.service';
 import { SignalRService } from '../../../core/services/signalr.service';
 import { NotificationService } from '../../../core/services/notification.service';
@@ -36,7 +36,8 @@ import { MatDialog } from '@angular/material/dialog';
                   <mat-label>Search Patient</mat-label>
                   <input matInput formControlName="patientSearch"
                     [matAutocomplete]="patientAuto"
-                    placeholder="Type name, MRN or phone..."
+                    placeholder="Type name or phone..."
+                    (focus)="onPatientFocus()"
                     (input)="onPatientSearchInput($event)">
                   <mat-icon matPrefix>search</mat-icon>
                   <mat-autocomplete #patientAuto="matAutocomplete"
@@ -44,8 +45,7 @@ import { MatDialog } from '@angular/material/dialog';
                     (optionSelected)="onPatientSelected($event)">
                     <mat-option *ngFor="let p of filteredPatients" [value]="p">
                       <div class="patient-option">
-                        <span class="name">{{ p.fullName }}</span>
-                        <span class="details">MRN: {{ p.mrn }} | {{ p.phone || 'No phone' }}</span>
+                        <span class="name">{{ p.fullName }} ({{ p.phone || 'No phone' }})</span>
                       </div>
                     </mat-option>
                     <mat-option *ngIf="showQuickAdd" (click)="openQuickAddDialog()" class="quick-add-option">
@@ -64,7 +64,7 @@ import { MatDialog } from '@angular/material/dialog';
                 <mat-icon>person</mat-icon>
                 <div class="patient-info">
                   <strong>{{ selectedPatient.fullName }}</strong>
-                  <span>MRN: {{ selectedPatient.mrn }} | {{ selectedPatient.phone || 'No phone' }}</span>
+                  <span>{{ selectedPatient.phone || 'No phone' }}</span>
                 </div>
                 <button mat-icon-button type="button" (click)="clearPatient()"><mat-icon>close</mat-icon></button>
               </div>
@@ -365,6 +365,15 @@ import { MatDialog } from '@angular/material/dialog';
     /* Dialog */
     :host ::ng-deep .mat-mdc-dialog-title { display: flex; align-items: center; gap: 0.5rem; }
     .dialog-form-row { display: flex; gap: 1rem; }
+
+    /* Autocomplete dropdown styling */
+    :host ::ng-deep .mat-mdc-autocomplete-panel { max-height: 300px !important; border-radius: 8px !important; border: 1px solid #c5cae9 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option { padding: 10px 16px !important; line-height: 1.4 !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option:hover { background-color: #e8eaf6 !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option.mat-mdc-option-active { background-color: #c5cae9 !important; }
+    :host ::ng-deep .patient-option { display: flex; flex-direction: column; padding: 2px 0; }
+    :host ::ng-deep .patient-option .name { font-weight: 500; }
+    :host ::ng-deep .patient-option .details { font-size: 0.75rem; color: #888; }
   `]
 })
 export class TokenGenerationComponent implements OnInit, OnDestroy {
@@ -390,7 +399,8 @@ export class TokenGenerationComponent implements OnInit, OnDestroy {
   tenant: any = null;
   currencySymbol = '$';
   private destroy$ = new Subject<void>();
-  private patientSearch$ = new Subject<string>();
+
+  allPatients: any[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -428,19 +438,7 @@ export class TokenGenerationComponent implements OnInit, OnDestroy {
       this.currencySymbol = this.tenantService.getCurrencySymbol();
     });
 
-    // Patient search with debounce
-    this.patientSearch$.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      switchMap(term => {
-        if (term.length < 2) return [];
-        return this.api.get<any[]>('v1/opd/search-patients', { term });
-      }),
-      takeUntil(this.destroy$)
-    ).subscribe(results => {
-      this.filteredPatients = Array.isArray(results) ? results : ((results as any)?.data ?? []);
-      this.showQuickAdd = this.searchTerm.length >= 2 && this.filteredPatients.length === 0;
-    });
+    // Patient data loaded on focus
   }
 
   ngOnDestroy() {
@@ -448,15 +446,35 @@ export class TokenGenerationComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  onPatientFocus() {
+    if (this.allPatients.length === 0) {
+      this.api.get<any[]>('v1/patients/search', { limit: 1000 }).subscribe(r => {
+        this.allPatients = Array.isArray(r) ? r : ((r as any)?.data ?? []);
+        this.filteredPatients = this.allPatients;
+      });
+    }
+  }
+
   onPatientSearchInput(event: any) {
     this.searchTerm = event.target.value || '';
-    this.patientSearch$.next(this.searchTerm);
+    const term = this.searchTerm.toLowerCase();
+    if (!term) {
+      this.filteredPatients = this.allPatients;
+      this.showQuickAdd = false;
+      return;
+    }
+    this.filteredPatients = this.allPatients.filter(p =>
+      (p.fullName || '').toLowerCase().includes(term) ||
+      (p.phone || '').toLowerCase().includes(term) ||
+      (p.mrn || '').toLowerCase().includes(term)
+    );
+    this.showQuickAdd = this.searchTerm.length >= 2 && this.filteredPatients.length === 0;
   }
 
   displayPatient(p: any): string {
     if (!p) return '';
     if (typeof p === 'string') return p;
-    return `${p.fullName || ''} (${p.mrn || ''})`;
+    return `${p.fullName || ''} (${p.phone || 'No phone'})`;
   }
 
   onPatientSelected(event: any) {

@@ -1,9 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, TemplateRef } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, of } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TenantService } from '../../../core/services/tenant.service';
+import { MatDialog } from '@angular/material/dialog';
 import { ClinicalService } from '../../services/models/service.model';
 
 @Component({
@@ -35,15 +38,26 @@ import { ClinicalService } from '../../services/models/service.model';
               <mat-form-field appearance="outline" class="flex-2">
                 <mat-label>Patient</mat-label>
                 <input matInput [matAutocomplete]="patientAuto" formControlName="patientSearch"
-                       placeholder="Search by name or MRN...">
+                       placeholder="Search by name or phone..."
+                       (focus)="onPatientFocus()"
+                       (input)="onPatientSearchInput($event)">
                 <mat-icon matPrefix>search</mat-icon>
                 <mat-autocomplete #patientAuto="matAutocomplete" [displayWith]="displayPatient"
                                  (optionSelected)="onPatientSelected($event)">
                   <mat-option *ngFor="let p of filteredPatients" [value]="p">
-                    {{ p.fullName }} ({{ p.mrn }})
+                    <div class="patient-option-item">
+                      <span class="name">{{ p.fullName }} ({{ p.phone || 'No phone' }})</span>
+                    </div>
+                  </mat-option>
+                  <mat-option *ngIf="showQuickAdd" (click)="openQuickAddDialog()" class="quick-add-option">
+                    <mat-icon>person_add</mat-icon>
+                    <span>Quick Add New Patient: "{{ searchTerm }}"</span>
                   </mat-option>
                 </mat-autocomplete>
               </mat-form-field>
+              <button mat-stroked-button type="button" class="quick-add-btn" (click)="openQuickAddDialog()">
+                <mat-icon>person_add</mat-icon> Quick Add
+              </button>
 
               <mat-form-field appearance="outline">
                 <mat-label>Invoice Date</mat-label>
@@ -73,9 +87,32 @@ import { ClinicalService } from '../../services/models/service.model';
               </span>
             </div>
 
+            <!-- Combined Search Bar -->
+            <div class="item-search-bar">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Search Service or Inventory Item</mat-label>
+                <input matInput formControlName="itemSearch"
+                       placeholder="Type to search services and inventory items..."
+                       (focus)="onItemFocus()"
+                       (input)="onItemSearchInput($event)"
+                       (keydown)="onItemKeydown($event)">
+                <mat-icon matPrefix>search</mat-icon>
+              </mat-form-field>
+              <div class="search-results" *ngIf="combinedResults.length > 0">
+                <div class="search-result-item" *ngFor="let r of combinedResults"
+                     (click)="addSelectedItem(r)">
+                  <span class="result-type" [class]="'type-' + r._type">{{ r._type === 'service' ? 'SVC' : 'INV' }}</span>
+                  <span class="result-name">{{ r._name }}</span>
+                  <span class="result-code" *ngIf="r._code">{{ r._code }}</span>
+                  <span class="result-price">{{ r._price | currencyFormat }}</span>
+                  <span class="result-stock" *ngIf="r._stock !== null">Stock: {{ r._stock }}</span>
+                </div>
+              </div>
+            </div>
+
             <div formArrayName="items">
               <div class="item-header" *ngIf="itemsArray.length > 0">
-                <span class="hdr-service">Service</span>
+                <span class="hdr-type">Type</span>
                 <span class="hdr-desc">Description</span>
                 <span class="hdr-qty">Qty</span>
                 <span class="hdr-rate">Rate</span>
@@ -85,29 +122,11 @@ import { ClinicalService } from '../../services/models/service.model';
 
               <div *ngFor="let item of itemsArray.controls; let i = index"
                    [formGroupName]="i" class="item-row">
-                <mat-form-field appearance="outline" class="service-field">
-                  <mat-label>Service</mat-label>
-                  <input matInput [matAutocomplete]="svcAuto" formControlName="serviceSearch"
-                         (keyup)="onServiceSearchKeyup($event, i)"
-                         (focus)="onServiceInputFocus(i)"
-                         placeholder="Search service...">
-                  <mat-autocomplete #svcAuto="matAutocomplete" [displayWith]="displayService"
-                                   (optionSelected)="onServiceSelected($event, i)">
-                    <mat-option *ngFor="let s of serviceOptions[i]" [value]="s">
-                      <div class="svc-option">
-                        <strong>{{ s.name }}</strong>
-                        <span class="svc-code">{{ s.code }}</span>
-                        <span class="svc-price">{{ s.price | currencyFormat }}</span>
-                      </div>
-                    </mat-option>
-                    <mat-option *ngIf="(serviceOptions[i] || []).length === 0 && serviceSearchTerm[i]"
-                                class="empty-option">
-                      No services found
-                    </mat-option>
-                  </mat-autocomplete>
-                </mat-form-field>
+                <div class="type-badge" [class]="'type-' + (item.get('itemType')?.value || 'service')">
+                  {{ item.get('itemType')?.value === 'service' ? 'SVC' : 'INV' }}
+                </div>
 
-                <mat-form-field appearance="outline">
+                <mat-form-field appearance="outline" class="desc-field">
                   <mat-label>Description</mat-label>
                   <input matInput formControlName="description">
                 </mat-form-field>
@@ -135,8 +154,8 @@ import { ClinicalService } from '../../services/models/service.model';
             </div>
 
             <button mat-stroked-button type="button" (click)="addItem()"
-                    color="primary" class="add-item-btn">
-              <mat-icon>add</mat-icon> Add Item
+                    color="primary" class="add-item-btn" *ngIf="itemsArray.length === 0">
+              <mat-icon>add</mat-icon> Add Empty Item
             </button>
           </div>
 
@@ -290,6 +309,63 @@ import { ClinicalService } from '../../services/models/service.model';
 
         </div>
       </form>
+
+      <!-- Quick Add Patient Dialog -->
+      <ng-template #quickAddDialog>
+        <h2 mat-dialog-title>
+          <mat-icon>person_add</mat-icon> Quick Add Patient
+        </h2>
+        <mat-dialog-content>
+          <form [formGroup]="quickPatientForm">
+            <div class="dialog-form-row">
+              <mat-form-field appearance="outline" class="flex-grow">
+                <mat-label>First Name *</mat-label>
+                <input matInput formControlName="firstName" placeholder="First name">
+                <mat-error>Required</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="flex-grow">
+                <mat-label>Last Name</mat-label>
+                <input matInput formControlName="lastName" placeholder="Last name">
+              </mat-form-field>
+            </div>
+            <div class="dialog-form-row">
+              <mat-form-field appearance="outline" class="flex-grow">
+                <mat-label>Phone</mat-label>
+                <input matInput formControlName="phone" placeholder="Phone number">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="flex-grow">
+                <mat-label>Gender</mat-label>
+                <mat-select formControlName="gender">
+                  <mat-option value="Male">Male</mat-option>
+                  <mat-option value="Female">Female</mat-option>
+                  <mat-option value="Other">Other</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div class="dialog-form-row">
+              <mat-form-field appearance="outline" class="flex-grow">
+                <mat-label>Age *</mat-label>
+                <input matInput type="number" formControlName="age" placeholder="Years" min="0" max="150" (input)="onAgeChange()">
+                <span matSuffix>years</span>
+                <mat-error>Required</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="flex-grow">
+                <mat-label>Date of Birth (auto)</mat-label>
+                <input matInput [matDatepicker]="dobPicker2" formControlName="dateOfBirth" readonly placeholder="Auto-calculated">
+                <mat-datepicker-toggle matSuffix [for]="dobPicker2"></mat-datepicker-toggle>
+                <mat-datepicker #dobPicker2></mat-datepicker>
+              </mat-form-field>
+            </div>
+          </form>
+        </mat-dialog-content>
+        <mat-dialog-actions align="end">
+          <button mat-button mat-dialog-close>Cancel</button>
+          <button mat-raised-button color="primary" (click)="saveQuickPatient()" [disabled]="quickPatientForm.invalid || savingPatient">
+            <mat-spinner *ngIf="savingPatient" diameter="20"></mat-spinner>
+            Save & Select
+          </button>
+        </mat-dialog-actions>
+      </ng-template>
     </app-main-layout>
   `,
   styles: [`
@@ -382,8 +458,8 @@ import { ClinicalService } from '../../services/models/service.model';
       text-transform: uppercase;
       letter-spacing: 0.4px;
     }
-    .hdr-service { flex: 2.3; min-width: 160px; }
-    .hdr-desc { flex: 1.4; }
+    .hdr-type { width: 42px; text-align: center; }
+    .hdr-desc { flex: 2; }
     .hdr-qty { flex: 0.55; text-align: center; }
     .hdr-rate { flex: 0.75; text-align: center; }
     .hdr-amount { flex: 0.85; text-align: center; }
@@ -400,21 +476,72 @@ import { ClinicalService } from '../../services/models/service.model';
       border: 1px solid #e8eaf6;
     }
     .item-row mat-form-field { flex: 1; }
-    .service-field { flex: 2.3 !important; min-width: 160px; }
+    .desc-field { flex: 2 !important; }
     .qty-field { flex: 0.55 !important; }
     .rate-field { flex: 0.75 !important; }
     .amount-field { flex: 0.85 !important; }
     .remove-btn { margin-top: 2px; }
 
-    .svc-option {
+    .type-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 32px;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin-top: 10px;
+      flex-shrink: 0;
+    }
+    .type-badge.type-service { background: #e3f2fd; color: #1565c0; }
+    .type-badge.type-inventory { background: #e8f5e9; color: #2e7d32; }
+
+    .item-search-bar {
+      margin-bottom: 0.75rem;
+      position: relative;
+    }
+    .item-search-bar .full-width { width: 100%; }
+
+    .search-results {
+      position: absolute;
+      z-index: 100;
+      background: white;
+      border: 1px solid #c5cae9;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      max-height: 260px;
+      overflow-y: auto;
+      width: calc(100% - 2rem);
+      margin: -0.75rem 1rem 0;
+    }
+    .search-result-item {
       display: flex;
-      justify-content: space-between;
       align-items: center;
       gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s;
     }
-    .svc-code { font-size: 0.78rem; color: #5c6bc0; }
-    .svc-price { font-weight: 600; color: #1a237e; }
-    .empty-option { color: #9fa8da; }
+    .search-result-item:hover { background: #e8eaf6; }
+    .result-type {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 22px;
+      border-radius: 4px;
+      font-size: 0.6rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .result-type.type-service { background: #e3f2fd; color: #1565c0; }
+    .result-type.type-inventory { background: #e8f5e9; color: #2e7d32; }
+    .result-name { font-weight: 500; flex: 1; }
+    .result-code { color: #7986cb; font-size: 0.8rem; }
+    .result-price { font-weight: 600; color: #1a237e; }
+    .result-stock { font-size: 0.75rem; color: #666; }
     .add-item-btn { margin-top: 0.35rem; }
 
     .compact-grid {
@@ -550,16 +677,41 @@ import { ClinicalService } from '../../services/models/service.model';
       border-color: #c5cae9;
       color: #3f51b5;
     }
+
+    .quick-add-btn { height: 56px; white-space: nowrap; }
+
+    :host ::ng-deep .patient-option-item { display: flex; flex-direction: column; padding: 4px 0; }
+    :host ::ng-deep .patient-option-item .name { font-weight: 500; }
+    :host ::ng-deep .patient-option-item .details { font-size: 0.75rem; color: #888; }
+    :host ::ng-deep .quick-add-option { color: #3f51b5; font-weight: 500; }
+    :host ::ng-deep .quick-add-option mat-icon { margin-right: 8px; vertical-align: middle; }
+
+    :host ::ng-deep .mat-mdc-dialog-title { display: flex; align-items: center; gap: 0.5rem; }
+    .dialog-form-row { display: flex; gap: 1rem; }
+    .flex-grow { flex: 1; }
+
+    /* Autocomplete dropdown styling */
+    :host ::ng-deep .mat-mdc-autocomplete-panel { max-height: 300px !important; border-radius: 8px !important; border: 1px solid #c5cae9 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option { padding: 10px 16px !important; line-height: 1.4 !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option:hover { background-color: #e8eaf6 !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option.mat-mdc-option-active { background-color: #c5cae9 !important; }
   `]
 })
-export class InvoiceFormComponent implements OnInit {
+export class InvoiceFormComponent implements OnInit, OnDestroy {
+  @ViewChild('quickAddDialog') quickAddDialog!: TemplateRef<any>;
+
   form!: FormGroup;
+  quickPatientForm!: FormGroup;
   isEdit = false;
   saving = false;
+  savingPatient = false;
   filteredPatients: any[] = [];
-  serviceOptions: ClinicalService[][] = [];
-  serviceSearchTerm: string[] = [];
+  searchTerm = '';
+  showQuickAdd = false;
   allServices: ClinicalService[] = [];
+  allInventoryItems: any[] = [];
+  allPatients: any[] = [];
+  combinedResults: any[] = [];
   availableDiscounts: any[] = [];
   subtotal = 0;
   templateDiscountValue = 0;
@@ -570,6 +722,7 @@ export class InvoiceFormComponent implements OnInit {
   paidAmount = 0;
   invoiceId: string | null = null;
   currencySymbol = '$';
+  private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
@@ -577,7 +730,8 @@ export class InvoiceFormComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private notification: NotificationService,
-    private tenantService: TenantService
+    private tenantService: TenantService,
+    private dialog: MatDialog
   ) {
     this.currencySymbol = tenantService.getCurrencySymbol();
   }
@@ -586,6 +740,7 @@ export class InvoiceFormComponent implements OnInit {
     this.form = this.fb.group({
       patientId: ['', Validators.required],
       patientSearch: [''],
+      itemSearch: [''],
       invoiceDate: [new Date(), Validators.required],
       dueDate: [''],
       items: this.fb.array([]),
@@ -599,17 +754,20 @@ export class InvoiceFormComponent implements OnInit {
       paymentReference: ['']
     });
 
-    this.addItem();
-
-    this.form.get('patientSearch')?.valueChanges.subscribe(val => {
-      if (typeof val === 'string' && val.length >= 2) {
-        this.api.get<any[]>('v1/patients/search', { term: val }).subscribe(r => this.filteredPatients = r);
-      }
+    this.quickPatientForm = this.fb.group({
+      firstName: ['', Validators.required],
+      lastName: [''],
+      phone: [''],
+      gender: [''],
+      age: [null, Validators.required],
+      dateOfBirth: [null]
     });
 
-    this.api.get<ClinicalService[]>('v1/services/active').subscribe(res => {
-      this.allServices = Array.isArray(res) ? res : ((res as any)?.data ?? []);
-    });
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id && id !== 'new') {
+      this.isEdit = true;
+      this.invoiceId = id;
+    }
 
     this.api.get<any[]>('v1/discounts', { isActive: true }).subscribe(r => {
       this.availableDiscounts = Array.isArray(r) ? r : ((r as any)?.data ?? []);
@@ -620,12 +778,14 @@ export class InvoiceFormComponent implements OnInit {
     this.form.get('taxPercentage')?.valueChanges.subscribe(() => this.calculateTotals());
     this.form.get('items')?.valueChanges.subscribe(() => this.calculateTotals());
 
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id && id !== 'new') {
-      this.isEdit = true;
-      this.invoiceId = id;
-      this.loadInvoice(id);
+    if (this.isEdit && this.invoiceId) {
+      this.loadInvoice(this.invoiceId);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   get itemsArray(): FormArray {
@@ -649,8 +809,8 @@ export class InvoiceFormComponent implements OnInit {
       this.itemsArray.clear();
       inv.items?.forEach((item: any) => {
         this.itemsArray.push(this.fb.group({
-          serviceId: [item.serviceId || null],
-          serviceSearch: [item.serviceName || item.description || ''],
+          itemType: [item.itemType || 'service'],
+          itemId: [item.itemId || item.serviceId || null],
           description: [item.description || ''],
           quantity: [item.quantity || 1],
           unitPrice: [item.unitPrice || 0],
@@ -680,30 +840,145 @@ export class InvoiceFormComponent implements OnInit {
   displayPatient(p: any): string {
     if (!p) return '';
     if (typeof p === 'string') return p;
-    return `${p.fullName} (${p.mrn})`;
+    return `${p.fullName} (${p.phone || 'No phone'})`;
   }
 
   onPatientSelected(e: any) {
-    this.form.patchValue({ patientId: e.option.value.id });
+    const patient = e.option.value;
+    this.form.patchValue({ patientId: patient.id, patientSearch: patient.fullName || patient });
+    this.showQuickAdd = false;
   }
 
-  onServiceSearchKeyup(event: any, index: number) {
-    const term = event.target.value || '';
-    this.serviceSearchTerm[index] = term;
-    if (!term.trim()) {
-      this.serviceOptions[index] = this.allServices;
+  clearPatient() {
+    this.form.patchValue({ patientId: '', patientSearch: '' });
+  }
+
+  onPatientFocus() {
+    if (this.allPatients.length === 0) {
+      this.api.get<any[]>('v1/patients/search', { limit: 1000 }).subscribe(r => {
+        this.allPatients = Array.isArray(r) ? r : [];
+        this.filteredPatients = this.allPatients;
+      });
+    }
+  }
+
+  onPatientSearchInput(event: any) {
+    this.searchTerm = event.target.value || '';
+    const term = this.searchTerm.toLowerCase();
+    if (!term) {
+      this.filteredPatients = this.allPatients;
+      this.showQuickAdd = false;
       return;
     }
-    const lower = term.toLowerCase();
-    this.serviceOptions[index] = this.allServices.filter(s =>
-      s.name?.toLowerCase().includes(lower) ||
-      s.code?.toLowerCase().includes(lower)
+    this.filteredPatients = this.allPatients.filter(p =>
+      (p.fullName || '').toLowerCase().includes(term) ||
+      (p.phone || '').toLowerCase().includes(term) ||
+      (p.mrn || '').toLowerCase().includes(term)
     );
+    this.showQuickAdd = this.searchTerm.length >= 2 && this.filteredPatients.length === 0;
   }
 
-  onServiceInputFocus(index: number) {
-    this.serviceOptions[index] = this.allServices;
-    this.serviceSearchTerm[index] = '';
+  openQuickAddDialog() {
+    this.quickPatientForm.reset({ firstName: this.searchTerm, lastName: '', phone: '', gender: '', age: null, dateOfBirth: null });
+    this.dialog.open(this.quickAddDialog, { width: '550px', disableClose: true });
+  }
+
+  onAgeChange() {
+    const age = this.quickPatientForm.get('age')?.value;
+    if (age !== null && age !== undefined && age >= 0 && age <= 150) {
+      const today = new Date();
+      const dob = new Date(today.getFullYear() - age, today.getMonth(), today.getDate());
+      this.quickPatientForm.get('dateOfBirth')?.setValue(dob);
+    } else {
+      this.quickPatientForm.get('dateOfBirth')?.setValue(null);
+    }
+  }
+
+  saveQuickPatient() {
+    if (this.quickPatientForm.invalid) return;
+    this.savingPatient = true;
+
+    const formVal = this.quickPatientForm.getRawValue();
+    let dob = formVal.dateOfBirth;
+    if (!dob && formVal.age >= 0) {
+      const today = new Date();
+      dob = new Date(today.getFullYear() - formVal.age, today.getMonth(), today.getDate());
+    }
+
+    const payload = {
+      firstName: formVal.firstName,
+      lastName: formVal.lastName || '',
+      phone: formVal.phone || '',
+      gender: formVal.gender || '',
+      dateOfBirth: dob ? dob.toISOString() : null
+    };
+
+    this.api.post<any>('v1/opd/quick-patient', payload).subscribe({
+      next: (res) => {
+        this.savingPatient = false;
+        this.dialog.closeAll();
+        const patientData = { id: res.id, mrn: res.mrn, fullName: res.fullName, phone: res.phone };
+        this.form.patchValue({ patientId: patientData.id, patientSearch: patientData.fullName });
+        this.notification.success(`Patient ${patientData.fullName} created successfully`);
+      },
+      error: () => this.savingPatient = false
+    });
+  }
+
+  onItemFocus() {
+    if (this.allServices.length === 0) {
+      this.api.get<any[]>('v1/services/active').subscribe(res => {
+        this.allServices = Array.isArray(res) ? res : ((res as any)?.data ?? []);
+      });
+    }
+    if (this.allInventoryItems.length === 0) {
+      this.api.get<any>('v1/inventory/items', { pageNumber: 1, pageSize: 500 }).subscribe(r => {
+        const items = Array.isArray(r) ? r : (r?.items ?? r?.data ?? []);
+        this.allInventoryItems = items.filter((i: any) => i.sellingPrice > 0 && i.currentStock > 0);
+      });
+    }
+  }
+
+  onItemSearchInput(event: any) {
+    const term = (event.target.value || '').toLowerCase();
+    if (!term) { this.combinedResults = []; return; }
+    const svcMapped = this.allServices
+      .filter(s => s.name?.toLowerCase().includes(term) || s.code?.toLowerCase().includes(term))
+      .map(s => ({ _type: 'service', _name: s.name, _code: s.code, _price: s.price, _tax: s.taxPercent || 0, _stock: null, _itemId: s.id }));
+    const invMapped = this.allInventoryItems
+      .filter(i => i.name?.toLowerCase().includes(term) || i.code?.toLowerCase().includes(term))
+      .map(i => ({ _type: 'inventory', _name: i.name, _code: i.code, _price: i.sellingPrice, _tax: i.taxPercent || 0, _stock: i.currentStock, _itemId: i.id }));
+    this.combinedResults = [...svcMapped, ...invMapped];
+  }
+
+  onItemKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter' && this.combinedResults.length === 1) {
+      event.preventDefault();
+      this.addSelectedItem(this.combinedResults[0]);
+    }
+  }
+
+  addSelectedItem(item: any) {
+    const existing = this.itemsArray.controls.find(ctrl => 
+      ctrl.value.itemType === item._type && ctrl.value.itemId === item._itemId
+    );
+    if (existing) {
+      this.notification.warning(`${item._name} is already added to the invoice.`);
+      this.combinedResults = [];
+      this.form.get('itemSearch')?.setValue('', { emitEvent: false });
+      return;
+    }
+    this.itemsArray.push(this.fb.group({
+      itemType: [item._type],
+      itemId: [item._itemId],
+      description: [item._name],
+      quantity: [1, [Validators.required, Validators.min(1)]],
+      unitPrice: [item._price, [Validators.required, Validators.min(0)]],
+      serviceTaxPercent: [item._tax]
+    }));
+    this.combinedResults = [];
+    this.form.get('itemSearch')?.setValue('', { emitEvent: false });
+    this.calculateTotals();
   }
 
   displayService(s: ClinicalService): string {
@@ -715,8 +990,8 @@ export class InvoiceFormComponent implements OnInit {
     const item = this.itemsArray.at(index);
     item.patchValue({
       serviceId: service.id,
-      serviceSearch: service.name,
-      description: `${service.name} (${service.code || ''})`,
+      serviceSearch: service,
+      description: service.name,
       unitPrice: service.price,
       serviceTaxPercent: service.taxPercent || 0
     });
@@ -724,17 +999,14 @@ export class InvoiceFormComponent implements OnInit {
   }
 
   addItem() {
-    const idx = this.itemsArray.length;
     this.itemsArray.push(this.fb.group({
-      serviceId: [null],
-      serviceSearch: [''],
+      itemType: ['service'],
+      itemId: [null],
       description: ['', Validators.required],
       quantity: [1, [Validators.required, Validators.min(1)]],
       unitPrice: [0, [Validators.required, Validators.min(0)]],
       serviceTaxPercent: [0]
     }));
-    this.serviceOptions[idx] = this.allServices;
-    this.serviceSearchTerm[idx] = '';
   }
 
   removeItem(i: number) {
@@ -807,7 +1079,9 @@ export class InvoiceFormComponent implements OnInit {
     const items = this.itemsArray.controls.map(c => {
       const v = c.value;
       return {
-        description: v.description || v.serviceSearch || '',
+        itemType: v.itemType || 'service',
+        itemId: v.itemId || null,
+        description: v.description || '',
         quantity: Number(v.quantity) || 1,
         unitPrice: Number(v.unitPrice) || 0
       };

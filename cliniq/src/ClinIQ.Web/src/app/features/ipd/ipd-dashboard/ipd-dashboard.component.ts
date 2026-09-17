@@ -76,7 +76,11 @@ export class IpdDashboardComponent implements OnInit {
 
     this.api.get<any>('v1/ipd/wards/overview').subscribe({
       next: (r) => {
-        this.wards = Array.isArray(r) ? r : ((r as any)?.data ?? []);
+        const wards = Array.isArray(r) ? r : ((r as any)?.data ?? []);
+        this.wards = wards;
+        // Calculate totals from ward overview (excludes deleted beds)
+        this.stats.totalBeds = wards.reduce((sum: number, w: any) => sum + (w.total || 0), 0);
+        this.stats.availableBeds = wards.reduce((sum: number, w: any) => sum + ((w.total || 0) - (w.occupied || 0)), 0);
       }
     });
 

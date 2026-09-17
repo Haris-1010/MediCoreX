@@ -31,6 +31,8 @@ const NAV: NavItem[] = [
     ],
   },
 
+  { label: 'Prescriptions', icon: 'receipt_long', route: '/prescriptions', module: 'prescriptions', permission: 'prescriptions.view' },
+
   {
     label: 'OPD', icon: 'local_hospital', module: 'opd', permission: 'opd.view',
     children: [
@@ -41,9 +43,17 @@ const NAV: NavItem[] = [
     ],
   },
 
-  { label: 'Services', icon: 'miscellaneous_services', route: '/services', module: 'services', permission: 'services.view' },
-
-  { label: 'Prescriptions', icon: 'receipt_long', route: '/prescriptions', module: 'prescriptions', permission: 'prescriptions.view' },
+  {
+    label: 'IPD', icon: 'bed', module: 'ipd', permission: 'ipd.view',
+    children: [
+      { label: 'Dashboard', icon: 'dashboard', route: '/ipd', module: 'ipd', permission: 'ipd.view' },
+      { label: 'Admissions', icon: 'assignment_ind', route: '/ipd/admissions', module: 'ipd', permission: 'admissions.view' },
+      { label: 'Wards', icon: 'hotel', route: '/ipd/wards', module: 'ipd', permission: 'ipd.view' },
+      { label: 'Rooms', icon: 'meeting_room', route: '/ipd/rooms', module: 'ipd', permission: 'ipd.view' },
+      { label: 'Bed Board', icon: 'grid_view', route: '/ipd/beds', module: 'ipd', permission: 'ipd.view' },
+      { label: 'Nursing Station', icon: 'local_hospital', route: '/ipd/nursing', module: 'ipd', permission: 'ipd.view' },
+    ],
+  },
 
   { label: 'Pharmacy', icon: 'local_pharmacy', route: '/pharmacy', module: 'pharmacy', permission: 'pharmacy.view' },
 
@@ -59,18 +69,6 @@ const NAV: NavItem[] = [
   { label: 'Insurance', icon: 'health_and_safety', route: '/insurance', module: 'insurance', permission: 'insurance.view' },
 
   {
-    label: 'IPD', icon: 'bed', module: 'ipd', permission: 'ipd.view',
-    children: [
-      { label: 'Dashboard', icon: 'dashboard', route: '/ipd', module: 'ipd', permission: 'ipd.view' },
-      { label: 'Admissions', icon: 'assignment_ind', route: '/ipd/admissions', module: 'ipd', permission: 'admissions.view' },
-      { label: 'Wards', icon: 'hotel', route: '/ipd/wards', module: 'ipd', permission: 'ipd.view' },
-      { label: 'Rooms', icon: 'meeting_room', route: '/ipd/rooms', module: 'ipd', permission: 'ipd.view' },
-      { label: 'Bed Board', icon: 'grid_view', route: '/ipd/beds', module: 'ipd', permission: 'ipd.view' },
-      { label: 'Nursing Station', icon: 'local_hospital', route: '/ipd/nursing', module: 'ipd', permission: 'ipd.view' },
-    ],
-  },
-
-  {
     label: 'Inventory', icon: 'inventory_2', module: 'inventory', permission: 'inventory.view',
     children: [
       { label: 'Items', icon: 'inventory', route: '/inventory', module: 'inventory', permission: 'inventory.view' },
@@ -84,6 +82,7 @@ const NAV: NavItem[] = [
   {
     label: 'Administration', icon: 'admin_panel_settings',
     children: [
+      { label: 'Services', icon: 'miscellaneous_services', route: '/services', module: 'services', permission: 'services.view' },
       { label: 'Doctors', icon: 'medical_services', route: '/doctors' },
       { label: 'Departments', icon: 'apartment', route: '/departments' },
       { label: 'Users', icon: 'manage_accounts', route: '/settings/users', permission: 'users.view' },

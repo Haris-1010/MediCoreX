@@ -47,15 +47,13 @@ import { CommonModule } from '@angular/common';
     }
     .contact-row {
       display: flex;
-      gap: 24px;
-      flex-wrap: wrap;
-      align-items: baseline;
+      flex-direction: column;
+      gap: 4px;
     }
     .contact-item {
       display: flex;
       align-items: baseline;
       gap: 6px;
-      height: 24px;
     }
     .contact-label {
       font-size: 12px;

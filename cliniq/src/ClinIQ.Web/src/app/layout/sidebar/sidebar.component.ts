@@ -56,6 +56,8 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
               <mat-icon class="toggle-icon" [class.expanded]="item.expanded">chevron_right</mat-icon>
             </button>
             <div class="nav-group-items" [class.expanded]="item.expanded && !collapsed">
+              <!-- shown as a heading only inside the hover flyout (collapsed mode) -->
+              <div *ngIf="collapsed" class="flyout-title">{{ item.label }}</div>
               <ng-container *ngFor="let child of item.children">
                 <a class="nav-item nav-child"
                    [routerLink]="child.route"
@@ -81,15 +83,25 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
     </div>
   `,
   styles: [`
-    .sidebar {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      background: #ffffff;
-      color: #333333;
-      overflow: hidden;
-      transition: width 0.2s ease;
-    }
+
+     :host {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #ffffff;
+    color: #333333;
+    overflow: hidden;
+    transition: width 0.2s ease;
+  }
+     .sidebar.collapsed {
+    overflow: visible;
+  }
 
     .sidebar.collapsed {
       width: 72px;
@@ -218,6 +230,11 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
       padding: 0.5rem 0;
     }
 
+    /* Collapsed rail: let the hover flyouts escape the scroll container */
+    .sidebar.collapsed .sidebar-nav {
+      overflow: visible;
+    }
+
     .sidebar-nav::-webkit-scrollbar {
       width: 4px;
     }
@@ -308,7 +325,11 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
       transform: rotate(90deg);
     }
 
-    /* Group Items */
+    /* Group Items (expanded, non-collapsed mode) */
+    .nav-group {
+      position: relative;
+    }
+
     .nav-group-items {
       max-height: 0;
       overflow: hidden;
@@ -317,10 +338,6 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
 
     .nav-group-items.expanded {
       max-height: 500px;
-    }
-
-    .sidebar.collapsed .nav-group-items {
-      display: none;
     }
 
     .nav-child {
@@ -332,6 +349,80 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
       font-size: 16px !important;
       width: 16px !important;
       height: 16px !important;
+    }
+
+    /* --- Collapsed rail: hover flyout submenu --- */
+    .sidebar.collapsed .nav-group-items {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 100%;
+      margin-left: 8px;
+      min-width: 220px;
+      max-height: none;
+      overflow: visible;
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      box-shadow: 6px 6px 24px rgba(0,0,0,0.14);
+      padding: 0.5rem 0;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(-6px);
+      transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+      z-index: 1200;
+    }
+ .sidebar.collapsed .nav-group-items .nav-item {
+    justify-content: flex-start;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    text-align: left;
+  }
+
+  .sidebar.collapsed .nav-group:hover .nav-group-items,
+  .sidebar.collapsed .nav-group:focus-within .nav-group-items {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+  }
+
+  .sidebar.collapsed .nav-group-items .nav-label {
+    display: inline-block;
+  }
+
+  .sidebar.collapsed .nav-child {
+    padding-left: 1rem;
+  }
+    .sidebar.collapsed .nav-group:hover .nav-group-items,
+    .sidebar.collapsed .nav-group:focus-within .nav-group-items {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+    }
+
+    .sidebar.collapsed .nav-group-items .nav-label {
+      display: inline-block;
+    }
+
+    .sidebar.collapsed .nav-child {
+      padding-left: 1rem;
+    }
+
+    .flyout-title {
+      display: none;
+      padding: 0.35rem 1rem 0.5rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #1a237e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 0.25rem;
+      white-space: nowrap;
+    }
+
+    .sidebar.collapsed .flyout-title {
+      display: block;
     }
 
     /* Footer */
@@ -416,6 +507,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   toggleGroup(item: NavItem): void {
+    // In collapsed (rail) mode, visibility is handled purely by CSS hover.
+    if (this.collapsed) return;
     item.expanded = !item.expanded;
   }
 
