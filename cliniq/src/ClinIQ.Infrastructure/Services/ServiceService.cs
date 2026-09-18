@@ -50,6 +50,9 @@ public class ServiceService : IServiceService
         if (query.IsActive.HasValue)
             q = q.Where(s => s.IsActive == query.IsActive.Value);
 
+        if (query.Type.HasValue)
+            q = q.Where(s => s.Type == (Domain.Enums.ServiceType)query.Type.Value);
+
         q = q.OrderBy(s => s.DisplayOrder).ThenBy(s => s.Name);
 
         var totalCount = await q.CountAsync(cancellationToken);
@@ -62,11 +65,16 @@ public class ServiceService : IServiceService
         return PaginatedResult<ServiceDto>.Success(items, totalCount, query.PageNumber, query.PageSize);
     }
 
-    public async Task<Result<IEnumerable<ServiceDto>>> GetActiveServicesAsync(CancellationToken cancellationToken = default)
+    public async Task<Result<IEnumerable<ServiceDto>>> GetActiveServicesAsync(int? type = null, CancellationToken cancellationToken = default)
     {
-        var services = await _context.Services
+        var q = _context.Services
             .Include(s => s.Category)
-            .Where(s => !s.IsDeleted && s.IsActive)
+            .Where(s => !s.IsDeleted && s.IsActive);
+
+        if (type.HasValue)
+            q = q.Where(s => s.Type == (Domain.Enums.ServiceType)type.Value);
+
+        var services = await q
             .OrderBy(s => s.DisplayOrder)
             .ThenBy(s => s.Name)
             .ToListAsync(cancellationToken);
@@ -74,11 +82,16 @@ public class ServiceService : IServiceService
         return Result<IEnumerable<ServiceDto>>.Success(services.Select(MapToDto));
     }
 
-    public async Task<Result<IEnumerable<ServiceDto>>> GetServicesByCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default)
+    public async Task<Result<IEnumerable<ServiceDto>>> GetServicesByCategoryAsync(Guid categoryId, int? type = null, CancellationToken cancellationToken = default)
     {
-        var services = await _context.Services
+        var q = _context.Services
             .Include(s => s.Category)
-            .Where(s => !s.IsDeleted && s.CategoryId == categoryId && s.IsActive)
+            .Where(s => !s.IsDeleted && s.CategoryId == categoryId && s.IsActive);
+
+        if (type.HasValue)
+            q = q.Where(s => s.Type == (Domain.Enums.ServiceType)type.Value);
+
+        var services = await q
             .OrderBy(s => s.DisplayOrder)
             .ThenBy(s => s.Name)
             .ToListAsync(cancellationToken);
@@ -101,6 +114,7 @@ public class ServiceService : IServiceService
             Description = request.Description,
             CategoryId = request.CategoryId,
             DepartmentId = request.DepartmentId,
+            Type = (Domain.Enums.ServiceType)request.Type,
             Price = request.Price,
             Cost = request.Cost,
             MinPrice = request.MinPrice,
@@ -141,6 +155,7 @@ public class ServiceService : IServiceService
         service.Description = request.Description;
         service.CategoryId = request.CategoryId;
         service.DepartmentId = request.DepartmentId;
+        service.Type = (Domain.Enums.ServiceType)request.Type;
         service.Price = request.Price;
         service.Cost = request.Cost;
         service.MinPrice = request.MinPrice;
@@ -306,7 +321,8 @@ public class ServiceService : IServiceService
         service.DurationMinutes,
         service.IsActive,
         service.DisplayOrder,
-        service.CreatedAt
+        service.CreatedAt,
+        (int)service.Type
     );
 
     private static ServiceCategoryDto MapCategoryToDto(ServiceCategory category) => new(

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ApiService, PagedResult } from '../../../core/services/api.service';
 import { ItemDialogComponent } from '../item-dialog/item-dialog.component';
+import { StockBatchesDialogComponent } from '../stock-batches-dialog/stock-batches-dialog.component';
 
 @Component({
   standalone: false,
@@ -27,7 +28,7 @@ import { ItemDialogComponent } from '../item-dialog/item-dialog.component';
           <ng-container matColumnDef="reorderLevel"><th mat-header-cell *matHeaderCellDef>Reorder</th><td mat-cell *matCellDef="let i">{{ i.reorderLevel }}</td></ng-container>
           <ng-container matColumnDef="purchasePrice"><th mat-header-cell *matHeaderCellDef>Cost</th><td mat-cell *matCellDef="let i">{{ i.purchasePrice | currencyFormat }}</td></ng-container>
           <ng-container matColumnDef="sellingPrice"><th mat-header-cell *matHeaderCellDef>Selling</th><td mat-cell *matCellDef="let i">{{ i.sellingPrice | currencyFormat }}</td></ng-container>
-          <ng-container matColumnDef="actions"><th mat-header-cell *matHeaderCellDef></th><td mat-cell *matCellDef="let i"><button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button><mat-menu #menu="matMenu"><button mat-menu-item (click)="openItemDialog(i)"><mat-icon>edit</mat-icon> Edit</button><button mat-menu-item (click)="adjustStock(i)"><mat-icon>tune</mat-icon> Adjust Stock</button></mat-menu></td></ng-container>
+          <ng-container matColumnDef="actions"><th mat-header-cell *matHeaderCellDef></th><td mat-cell *matCellDef="let i"><button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button><mat-menu #menu="matMenu"><button mat-menu-item (click)="openItemDialog(i)"><mat-icon>edit</mat-icon> Edit</button><button mat-menu-item (click)="adjustStock(i)"><mat-icon>tune</mat-icon> Adjust Stock</button><button mat-menu-item (click)="viewBatches(i)"><mat-icon>inventory_2</mat-icon> View Batches</button></mat-menu></td></ng-container>
           <tr mat-header-row *matHeaderRowDef="columns"></tr>
           <tr mat-row *matRowDef="let row; columns: columns;"></tr>
         </table>
@@ -53,21 +54,43 @@ export class ItemListComponent implements OnInit {
 
   onSearch(term: string) { this.searchTerm = term; this.pageIndex = 0; this.load(); }
   onPage(e: any) { this.pageIndex = e.pageIndex; this.pageSize = e.pageSize; this.load(); }
-  openItemDialog(item?: any) {
-    const dialogRef = this.dialog.open(ItemDialogComponent, {
-      data: { item, mode: item ? 'edit' : 'add' },
-      width: '600px'
-    });
-    dialogRef.afterClosed().subscribe(result => { if (result) this.load(); });
-  }
+ openItemDialog(item?: any) {
 
-  adjustStock(item: any) {
-    const dialogRef = this.dialog.open(ItemDialogComponent, {
-      data: { item, mode: 'adjust' },
-      width: '450px'
-    });
-    dialogRef.afterClosed().subscribe(result => { if (result) this.load(); });
-  }
+  const dialogRef = this.dialog.open(ItemDialogComponent, {
+    data: { item, mode: item ? 'edit' : 'add' },
+    width: '720px',
+    maxWidth: '95vw'
+  });
+
+  dialogRef.afterClosed().subscribe(result => {
+    if (result) this.load();
+  });
+}
+
+adjustStock(item: any) {
+
+  const dialogRef = this.dialog.open(ItemDialogComponent, {
+    data: { item, mode: 'adjust' },
+   width: '720px',
+    maxWidth: '95vw'
+  });
+
+  dialogRef.afterClosed().subscribe(result => {
+    if (result) this.load();
+  });
+}
+
+viewBatches(item: any) {
+  const dialogRef = this.dialog.open(StockBatchesDialogComponent, {
+    data: { itemId: item.id, itemName: item.name },
+    width: '800px',
+    maxWidth: '95vw'
+  });
+
+  dialogRef.afterClosed().subscribe(result => {
+    if (result) this.load();
+  });
+}
 
   hasActiveFilters(): boolean {
     return !!(this.searchTerm || this.filterCategory);

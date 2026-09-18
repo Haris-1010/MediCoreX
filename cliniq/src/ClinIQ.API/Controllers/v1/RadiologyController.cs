@@ -69,7 +69,7 @@ public class RadiologyController : ControllerBase
     }
 
     [HttpPost("orders")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.RadiologyView)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.RadiologyCreate)]
     public async Task<IActionResult> CreateOrder([FromBody] CreateRadiologyOrderRequest request)
     {
         if (request.PatientId == Guid.Empty)
@@ -196,6 +196,83 @@ public class RadiologyController : ControllerBase
         }));
     }
 
+    [HttpGet("pending")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.RadiologyView)]
+    public async Task<IActionResult> GetPendingOrders()
+    {
+        var orders = await _context.MedicalOrders
+            .Where(o => o.OrderType == MedicalOrderType.Radiology &&
+                (o.Status == MedicalOrderStatus.Ordered || o.Status == MedicalOrderStatus.InProgress) &&
+                !o.IsDeleted)
+            .OrderByDescending(o => o.OrderDate)
+            .Take(50)
+            .Select(o => new
+            {
+                o.Id,
+                o.OrderNumber,
+                PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
+                o.PatientId,
+                o.OrderDate,
+                Status = o.Status.ToString(),
+                o.IsUrgent,
+                o.Priority,
+                o.OrderItems,
+                o.ClinicalIndication
+            })
+            .ToListAsync();
+
+        return Ok(Result<object>.Success(orders));
+    }
+
+    [HttpPut("orders/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.RadiologyEdit)]
+    public async Task<IActionResult> UpdateOrder(Guid id, [FromBody] UpdateRadiologyOrderRequest request)
+    {
+        var order = await _context.MedicalOrders.FirstOrDefaultAsync(o => o.Id == id && o.OrderType == MedicalOrderType.Radiology && !o.IsDeleted);
+        if (order == null)
+            return NotFound(Result.Failure("Order not found"));
+
+        if (request.Status != null && Enum.TryParse<MedicalOrderStatus>(request.Status, true, out var status))
+            order.Status = status;
+        if (request.ClinicalIndication != null) order.ClinicalIndication = request.ClinicalIndication;
+        if (request.SpecialInstructions != null) order.SpecialInstructions = request.SpecialInstructions;
+        if (request.Notes != null) order.Notes = request.Notes;
+
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Order updated"));
+    }
+
+    [HttpPost("orders/{id:guid}/complete")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.RadiologyReport)]
+    public async Task<IActionResult> CompleteOrder(Guid id, [FromBody] CompleteRadiologyOrderRequest request)
+    {
+        var order = await _context.MedicalOrders.FirstOrDefaultAsync(o => o.Id == id && o.OrderType == MedicalOrderType.Radiology && !o.IsDeleted);
+        if (order == null)
+            return NotFound(Result.Failure("Order not found"));
+
+        order.Status = MedicalOrderStatus.Completed;
+        order.Results = request.Results;
+        order.ResultNotes = request.ResultNotes;
+        order.AbnormalFlags = request.AbnormalFlags;
+        order.CompletedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Report completed"));
+    }
+
+    [HttpDelete("orders/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.RadiologyDelete)]
+    public async Task<IActionResult> DeleteOrder(Guid id)
+    {
+        var order = await _context.MedicalOrders.FirstOrDefaultAsync(o => o.Id == id && o.OrderType == MedicalOrderType.Radiology && !o.IsDeleted);
+        if (order == null)
+            return NotFound(Result.Failure("Order not found"));
+
+        order.IsDeleted = true;
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Radiology order deleted successfully"));
+    }
+
     public class CreateRadiologyOrderRequest
     {
         public Guid PatientId { get; set; }
@@ -208,5 +285,20 @@ public class RadiologyController : ControllerBase
         public string? ClinicalIndication { get; set; }
         public string? SpecialInstructions { get; set; }
         public string? Notes { get; set; }
+    }
+
+    public class UpdateRadiologyOrderRequest
+    {
+        public string? Status { get; set; }
+        public string? ClinicalIndication { get; set; }
+        public string? SpecialInstructions { get; set; }
+        public string? Notes { get; set; }
+    }
+
+    public class CompleteRadiologyOrderRequest
+    {
+        public string? Results { get; set; }
+        public string? ResultNotes { get; set; }
+        public string? AbnormalFlags { get; set; }
     }
 }

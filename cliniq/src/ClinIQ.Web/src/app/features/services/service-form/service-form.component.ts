@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { TenantService } from '../../../core/services/tenant.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { ClinicalService } from '../models/service.model';
+import { ClinicalService, ServiceType, SERVICE_TYPE_OPTIONS } from '../models/service.model';
 
 @Component({
   standalone: false,
@@ -34,6 +34,12 @@ import { ClinicalService } from '../models/service.model';
               <mat-select formControlName="categoryId" [compareWith]="compareCategory">
                 <mat-option value="">None</mat-option>
                 <mat-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Service Type</mat-label>
+              <mat-select formControlName="type">
+                <mat-option *ngFor="let t of serviceTypeOptions" [value]="t.value">{{ t.label }}</mat-option>
               </mat-select>
             </mat-form-field>
             <mat-form-field appearance="outline">
@@ -74,6 +80,7 @@ export class ServiceFormComponent implements OnInit {
   serviceId: string | null = null;
   categories: { id: string; name: string }[] = [];
   currencySymbol = '';
+  serviceTypeOptions = SERVICE_TYPE_OPTIONS;
 
   private tenantService = inject(TenantService);
 
@@ -91,7 +98,8 @@ export class ServiceFormComponent implements OnInit {
       taxPercent: [0],
       durationMinutes: [0],
       isTaxable: [false],
-      isActive: [true]
+      isActive: [true],
+      type: [ServiceType.General]
     });
   }
 
@@ -150,7 +158,8 @@ export class ServiceFormComponent implements OnInit {
       insuranceCode: null,
       durationMinutes: v.durationMinutes || null,
       isActive: v.isActive,
-      displayOrder: 0
+      displayOrder: 0,
+      type: v.type
     };
     const request = this.isEdit
       ? this.api.put('v1/services', this.serviceId!, payload)

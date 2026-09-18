@@ -81,6 +81,74 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
           </table>
           <p *ngIf="allocationHistory.length === 0" class="no-data">No allocation history.</p>
         </div>
+
+        <!-- Billing -->
+        <div class="card full-width">
+          <h3><mat-icon>receipt_long</mat-icon> Billing</h3>
+
+          <table mat-table [dataSource]="bedCharges" class="full-width" *ngIf="bedCharges.length > 0">
+            <ng-container matColumnDef="bedNumber">
+              <th mat-header-cell *matHeaderCellDef>Bed</th>
+              <td mat-cell *matCellDef="let c">{{ c.bedNumber }}</td>
+            </ng-container>
+            <ng-container matColumnDef="wardName">
+              <th mat-header-cell *matHeaderCellDef>Ward</th>
+              <td mat-cell *matCellDef="let c">{{ c.wardName }}</td>
+            </ng-container>
+            <ng-container matColumnDef="fromDate">
+              <th mat-header-cell *matHeaderCellDef>From</th>
+              <td mat-cell *matCellDef="let c">{{ c.fromDate | date:'mediumDate' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="toDate">
+              <th mat-header-cell *matHeaderCellDef>To</th>
+              <td mat-cell *matCellDef="let c">{{ c.toDate | date:'mediumDate' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="days">
+              <th mat-header-cell *matHeaderCellDef>Days</th>
+              <td mat-cell *matCellDef="let c">{{ c.days }}</td>
+            </ng-container>
+            <ng-container matColumnDef="dailyRate">
+              <th mat-header-cell *matHeaderCellDef>Rate/Day</th>
+              <td mat-cell *matCellDef="let c">{{ c.dailyRate | currency }}</td>
+            </ng-container>
+            <ng-container matColumnDef="totalCharge">
+              <th mat-header-cell *matHeaderCellDef>Total</th>
+              <td mat-cell *matCellDef="let c">{{ c.totalCharge | currency }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="billingColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: billingColumns;"></tr>
+          </table>
+          <p *ngIf="bedCharges.length === 0" class="no-data">No bed charges yet.</p>
+
+          <div class="billing-summary" *ngIf="bedCharges.length > 0">
+            <div class="billing-summary-item">
+              <div class="label">Total Bed Charges</div>
+              <div class="value">{{ totalBedCharges | currency }}</div>
+            </div>
+            <div class="billing-summary-item">
+              <div class="label">Deposit Deducted</div>
+              <div class="value paid">{{ depositAmount | currency }}</div>
+            </div>
+            <div class="billing-summary-item">
+              <div class="label">Outstanding Amount</div>
+              <div class="value outstanding">{{ outstandingAmount | currency }}</div>
+            </div>
+          </div>
+
+          <div class="invoice-info" *ngIf="existingInvoice">
+            <div><span class="label">Invoice Number:</span> <strong class="value">{{ existingInvoice.invoiceNumber }}</strong></div>
+            <div><span class="label">Invoice Date:</span> <strong class="value">{{ existingInvoice.invoiceDate | date:'medium' }}</strong></div>
+            <div><span class="label">Total Amount:</span> <strong class="value">{{ existingInvoice.totalAmount | currency }}</strong></div>
+            <div><span class="label">Status:</span> <strong class="value">{{ existingInvoice.status }}</strong></div>
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <button mat-raised-button color="primary" (click)="generateBill()" [disabled]="generatingBill || existingInvoice" *ngIf="bedCharges.length > 0">
+              <mat-icon>receipt</mat-icon>
+              {{ generatingBill ? 'Generating...' : 'Generate Bill' }}
+            </button>
+          </div>
+        </div>
       </div>
     </app-main-layout>
   `,
@@ -97,6 +165,15 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .mono { font-family: monospace; font-size: 0.8rem; }
     .no-data { text-align: center; color: #aaa; padding: 1rem; }
     .full-width table { width: 100%; }
+    .billing-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #f0f0f0; }
+    .billing-summary-item { text-align: center; padding: 0.75rem; background: #f8f9fa; border-radius: 6px; }
+    .billing-summary-item .label { font-size: 0.8rem; color: #888; margin-bottom: 0.25rem; }
+    .billing-summary-item .value { font-size: 1.25rem; font-weight: 600; color: #333; }
+    .billing-summary-item .value.outstanding { color: #f44336; }
+    .billing-summary-item .value.paid { color: #4caf50; }
+    .invoice-info { background: #e8f5e9; padding: 1rem; border-radius: 6px; margin-top: 1rem; border-left: 4px solid #4caf50; }
+    .invoice-info .label { font-size: 0.8rem; color: #2e7d32; }
+    .invoice-info .value { font-weight: 600; color: #2e7d32; }
   `]
 })
 export class AdmissionDetailComponent implements OnInit {
@@ -104,6 +181,17 @@ export class AdmissionDetailComponent implements OnInit {
   allocationHistory: any[] = [];
   historyColumns = ['bed', 'ward', 'allocatedAt', 'releasedAt', 'duration'];
   branding: Tenant | null = null;
+
+  billingData: any = null;
+  bedCharges: any[] = [];
+  billingColumns = ['bedNumber', 'wardName', 'fromDate', 'toDate', 'days', 'dailyRate', 'totalCharge'];
+  totalBedCharges: number = 0;
+  depositAmount: number = 0;
+  outstandingAmount: number = 0;
+  existingInvoice: any = null;
+  invoiceItems: any[] = [];
+  generatingBill: boolean = false;
+  admissionId: string = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -115,14 +203,50 @@ export class AdmissionDetailComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.api.getById<any>('v1/admissions', id).subscribe(r => this.admission = r);
-      this.api.get<any>(`v1/admissions/${id}/allocation-history`).subscribe({
+    this.admissionId = this.route.snapshot.paramMap.get('id') || '';
+    if (this.admissionId) {
+      this.api.getById<any>('v1/admissions', this.admissionId).subscribe(r => this.admission = r);
+      this.api.get<any>(`v1/admissions/${this.admissionId}/allocation-history`).subscribe({
         next: (r) => { this.allocationHistory = Array.isArray(r) ? r : []; }
       });
+      this.loadBillingData();
     }
     this.tenantService.loadTenant().subscribe(tenant => this.branding = tenant);
+  }
+
+  loadBillingData() {
+    if (!this.admissionId) return;
+    this.api.get<any>(`v1/admissions/${this.admissionId}/billing`).subscribe({
+      next: (data) => {
+        this.billingData = data;
+        this.bedCharges = data.bedCharges || [];
+        this.totalBedCharges = data.totalBedCharges || 0;
+        this.existingInvoice = data.existingInvoice || null;
+        this.invoiceItems = data.invoiceItems || [];
+        this.outstandingAmount = this.totalBedCharges;
+        if (this.existingInvoice) {
+          this.outstandingAmount = this.existingInvoice.outstandingAmount || 0;
+          this.depositAmount = this.existingInvoice.depositDeducted || 0;
+        }
+      },
+      error: (err) => { console.error('Failed to load billing data', err); }
+    });
+  }
+
+  generateBill() {
+    if (!this.admissionId || this.generatingBill) return;
+    this.generatingBill = true;
+    this.api.post<any>(`v1/admissions/${this.admissionId}/generate-bill`, {}).subscribe({
+      next: (result) => {
+        this.generatingBill = false;
+        this.notification.success(`Bill generated successfully! Invoice #${result.invoiceNumber}`);
+        this.loadBillingData();
+      },
+      error: (err) => {
+        this.generatingBill = false;
+        this.notification.error('Failed to generate bill: ' + (err.message || 'Unknown error'));
+      }
+    });
   }
 
   print() {

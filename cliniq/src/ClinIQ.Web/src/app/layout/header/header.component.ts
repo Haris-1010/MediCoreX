@@ -18,7 +18,7 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
 
       <!-- Hospital Name (Tenant Branding) - Centered -->
       <div class="hospital-name-container">
-        <span class="hospital-name">{{ tenant?.name || 'ClinIQ' }}</span>
+        <span class="hospital-name">{{ tenant?.name || 'MediCoreX' }}</span>
       </div>
 
       <span class="spacer"></span>

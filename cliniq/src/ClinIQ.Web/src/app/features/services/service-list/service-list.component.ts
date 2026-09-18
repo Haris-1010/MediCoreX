@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../../core/services/api.service';
-import { ClinicalService } from '../models/service.model';
+import { ClinicalService, ServiceType, SERVICE_TYPE_OPTIONS } from '../models/service.model';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
@@ -17,12 +17,20 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
             <input matInput [(ngModel)]="searchTerm" (keyup)="applyFilter()" placeholder="Search by name...">
             <mat-icon matSuffix>search</mat-icon>
           </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Type</mat-label>
+            <mat-select [(ngModel)]="filterType" (selectionChange)="applyFilter()">
+              <mat-option value="">All Types</mat-option>
+              <mat-option *ngFor="let t of serviceTypeOptions" [value]="t.value">{{ t.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
           <button mat-raised-button color="primary" routerLink="add">
             <mat-icon>add</mat-icon> Add Service
           </button>
         </div>
         <table mat-table [dataSource]="filteredServices" matSort>
           <ng-container matColumnDef="name"><th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th><td mat-cell *matCellDef="let s">{{ s.name }}</td></ng-container>
+          <ng-container matColumnDef="type"><th mat-header-cell *matHeaderCellDef mat-sort-header>Type</th><td mat-cell *matCellDef="let s"><mat-chip>{{ getTypeLabel(s.type) }}</mat-chip></td></ng-container>
           <ng-container matColumnDef="category"><th mat-header-cell *matHeaderCellDef mat-sort-header>Category</th><td mat-cell *matCellDef="let s"><mat-chip>{{ getCategoryLabel(s.categoryName) }}</mat-chip></td></ng-container>
           <ng-container matColumnDef="price"><th mat-header-cell *matHeaderCellDef mat-sort-header>Price</th><td mat-cell *matCellDef="let s">{{ s.price | currencyFormat }}</td></ng-container>
           <ng-container matColumnDef="durationMinutes"><th mat-header-cell *matHeaderCellDef mat-sort-header>Duration</th><td mat-cell *matCellDef="let s">{{ s.durationMinutes }} min</td></ng-container>
@@ -41,7 +49,9 @@ export class ServiceListComponent implements OnInit {
   services: ClinicalService[] = [];
   filteredServices: ClinicalService[] = [];
   searchTerm = '';
-  columns = ['name', 'category', 'price', 'durationMinutes', 'isActive', 'actions'];
+  filterType = '';
+  columns = ['name', 'type', 'category', 'price', 'durationMinutes', 'isActive', 'actions'];
+  serviceTypeOptions = SERVICE_TYPE_OPTIONS;
 
   constructor(private api: ApiService, private dialog: MatDialog) {}
 
@@ -58,7 +68,8 @@ export class ServiceListComponent implements OnInit {
 
   applyFilter() {
     this.filteredServices = this.services.filter(s =>
-      !this.searchTerm || s.name.toLowerCase().includes(this.searchTerm.toLowerCase())
+      (!this.searchTerm || s.name.toLowerCase().includes(this.searchTerm.toLowerCase())) &&
+      (!this.filterType || s.type === Number(this.filterType))
     );
   }
 
@@ -76,5 +87,10 @@ export class ServiceListComponent implements OnInit {
 
   getCategoryLabel(name: string | null | undefined): string {
     return name || 'Uncategorized';
+  }
+
+  getTypeLabel(type: number): string {
+    const option = this.serviceTypeOptions.find(t => t.value === type);
+    return option?.label || 'Unknown';
   }
 }

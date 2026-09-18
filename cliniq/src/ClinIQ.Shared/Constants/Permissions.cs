@@ -124,9 +124,31 @@ public static class Permissions
 
     // Laboratory
     public const string LaboratoryView = "laboratory.view";
+    public const string LaboratoryCreate = "laboratory.create";
+    public const string LaboratoryEdit = "laboratory.edit";
+    public const string LaboratoryDelete = "laboratory.delete";
+    public const string LaboratoryManageResults = "laboratory.manage_results";
+    public const string LaboratoryOrdersView = "laboratory.orders.view";
+    public const string LaboratoryOrdersCreate = "laboratory.orders.create";
+    public const string LaboratoryOrdersEdit = "laboratory.orders.edit";
+    public const string LaboratoryOrdersDelete = "laboratory.orders.delete";
+    public const string LaboratoryResultsView = "laboratory.results.view";
+    public const string LaboratoryResultsEdit = "laboratory.results.edit";
+    public const string LaboratoryPrint = "laboratory.print";
 
     // Radiology
     public const string RadiologyView = "radiology.view";
+    public const string RadiologyCreate = "radiology.create";
+    public const string RadiologyEdit = "radiology.edit";
+    public const string RadiologyDelete = "radiology.delete";
+    public const string RadiologyReport = "radiology.report";
+    public const string RadiologyOrdersView = "radiology.orders.view";
+    public const string RadiologyOrdersCreate = "radiology.orders.create";
+    public const string RadiologyOrdersEdit = "radiology.orders.edit";
+    public const string RadiologyOrdersDelete = "radiology.orders.delete";
+    public const string RadiologyResultsView = "radiology.results.view";
+    public const string RadiologyResultsEdit = "radiology.results.edit";
+    public const string RadiologyPrint = "radiology.print";
 
     // Reports
     public const string ReportsView = "reports.view";

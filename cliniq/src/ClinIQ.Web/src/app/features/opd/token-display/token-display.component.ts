@@ -27,15 +27,15 @@ interface DoctorDisplay {
         <div class="header-left">
           <mat-icon>local_hospital</mat-icon>
           <div>
-            <h1>{{ tenant?.name || 'ClinIQ' }}</h1>
+            <h1>{{ tenant?.name || 'MediCoreX' }}</h1>
             <p class="subtitle">OPD Queue Display</p>
           </div>
         </div>
-        <div class="header-right">
-          <div class="live-badge"><span class="dot"></span> LIVE</div>
-          <p class="time">{{ currentTime | date:'HH:mm:ss' }}</p>
-          <p class="date">{{ currentTime | date:'EEEE, MMMM d, y' }}</p>
-        </div>
+       <div class="header-right"> 
+    <div class="live-badge"><span class="dot"></span> LIVE</div> 
+    <p class="time">{{ currentTime | date:'hh:mm:ss a' }}</p> 
+    <p class="date">{{ currentTime | date:'EEEE, MMMM d, y' }}</p> 
+</div>
       </div>
 
       <!-- Stats Bar -->

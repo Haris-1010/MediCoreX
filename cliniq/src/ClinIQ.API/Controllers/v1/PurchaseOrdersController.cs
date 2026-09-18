@@ -153,7 +153,16 @@ public class PurchaseOrdersController : ControllerBase
                     i.TaxPercent,
                     i.TaxAmount,
                     i.TotalAmount,
-                    i.Notes
+                    i.Notes,
+                    StockBatch = _context.StockBatches
+                        .Where(sb => sb.PurchaseOrderId == p.Id && sb.ItemId == i.ItemId)
+                        .Select(sb => new
+                        {
+                            sb.Id,
+                            sb.BatchNumber,
+                            sb.ExpiryDate
+                        })
+                        .FirstOrDefault()
                 }).ToList()
             })
             .FirstOrDefaultAsync();
@@ -307,7 +316,7 @@ public class PurchaseOrdersController : ControllerBase
             var receivedQty = detail?.ReceivedQuantity ?? 0;
             var costPrice = detail?.CostPrice > 0 ? detail.CostPrice : item.UnitPrice;
             var batchNumber = detail?.BatchNumber;
-            var expiryDate = detail?.ExpiryDate;
+            var expiryDate = detail?.ExpiryDate ?? DateTime.UtcNow.AddYears(1);
 
             item.ReceivedQuantity += receivedQty;
             item.PendingQuantity = item.OrderedQuantity - item.ReceivedQuantity;

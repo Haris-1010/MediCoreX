@@ -207,26 +207,151 @@ export interface ItemDialogData {
     </mat-dialog-actions>
   `,
   styles: [`
-    h2[mat-dialog-title] {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .full-width { width: 100%; }
-    .form-row { display: flex; gap: 1rem; margin-bottom: 0.25rem; }
-    .form-row mat-form-field { flex: 1; }
-    .checkboxes { gap: 1.5rem; align-items: center; }
-    .section-label { font-size: 0.85rem; font-weight: 600; color: #3f51b5; margin: 0.75rem 0 0.25rem; text-transform: uppercase; letter-spacing: 0.5px; }
-    .current-stock {
-      background: #e3f2fd;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-bottom: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    mat-dialog-content { min-width: 400px; max-width: 500px; }
+   
+h2[mat-dialog-title] {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 18px 24px;
+  font-size: 21px;
+  font-weight: 600;
+  color: #172033;
+  border-bottom: 1px solid #edf0f5;
+}
+
+h2[mat-dialog-title] mat-icon {
+  color: #1f3b64;
+  font-size: 23px;
+  width: 23px;
+  height: 23px;
+}
+
+mat-dialog-content {
+  width: 680px;
+  max-width: 680px;
+  min-width: 680px;
+  padding: 22px 24px 10px !important;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  background: #fff;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.form-row {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+
+.form-row mat-form-field {
+  flex: 1;
+  min-width: 0;
+}
+
+mat-form-field {
+  font-size: 14px;
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 8px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid #edf0f5;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1f3b64;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.section-label::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  border-radius: 4px;
+  background: #1f3b64;
+}
+
+.checkboxes {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 12px 14px;
+  background: #f7f9fc;
+  border: 1px solid #edf0f5;
+  border-radius: 8px;
+}
+
+.current-stock {
+  background: linear-gradient(135deg, #eef6ff, #f7fbff);
+  border: 1px solid #d9eaff;
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin-bottom: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.current-stock span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.current-stock strong {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1f3b64;
+}
+
+mat-dialog-actions {
+  padding: 14px 24px 18px !important;
+  margin: 0 !important;
+  border-top: 1px solid #edf0f5;
+  background: #fafbfc;
+}
+
+mat-dialog-actions button {
+  min-width: 90px;
+  height: 40px;
+  border-radius: 7px;
+}
+
+mat-dialog-actions button[color="primary"] {
+  min-width: 105px;
+}
+
+textarea {
+  resize: vertical;
+}
+
+@media (max-width: 720px) {
+  mat-dialog-content {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .checkboxes {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+} 
   `]
 })
 export class ItemDialogComponent implements OnInit {

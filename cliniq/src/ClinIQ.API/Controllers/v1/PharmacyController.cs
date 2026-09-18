@@ -173,6 +173,16 @@ public class PharmacyController : ControllerBase
                     var inventoryItem = await _context.Items.FirstOrDefaultAsync(i => i.Id == item.MedicineId.Value);
                     if (inventoryItem != null)
                     {
+                        // Check if batch is expired before dispensing
+                        if (dispensedItem.BatchId.HasValue)
+                        {
+                            var batch = await _context.StockBatches.FirstOrDefaultAsync(b => b.Id == dispensedItem.BatchId.Value && b.IsActive);
+                            if (batch != null && batch.IsExpired)
+                                return BadRequest(Result.Failure($"Cannot dispense expired batch {batch.BatchNumber}"));
+                            if (batch != null && batch.AvailableQuantity < dispensedItem.Quantity.Value)
+                                return BadRequest(Result.Failure($"Insufficient stock in batch {batch.BatchNumber}. Available: {batch.AvailableQuantity}"));
+                        }
+
                         inventoryItem.CurrentStock -= dispensedItem.Quantity.Value;
                         unitPrice = dispensedItem.UnitPrice ?? inventoryItem.SellingPrice;
                     }
@@ -275,6 +285,7 @@ public class PharmacyController : ControllerBase
             return Ok(Result<object>.Success(Array.Empty<object>()));
 
         var lower = term.ToLower();
+        var today = DateTime.Today;
         var medicines = await _context.Items
             .Where(i => !i.IsDeleted && i.IsActive && i.IsMedicine &&
                 (i.Name.ToLower().Contains(lower) ||
@@ -290,13 +301,38 @@ public class PharmacyController : ControllerBase
                 i.Strength,
                 i.Form,
                 i.SellingPrice,
-                i.CurrentStock
+                i.CurrentStock,
+                AvailableStock = _context.StockBatches
+                    .Where(b => b.ItemId == i.Id && b.IsActive && !b.IsExpired && b.AvailableQuantity > 0)
+                    .Sum(b => b.AvailableQuantity)
             })
             .OrderBy(i => i.Name)
             .Take(20)
             .ToListAsync();
 
         return Ok(Result<object>.Success(medicines));
+    }
+
+    [HttpGet("medicines/{itemId:guid}/available-batches")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.PharmacyView)]
+    public async Task<IActionResult> GetAvailableBatches(Guid itemId)
+    {
+        var today = DateTime.Today;
+        var batches = await _context.StockBatches
+            .Where(b => b.ItemId == itemId && b.IsActive && !b.IsExpired && b.AvailableQuantity > 0)
+            .OrderBy(b => b.ExpiryDate)
+            .Select(b => new
+            {
+                b.Id,
+                b.BatchNumber,
+                b.ExpiryDate,
+                b.AvailableQuantity,
+                b.SellingPrice,
+                b.MRP
+            })
+            .ToListAsync();
+
+        return Ok(Result<object>.Success(batches));
     }
 
     public class DispenseRequest

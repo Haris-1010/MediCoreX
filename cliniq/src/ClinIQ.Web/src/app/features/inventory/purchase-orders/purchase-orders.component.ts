@@ -1,6 +1,8 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { MatDatepicker } from '@angular/material/datepicker';
+import { of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
 import { ApiService, PagedResult } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TenantService } from '../../../core/services/tenant.service';
@@ -101,35 +103,34 @@ import { TenantService } from '../../../core/services/tenant.service';
             </mat-form-field>
           </div>
 
-          <!-- Item Search + List -->
-          <div formArrayName="items" class="items-section">
+          <!-- Item Search (lives at the poForm level, NOT inside the items FormArray) -->
+          <div class="items-section">
             <div class="search-bar-wrapper">
               <mat-form-field appearance="outline" class="item-search-bar">
-                <mat-label>Search Items (click to load all, type to filter)</mat-label>
+                <mat-label>Search Items</mat-label>
                 <input matInput
                        [matAutocomplete]="combinedItemAuto"
                        formControlName="combinedItemSearch"
-                       placeholder="Click to load items, then type to search..."
-                       (focus)="onItemFocus()"
-                       (click)="onItemFocus()">
-                <mat-icon matSuffix>search</mat-icon>
-<mat-autocomplete
-  #combinedItemAuto="matAutocomplete"
-  (optionSelected)="addSelectedItemFromSearch($event.option.value)">
-
-  <mat-option *ngFor="let it of combinedItemResults" [value]="it.name">
-    {{ it.name }} ({{ it.code }}) -
-    {{ currencySymbol }}{{ it.purchasePrice }} -
-    Stock: {{ it.currentStock }}
-  </mat-option>
-
-</mat-autocomplete>
+                       placeholder="Type at least 2 characters to search...">
+                <mat-icon matSuffix *ngIf="!searchingItems">search</mat-icon>
+                <mat-spinner matSuffix *ngIf="searchingItems" diameter="18"></mat-spinner>
+                <mat-autocomplete
+                  #combinedItemAuto="matAutocomplete"
+                  (optionSelected)="addSelectedItemFromSearch($event.option.value)">
+                  <mat-option *ngFor="let it of combinedItemResults" [value]="it.name">
+                    {{ it.name }} ({{ it.code }}) -
+                    {{ currencySymbol }}{{ it.purchasePrice }} -
+                    Stock: {{ it.currentStock }}
+                  </mat-option>
+                  <mat-option *ngIf="!searchingItems && searchAttempted && combinedItemResults.length === 0" disabled>
+                    No items found
+                  </mat-option>
+                </mat-autocomplete>
               </mat-form-field>
-
-              <button mat-icon-button color="primary" type="button" (click)="reloadItems()" matTooltip="Reload items" [disabled]="!itemsLoaded">
-                <mat-icon>refresh</mat-icon>
-              </button>
             </div>
+
+            <!-- Item rows: this is the only part that belongs to the FormArray -->
+            <div formArrayName="items">
 
             <!-- Header -->
             <div class="item-header" *ngIf="poItems.length > 0">
@@ -164,6 +165,7 @@ import { TenantService } from '../../../core/services/tenant.service';
             <div class="empty-items" *ngIf="poItems.length === 0">
               <mat-icon>add_shopping_cart</mat-icon>
               <p>Search and select an item above to add it to the order</p>
+            </div>
             </div>
           </div>
 
@@ -233,11 +235,41 @@ import { TenantService } from '../../../core/services/tenant.service';
           </ng-container>
           <ng-container matColumnDef="batch">
             <th mat-header-cell *matHeaderCellDef>Batch</th>
-            <td mat-cell *matCellDef="let i">{{ i.batchNumber || '-' }}</td>
+            <td mat-cell *matCellDef="let i">
+              <span *ngIf="editingBatchItem?.id !== i.id" class="clickable-value" (click)="openEditBatch(i)" matTooltip="Click to edit batch number">
+                {{ i.stockBatch?.batchNumber || i.batchNumber || '-' }}
+                <mat-icon class="inline-edit-icon" *ngIf="i.stockBatch?.id">edit</mat-icon>
+              </span>
+              <span *ngIf="editingBatchItem?.id === i.id" class="inline-edit">
+                <mat-form-field appearance="outline" class="inline-batch-input">
+                  <input matInput [(ngModel)]="editingBatchValue" placeholder="Batch number">
+                </mat-form-field>
+                <button mat-icon-button color="primary" (click)="saveBatchNumber()" matTooltip="Save"><mat-icon>check</mat-icon></button>
+                <button mat-icon-button color="warn" (click)="cancelEditBatch()" matTooltip="Cancel"><mat-icon>close</mat-icon></button>
+              </span>
+            </td>
           </ng-container>
           <ng-container matColumnDef="expiry">
             <th mat-header-cell *matHeaderCellDef>Expiry</th>
-            <td mat-cell *matCellDef="let i">{{ (i.expiryDate | date:'mediumDate') || '-' }}</td>
+            <td mat-cell *matCellDef="let i">
+              <span *ngIf="editingExpiryItem?.id !== i.id">{{ (i.stockBatch?.expiryDate || i.expiryDate | date:'mediumDate') || '-' }}</span>
+              <span *ngIf="editingExpiryItem?.id === i.id" class="inline-edit">
+                <mat-form-field appearance="outline" class="inline-expiry-input">
+                  <input matInput [matDatepicker]="editExpiryPicker" [value]="editingExpiryValue" (dateChange)="onEditExpiryDateChange($event)" readonly>
+                  <mat-datepicker-toggle matSuffix [for]="editExpiryPicker"></mat-datepicker-toggle>
+                </mat-form-field>
+                <button mat-icon-button color="primary" (click)="saveExpiryDate()" matTooltip="Save"><mat-icon>check</mat-icon></button>
+                <button mat-icon-button color="warn" (click)="cancelEditExpiry()" matTooltip="Cancel"><mat-icon>close</mat-icon></button>
+              </span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="editExpiry">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let i">
+              <button mat-icon-button *ngIf="editingExpiryItem?.id !== i.id && editingBatchItem?.id !== i.id" (click)="openEditExpiry(i)" matTooltip="Edit Expiry Date">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </td>
           </ng-container>
           <ng-container matColumnDef="price">
             <th mat-header-cell *matHeaderCellDef>Price</th>
@@ -247,11 +279,11 @@ import { TenantService } from '../../../core/services/tenant.service';
             <th mat-header-cell *matHeaderCellDef>Total</th>
             <td mat-cell *matCellDef="let i">{{ i.totalAmount | currencyFormat }}</td>
           </ng-container>
-          <tr mat-header-row *matHeaderRowDef="['name', 'qty', 'received', 'batch', 'expiry', 'price', 'total']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['name', 'qty', 'received', 'batch', 'expiry', 'price', 'total'];"></tr>
+          <tr mat-header-row *matHeaderRowDef="['name', 'qty', 'received', 'batch', 'expiry', 'editExpiry', 'price', 'total']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['name', 'qty', 'received', 'batch', 'expiry', 'editExpiry', 'price', 'total'];"></tr>
         </table>
 
-        <div class="po-total">Grand Total: <strong>{{ selectedOrder.totalAmount | currencyFormat }}</strong></div>
+        <div class="po-total">Grand Total: <strong>{{ selectedOrder.totalAmount | currencyFormat }}</strong>        </div>
 
         <div class="form-actions">
           <button mat-stroked-button (click)="selectedOrder = null">Back to List</button>
@@ -328,12 +360,13 @@ import { TenantService } from '../../../core/services/tenant.service';
                 <label class="field-label"><mat-icon>event</mat-icon> Expiry Date</label>
                 <mat-form-field appearance="outline" class="field-input expiry-input">
                   <input matInput
-                         [matDatepicker]="sharedExpiryPicker"
+                         [matDatepicker]="rowExpiryPicker"
                          [value]="receiveItems[ri].expiryDateObj"
                          (dateChange)="onExpiryDateChange($event, ri)"
                          placeholder="Select date"
                          readonly>
-                  <mat-datepicker-toggle matSuffix [for]="sharedExpiryPicker" (click)="activeExpiryIndex = ri"></mat-datepicker-toggle>
+                  <mat-datepicker-toggle matSuffix [for]="rowExpiryPicker"></mat-datepicker-toggle>
+                  <mat-datepicker #rowExpiryPicker></mat-datepicker>
                 </mat-form-field>
               </div>
             </div>
@@ -345,8 +378,6 @@ import { TenantService } from '../../../core/services/tenant.service';
             </div>
           </div>
         </div>
-
-        <mat-datepicker #sharedExpiryPicker></mat-datepicker>
 
         <div class="receive-summary">
           <div class="summary-row">
@@ -374,6 +405,9 @@ import { TenantService } from '../../../core/services/tenant.service';
           </button>
         </div>
       </div>
+
+      <mat-datepicker #sharedExpiryPicker></mat-datepicker>
+      <mat-datepicker #editExpiryPicker></mat-datepicker>
     </app-main-layout>
   `,
   styles: [`
@@ -799,10 +833,67 @@ import { TenantService } from '../../../core/services/tenant.service';
       color: #2e7d32;
       font-size: 1.1rem;
     }
+
+    .inline-edit {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .inline-expiry-input {
+      width: 150px;
+    }
+
+    ::ng-deep .inline-expiry-input .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
+
+    ::ng-deep     .inline-expiry-input .mat-mdc-form-field-infix {
+      padding-top: 2px;
+      padding-bottom: 2px;
+    }
+
+    .inline-batch-input {
+      width: 140px;
+    }
+
+    ::ng-deep .inline-batch-input .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
+
+    ::ng-deep .inline-batch-input .mat-mdc-form-field-infix {
+      padding-top: 2px;
+      padding-bottom: 2px;
+    }
+
+    .clickable-value {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .clickable-value:hover {
+      color: #1a237e;
+    }
+
+    .inline-edit-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      color: #9e9e9e;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .clickable-value:hover .inline-edit-icon {
+      opacity: 1;
+    }
   `]
 })
 export class PurchaseOrdersComponent implements OnInit {
   @ViewChild('sharedExpiryPicker') sharedExpiryPicker!: MatDatepicker<any>;
+  @ViewChild('editExpiryPicker') editExpiryPicker!: MatDatepicker<any>;
   @ViewChild('combinedItemAuto') combinedItemAuto: any;
 
   orders: any[] = [];
@@ -819,17 +910,19 @@ export class PurchaseOrdersComponent implements OnInit {
 
   poForm!: FormGroup;
   filteredSuppliers: any[] = [];
-  allInventoryItems: any[] = [];
   combinedItemResults: any[] = [];
+  searchingItems = false;
+  searchAttempted = false;
 
   showReceiveDialog = false;
   receiveItems: any[] = [];
   receiving = false;
-  activeExpiryIndex = 0;
+  editingExpiryItem: any = null;
+  editingExpiryValue: Date | null = null;
+  editingBatchItem: any = null;
+  editingBatchValue: string = '';
 
-  branding: any = null;
   currencySymbol = '$';
-  itemsLoaded = false;
 
   constructor(
     private api: ApiService,
@@ -843,17 +936,6 @@ export class PurchaseOrdersComponent implements OnInit {
   ngOnInit() {
     this.load();
     this.initForm();
-    this.tenantService.loadTenant().subscribe(t => this.branding = t);
-
-    // Pre-load inventory items
-    this.api.get<any>('v1/inventory/items', { pageNumber: 1, pageSize: 500 }).subscribe({
-      next: (r) => {
-        const items = Array.isArray(r) ? r : (r?.items ?? r?.data ?? []);
-        this.allInventoryItems = items;
-        this.itemsLoaded = true;
-      },
-      error: (err) => console.error('Failed to load inventory items:', err)
-    });
   }
 
   initForm() {
@@ -866,39 +948,40 @@ export class PurchaseOrdersComponent implements OnInit {
       combinedItemSearch: [null]
     });
 
-    // Combined item search
-    this.poForm.get('combinedItemSearch')?.valueChanges.subscribe(val => {
-      const term = (typeof val === 'string' ? val : (val?.name || '')).toLowerCase().trim();
+    // Live server-side item search: hits GET v1/inventory/items/search?term=xyz
+    // Debounced by 300ms so it doesn't fire on every single keystroke.
+    this.poForm.get('combinedItemSearch')?.valueChanges.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(val => {
+        const term = (typeof val === 'string' ? val : (val?.name || '')).trim();
 
-      if (!term) {
-        this.combinedItemResults = this.allInventoryItems
-          .map(i => ({
-            id: i.id,
-            name: i.name,
-            code: i.code,
-            purchasePrice: i.purchasePrice || 0,
-            currentStock: i.currentStock || 0
-          }))
-          .slice(0, 100);
-        return;
-      }
+        if (term.length < 2) {
+          this.searchingItems = false;
+          this.searchAttempted = false;
+          return of([]);
+        }
 
-      const filtered = this.allInventoryItems
-        .filter(i =>
-          i.name?.toLowerCase().includes(term) ||
-          i.code?.toLowerCase().includes(term)
-        )
-        .map(i => ({
-          id: i.id,
-          name: i.name,
-          code: i.code,
-          purchasePrice: i.purchasePrice || 0,
-          currentStock: i.currentStock || 0
-        }))
-        .slice(0, 100);
+        this.searchingItems = true;
+        this.searchAttempted = true;
 
-      // If no match, show all items (limited)
-      this.combinedItemResults = filtered.length > 0 ? filtered : this.allInventoryItems.slice(0, 100);
+        return this.api.get<any>('v1/inventory/items/search', { term }).pipe(
+          catchError(err => {
+            console.error('Item search failed:', err);
+            return of([]);
+          })
+        );
+      })
+    ).subscribe(r => {
+      this.searchingItems = false;
+      const items = Array.isArray(r) ? r : (r?.data ?? r?.items ?? []);
+      this.combinedItemResults = items.map((i: any) => ({
+        id: i.id,
+        name: i.name,
+        code: i.code,
+        purchasePrice: i.purchasePrice ?? i.sellingPrice ?? 0,
+        currentStock: i.currentStock || 0
+      }));
     });
 
     // Supplier search
@@ -926,86 +1009,37 @@ export class PurchaseOrdersComponent implements OnInit {
     this.poForm.patchValue({ supplierId: e.option.value.id });
   }
 
-  onItemFocus() {
-    if (!this.itemsLoaded) return;
+  addSelectedItemFromSearch(itemName: string) {
+    const item = this.combinedItemResults.find(i => i.name === itemName);
 
-    this.combinedItemResults = this.allInventoryItems
-      .map(i => ({
-        id: i.id,
-        name: i.name,
-        code: i.code,
-        purchasePrice: i.purchasePrice || 0,
-        currentStock: i.currentStock || 0
-      }))
-      .slice(0, 100);
+    if (!item) {
+      return;
+    }
 
-    setTimeout(() => {
-      this.combinedItemAuto?.openPanel?.();
-    }, 80);
+    const existing = this.poItems.controls.find(ctrl =>
+      ctrl.value.itemId === item.id
+    );
+
+    if (existing) {
+      this.notification.warning(`${item.name} is already added to the order.`);
+      this.clearItemSearch();
+      return;
+    }
+
+    this.poItems.push(this.fb.group({
+      itemId: [item.id],
+      itemSearch: [item.name],
+      quantity: [1, [Validators.required, Validators.min(1)]],
+      unitPrice: [item.purchasePrice || 0, Validators.min(0)]
+    }));
+
+    this.clearItemSearch();
   }
-
-  reloadItems() {
-    this.itemsLoaded = false;
-    this.api.get<any>('v1/inventory/items', { pageNumber: 1, pageSize: 500 }).subscribe({
-      next: (r) => {
-        const items = Array.isArray(r) ? r : (r?.items ?? r?.data ?? []);
-        this.allInventoryItems = items.filter((i: any) => i.purchasePrice > 0);
-        this.itemsLoaded = true;
-
-        this.combinedItemResults = this.allInventoryItems
-          .map(i => ({
-            id: i.id,
-            name: i.name,
-            code: i.code,
-            purchasePrice: i.purchasePrice || 0,
-            currentStock: i.currentStock || 0
-          }))
-          .slice(0, 100);
-
-        setTimeout(() => this.combinedItemAuto?.openPanel?.(), 80);
-      },
-      error: (err) => console.error('Failed to reload inventory items:', err)
-    });
-  }
-
- addSelectedItemFromSearch(itemName: string) {
-  const item = this.allInventoryItems.find(
-    (i: any) => i.name === itemName
-  );
-
-  if (!item) {
-    return;
-  }
-
-  const existing = this.poItems.controls.find(ctrl =>
-    ctrl.value.itemId === item.id
-  );
-
-  if (existing) {
-    this.notification.warning(`${item.name} is already added to the order.`);
-
-    this.combinedItemResults = [];
-    this.poForm.get('combinedItemSearch')?.setValue('', { emitEvent: false });
-    return;
-  }
-
-  this.poItems.push(this.fb.group({
-    itemId: [item.id],
-    itemSearch: [item.name],
-    quantity: [1, [Validators.required, Validators.min(1)]],
-    unitPrice: [item.purchasePrice || 0, Validators.min(0)]
-  }));
-
-  this.combinedItemResults = [];
-
-  this.poForm.get('combinedItemSearch')?.setValue('', {
-    emitEvent: false
-  });
-}
 
   private clearItemSearch() {
     this.combinedItemResults = [];
-    this.poForm.get('combinedItemSearch')?.setValue(null, { emitEvent: false });
+    this.searchAttempted = false;
+    this.poForm.get('combinedItemSearch')?.setValue('', { emitEvent: false });
   }
 
   get poItems(): FormArray {
@@ -1110,11 +1144,17 @@ export class PurchaseOrdersComponent implements OnInit {
     this.receiveItems = (this.selectedOrder.items || []).map((item: any) => ({
       ...item,
       batchNumber: item.batchNumber || '',
-      expiryDateObj: item.expiryDate ? new Date(item.expiryDate) : null,
+      expiryDateObj: item.expiryDate ? new Date(item.expiryDate) : this.getDefaultExpiryDate(),
       costPrice: item.unitPrice || 0,
       receiveQty: item.orderedQuantity - (item.receivedQuantity || 0)
     }));
     this.showReceiveDialog = true;
+  }
+
+  getDefaultExpiryDate(): Date {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 1);
+    return d;
   }
 
   getReceivingItemCount(): number {
@@ -1159,98 +1199,81 @@ export class PurchaseOrdersComponent implements OnInit {
     });
   }
 
-  // ===== Print =====
-  printOrder(id: string) {
-    this.api.getById<any>('v1/purchase-orders', id).subscribe(order => {
-      const printContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>PO ${order.poNumber}</title>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; color: #333; }
-            .brand { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #1a237e; }
-            .brand-logo { max-width: 60px; max-height: 60px; }
-            .brand-info h2 { margin: 0; color: #1a237e; font-size: 18px; }
-            .brand-info p { margin: 2px 0; color: #666; font-size: 11px; }
-            .header { display: flex; justify-content: space-between; margin-bottom: 20px; }
-            .header h1 { color: #1a237e; font-size: 22px; letter-spacing: 1px; }
-            .header p { color: #666; font-size: 12px; }
-            .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; padding: 12px; background: #f5f6ff; border-radius: 6px; }
-            .meta span { font-size: 12px; }
-            .meta strong { color: #1a237e; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            th { background: #1a237e; color: white; padding: 8px 12px; text-align: left; font-size: 11px; }
-            td { padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-size: 12px; }
-            .total-section { text-align: right; font-size: 16px; margin-bottom: 20px; padding-top: 10px; border-top: 2px solid #1a237e; }
-            .total-section strong { color: #1a237e; }
-            .notes { font-size: 12px; color: #666; margin-bottom: 20px; }
-            .footer { display: flex; justify-content: space-between; margin-top: 40px; font-size: 11px; color: #999; border-top: 1px solid #e0e0e0; padding-top: 10px; }
-            @media print { body { padding: 15px; } }
-          </style>
-        </head>
-        <body>
-          <div class="brand">
-            ${this.branding?.logoUrl ? `<img src="${this.branding.logoUrl}" alt="logo" class="brand-logo">` : ''}
-            <div class="brand-info">
-              <h2>${this.branding?.name || 'Hospital Name'}</h2>
-              ${this.branding?.phone ? `<p>${this.branding.phone}</p>` : ''}
-              ${this.branding?.address ? `<p>${this.branding.address}</p>` : ''}
-            </div>
-          </div>
-          <div class="header">
-            <div><h1>PURCHASE ORDER</h1><p>${order.poNumber}</p></div>
-            <div style="text-align:right">
-              <p><strong>Date:</strong> ${new Date(order.orderDate).toLocaleDateString()}</p>
-              <p><strong>Status:</strong> ${order.status}</p>
-            </div>
-          </div>
-          <div class="meta">
-            <div><span><strong>Supplier:</strong> ${order.supplierName || 'N/A'}</span></div>
-            <div><span><strong>Expected Delivery:</strong> ${order.expectedDeliveryDate ? new Date(order.expectedDeliveryDate).toLocaleDateString() : 'N/A'}</span></div>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Qty</th>
-                <th>Batch</th>
-                <th>Expiry</th>
-                <th>Unit Price</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${(order.items || []).map((i: any) => `
-                <tr>
-                  <td>${i.itemName || 'N/A'}</td>
-                  <td>${i.orderedQuantity}</td>
-                  <td>${i.batchNumber || '-'}</td>
-                  <td>${i.expiryDate ? new Date(i.expiryDate).toLocaleDateString() : '-'}</td>
-                  <td>${this.currencySymbol}${i.unitPrice}</td>
-                  <td>${this.currencySymbol}${i.totalAmount}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          <div class="total-section">
-            <strong>Total: ${this.currencySymbol}${order.totalAmount}</strong>
-          </div>
-          ${order.notes ? `<div class="notes"><strong>Notes:</strong> ${order.notes}</div>` : ''}
-          <div class="footer">
-            <span>Generated by ${this.branding?.name || 'System'}</span>
-            <span>${new Date().toLocaleString()}</span>
-          </div>
-        </body>
-        </html>`;
+  // ===== Edit Expiry =====
+  openEditExpiry(item: any) {
+    this.editingBatchItem = null;
+    this.editingExpiryItem = item;
+    this.editingExpiryValue = item.stockBatch?.expiryDate ? new Date(item.stockBatch.expiryDate) : (item.expiryDate ? new Date(item.expiryDate) : this.getDefaultExpiryDate());
+  }
 
-      const w = window.open('', '_blank');
-      if (w) {
-        w.document.write(printContent);
-        w.document.close();
-        w.print();
+  cancelEditExpiry() {
+    this.editingExpiryItem = null;
+    this.editingExpiryValue = null;
+  }
+
+  onEditExpiryDateChange(event: any) {
+    if (event.value) {
+      this.editingExpiryValue = event.value;
+    }
+  }
+
+  saveExpiryDate() {
+    if (!this.editingExpiryItem || !this.editingExpiryValue) return;
+    const batchId = this.editingExpiryItem.stockBatch?.id;
+    if (!batchId) {
+      this.notification.error('Item has not been received yet - no stock batch exists');
+      return;
+    }
+    const d = this.editingExpiryValue;
+    const expiryStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    this.api.put('v1/inventory/stock-batches/expiry', batchId, { expiryDate: expiryStr }).subscribe({
+      next: () => {
+        this.notification.success('Expiry date updated');
+        this.editingExpiryItem = null;
+        this.editingExpiryValue = null;
+        this.viewOrder(this.selectedOrder.id);
+      },
+      error: () => {
+        this.notification.error('Failed to update expiry date');
       }
     });
+  }
+
+  // ===== Edit Batch Number =====
+  openEditBatch(item: any) {
+    if (!item.stockBatch?.id) return;
+    this.editingExpiryItem = null;
+    this.editingBatchItem = item;
+    this.editingBatchValue = item.stockBatch?.batchNumber || item.batchNumber || '';
+  }
+
+  cancelEditBatch() {
+    this.editingBatchItem = null;
+    this.editingBatchValue = '';
+  }
+
+  saveBatchNumber() {
+    if (!this.editingBatchItem || !this.editingBatchValue?.trim()) return;
+    const batchId = this.editingBatchItem.stockBatch?.id;
+    if (!batchId) {
+      this.notification.error('Item has not been received yet - no stock batch exists');
+      return;
+    }
+    this.api.put('v1/inventory/stock-batches/batch-number', batchId, { batchNumber: this.editingBatchValue.trim() }).subscribe({
+      next: () => {
+        this.notification.success('Batch number updated');
+        this.editingBatchItem = null;
+        this.editingBatchValue = '';
+        this.viewOrder(this.selectedOrder.id);
+      },
+      error: () => {
+        this.notification.error('Failed to update batch number');
+      }
+    });
+  }
+
+  // ===== Print =====
+  printOrder(id: string) {
+    window.open(`/inventory/purchase-orders/print/${id}`, '_blank');
   }
 }

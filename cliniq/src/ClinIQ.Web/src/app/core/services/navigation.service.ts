@@ -58,6 +58,14 @@ const NAV: NavItem[] = [
   { label: 'Pharmacy', icon: 'local_pharmacy', route: '/pharmacy', module: 'pharmacy', permission: 'pharmacy.view' },
 
   {
+    label: 'Diagnostics', icon: 'diagnostic', module: 'diagnostics',
+    children: [
+      { label: 'Laboratory', icon: 'science', route: '/laboratory', module: 'laboratory', permission: 'laboratory.view' },
+      { label: 'Radiology', icon: 'medical_information', route: '/radiology', module: 'radiology', permission: 'radiology.view' },
+    ],
+  },
+
+  {
     label: 'Billing', icon: 'payments', module: 'billing', permission: 'billing.view',
     children: [
       { label: 'Invoices', icon: 'receipt_long', route: '/billing/invoices', module: 'billing', permission: 'billing.view' },

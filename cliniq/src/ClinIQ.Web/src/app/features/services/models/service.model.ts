@@ -19,6 +19,7 @@ export interface ClinicalService {
   isActive: boolean;
   displayOrder: number;
   createdAt: string;
+  type: number; // ServiceType: 1=General, 2=Laboratory, 3=Radiology
 }
 
 export interface ServiceCategoryModel {
@@ -33,6 +34,18 @@ export interface ServiceCategoryModel {
   serviceCount: number;
   createdAt: string;
 }
+
+export enum ServiceType {
+  General = 1,
+  Laboratory = 2,
+  Radiology = 3
+}
+
+export const SERVICE_TYPE_OPTIONS = [
+  { value: ServiceType.General, label: 'General' },
+  { value: ServiceType.Laboratory, label: 'Laboratory' },
+  { value: ServiceType.Radiology, label: 'Radiology' }
+];
 
 export const SERVICE_CATEGORIES = [
   { value: 'Consultation', label: 'Consultation' },

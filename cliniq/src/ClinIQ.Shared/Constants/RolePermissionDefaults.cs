@@ -39,8 +39,12 @@ public static class RolePermissionDefaults
                 Permissions.InventoryView, Permissions.InventoryManage, Permissions.InventoryAdjust, Permissions.InventoryTransfer,
                 Permissions.PurchaseOrdersView, Permissions.PurchaseOrdersCreate, Permissions.PurchaseOrdersApprove, Permissions.PurchaseOrdersReceive,
                 Permissions.PharmacyView, Permissions.PharmacySale, Permissions.PharmacyDispense,
-                Permissions.LaboratoryView,
-                Permissions.RadiologyView,
+                Permissions.LaboratoryView, Permissions.LaboratoryCreate, Permissions.LaboratoryEdit, Permissions.LaboratoryDelete,
+                Permissions.LaboratoryOrdersView, Permissions.LaboratoryOrdersCreate, Permissions.LaboratoryOrdersEdit, Permissions.LaboratoryOrdersDelete,
+                Permissions.LaboratoryResultsView, Permissions.LaboratoryResultsEdit, Permissions.LaboratoryManageResults, Permissions.LaboratoryPrint,
+                Permissions.RadiologyView, Permissions.RadiologyCreate, Permissions.RadiologyEdit, Permissions.RadiologyDelete,
+                Permissions.RadiologyOrdersView, Permissions.RadiologyOrdersCreate, Permissions.RadiologyOrdersEdit, Permissions.RadiologyOrdersDelete,
+                Permissions.RadiologyResultsView, Permissions.RadiologyResultsEdit, Permissions.RadiologyReport, Permissions.RadiologyPrint,
                 Permissions.ReportsView, Permissions.ReportsExport, Permissions.ReportsFinancial,
                 Permissions.UsersView, Permissions.UsersCreate, Permissions.UsersEdit, Permissions.UsersDelete,
                 Permissions.RolesView, Permissions.RolesCreate, Permissions.RolesEdit, Permissions.RolesDelete,
@@ -98,6 +102,8 @@ public static class RolePermissionDefaults
                 Permissions.PrescriptionsView, Permissions.PrescriptionsCreate, Permissions.PrescriptionsEdit, Permissions.PrescriptionsDelete, Permissions.PrescriptionsPrint,
                 Permissions.AdmissionsView, Permissions.AdmissionsCreate, Permissions.AdmissionsDischarge,
                 Permissions.BedsView,
+                Permissions.LaboratoryView, Permissions.LaboratoryCreate, Permissions.LaboratoryOrdersCreate,
+                Permissions.RadiologyView, Permissions.RadiologyCreate, Permissions.RadiologyOrdersCreate,
                 Permissions.DoctorsView,
                 Permissions.ReportsView
             },
@@ -159,12 +165,18 @@ public static class RolePermissionDefaults
             [Roles.LabStaff] = new[]
             {
                 Permissions.PatientsView, Permissions.VisitsView, Permissions.EmrView,
+                Permissions.LaboratoryView, Permissions.LaboratoryCreate, Permissions.LaboratoryEdit, Permissions.LaboratoryDelete,
+                Permissions.LaboratoryOrdersView, Permissions.LaboratoryOrdersCreate, Permissions.LaboratoryOrdersEdit, Permissions.LaboratoryOrdersDelete,
+                Permissions.LaboratoryResultsView, Permissions.LaboratoryResultsEdit, Permissions.LaboratoryManageResults, Permissions.LaboratoryPrint,
                 Permissions.ReportsView
             },
 
             [Roles.RadiologyStaff] = new[]
             {
                 Permissions.PatientsView, Permissions.VisitsView, Permissions.EmrView,
+                Permissions.RadiologyView, Permissions.RadiologyCreate, Permissions.RadiologyEdit, Permissions.RadiologyDelete,
+                Permissions.RadiologyOrdersView, Permissions.RadiologyOrdersCreate, Permissions.RadiologyOrdersEdit, Permissions.RadiologyOrdersDelete,
+                Permissions.RadiologyResultsView, Permissions.RadiologyResultsEdit, Permissions.RadiologyReport, Permissions.RadiologyPrint,
                 Permissions.ReportsView
             },
 

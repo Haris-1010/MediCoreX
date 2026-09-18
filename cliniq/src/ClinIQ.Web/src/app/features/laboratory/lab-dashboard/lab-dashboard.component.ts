@@ -8,8 +8,8 @@ import { ApiService } from '../../../core/services/api.service';
     <app-main-layout>
       <app-page-header title="Laboratory" [breadcrumbs]="[{ label: 'Dashboard', route: '/dashboard' }, { label: 'Laboratory' }]"></app-page-header>
       <div class="stats-grid">
-        <div class="stat-card"><mat-icon>pending</mat-icon><div><h3>{{ stats.pending }}</h3><p>Pending</p></div></div>
-        <div class="stat-card"><mat-icon>science</mat-icon><div><h3>{{ stats.inProgress }}</h3><p>In Progress</p></div></div>
+        <div class="stat-card"><mat-icon>pending</mat-icon><div><h3>{{ stats.pendingOrders }}</h3><p>Pending Orders</p></div></div>
+        <div class="stat-card"><mat-icon>science</mat-icon><div><h3>{{ stats.totalResults }}</h3><p>Total Results</p></div></div>
         <div class="stat-card"><mat-icon>check_circle</mat-icon><div><h3>{{ stats.completedToday }}</h3><p>Completed Today</p></div></div>
       </div>
       <div class="card">
@@ -33,7 +33,7 @@ import { ApiService } from '../../../core/services/api.service';
     .card { background: white; padding: 1.5rem; border-radius: 8px; } .card h3 { margin: 0 0 1rem; } table { width: 100%; }`]
 })
 export class LabDashboardComponent implements OnInit {
-  stats = { pending: 0, inProgress: 0, completedToday: 0 };
+  stats = { pendingOrders: 0, totalResults: 0, completedToday: 0 };
   orders: any[] = [];
   columns = ['orderNumber', 'patient', 'tests', 'priority', 'orderedBy', 'actions'];
 

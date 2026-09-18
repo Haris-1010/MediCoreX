@@ -29,6 +29,7 @@ public class ServicesController : ControllerBase
         [FromQuery] Guid? categoryId = null,
         [FromQuery] Guid? departmentId = null,
         [FromQuery] bool? isActive = null,
+        [FromQuery] int? type = null,
         CancellationToken ct = default)
     {
         var query = new ServiceQuery
@@ -38,7 +39,8 @@ public class ServicesController : ControllerBase
             SearchTerm = searchTerm,
             CategoryId = categoryId,
             DepartmentId = departmentId,
-            IsActive = isActive
+            IsActive = isActive,
+            Type = type
         };
 
         var result = await _serviceService.GetServicesPaginatedAsync(query, ct);
@@ -47,9 +49,9 @@ public class ServicesController : ControllerBase
 
     [HttpGet("active")]
     [RequirePermission(Permissions.ServicesView)]
-    public async Task<IActionResult> GetActiveServices(CancellationToken ct = default)
+    public async Task<IActionResult> GetActiveServices([FromQuery] int? type = null, CancellationToken ct = default)
     {
-        var result = await _serviceService.GetActiveServicesAsync(ct);
+        var result = await _serviceService.GetActiveServicesAsync(type, ct);
         return Ok(result);
     }
 

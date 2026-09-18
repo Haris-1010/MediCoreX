@@ -135,8 +135,8 @@ public class DashboardController : ControllerBase
         var today = DateTime.Today;
         var warningDate = today.AddDays(30);
         var totalProduct = await _context.Items.CountAsync(item => !item.IsDeleted && item.IsActive);
-        var expiryProduct = await _context.StockBatches.CountAsync(batch => batch.IsActive && batch.ExpiryDate.HasValue && batch.ExpiryDate < today);
-        var nearToExpire = await _context.StockBatches.CountAsync(batch => batch.IsActive && batch.ExpiryDate >= today && batch.ExpiryDate <= warningDate);
+        var expiryProduct = await _context.StockBatches.CountAsync(batch => batch.IsActive && batch.IsExpired && batch.ExpiryDate.HasValue && batch.ExpiryDate < today);
+        var nearToExpire = await _context.StockBatches.CountAsync(batch => batch.IsActive && !batch.IsExpired && batch.ExpiryDate.HasValue && batch.ExpiryDate >= today && batch.ExpiryDate <= warningDate);
         var nearToFinish = await _context.Items.CountAsync(item => !item.IsDeleted && item.IsActive && item.CurrentStock <= item.ReorderLevel);
 
         return Ok(Result<object>.Success(new { totalProduct, expiryProduct, nearToExpire, nearToFinish }));

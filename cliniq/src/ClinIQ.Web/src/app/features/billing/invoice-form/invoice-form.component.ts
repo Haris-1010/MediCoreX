@@ -924,32 +924,62 @@ export class InvoiceFormComponent implements OnInit, OnDestroy {
       error: () => this.savingPatient = false
     });
   }
-
-  onItemFocus() {
-    if (this.allServices.length === 0) {
-      this.api.get<any[]>('v1/services/active').subscribe(res => {
-        this.allServices = Array.isArray(res) ? res : ((res as any)?.data ?? []);
-      });
-    }
-    if (this.allInventoryItems.length === 0) {
-      this.api.get<any>('v1/inventory/items', { pageNumber: 1, pageSize: 500 }).subscribe(r => {
-        const items = Array.isArray(r) ? r : (r?.items ?? r?.data ?? []);
-        this.allInventoryItems = items.filter((i: any) => i.sellingPrice > 0 && i.currentStock > 0);
-      });
-    }
+onItemFocus() {
+  if (this.allServices.length === 0) {
+    this.api.get<any[]>('v1/services/active').subscribe(res => {
+      this.allServices = Array.isArray(res) ? res : ((res as any)?.data ?? []);
+    });
+  }
+   
+}
+onItemSearchInput(event: any) {
+  const term = (event.target.value || '').trim();
+  if (!term) {
+    this.combinedResults = [];
+    return;
   }
 
-  onItemSearchInput(event: any) {
-    const term = (event.target.value || '').toLowerCase();
-    if (!term) { this.combinedResults = []; return; }
-    const svcMapped = this.allServices
-      .filter(s => s.name?.toLowerCase().includes(term) || s.code?.toLowerCase().includes(term))
-      .map(s => ({ _type: 'service', _name: s.name, _code: s.code, _price: s.price, _tax: s.taxPercent || 0, _stock: null, _itemId: s.id }));
-    const invMapped = this.allInventoryItems
-      .filter(i => i.name?.toLowerCase().includes(term) || i.code?.toLowerCase().includes(term))
-      .map(i => ({ _type: 'inventory', _name: i.name, _code: i.code, _price: i.sellingPrice, _tax: i.taxPercent || 0, _stock: i.currentStock, _itemId: i.id }));
-    this.combinedResults = [...svcMapped, ...invMapped];
-  }
+  const termLower = term.toLowerCase();
+
+  // Services: client-side filter
+  const svcMapped = this.allServices
+    .filter(s =>
+      s.name?.toLowerCase().includes(termLower) ||
+      s.code?.toLowerCase().includes(termLower)
+    )
+    .map(s => ({
+      _type: 'service',
+      _name: s.name,
+      _code: s.code,
+      _price: s.price,
+      _tax: s.taxPercent || 0,
+      _stock: null,
+      _itemId: s.id
+    }));
+
+  // Inventory: dedicated search endpoint
+  this.api.get<any>('v1/inventory/items/search', { term }).subscribe({
+    next: (r) => {
+      const items = Array.isArray(r) ? r : (r?.data ?? r?.items ?? []);
+      const invMapped = items
+        .filter((i: any) => i.sellingPrice > 0)
+        .map((i: any) => ({
+          _type: 'inventory',
+          _name: i.name,
+          _code: i.code,
+          _price: i.sellingPrice,
+          _tax: i.taxPercent || 0,
+          _stock: i.currentStock,
+          _itemId: i.id
+        }));
+
+      this.combinedResults = [...svcMapped, ...invMapped];
+    },
+    error: () => {
+      this.combinedResults = svcMapped;
+    }
+  });
+}
 
   onItemKeydown(event: KeyboardEvent) {
     if (event.key === 'Enter' && this.combinedResults.length === 1) {

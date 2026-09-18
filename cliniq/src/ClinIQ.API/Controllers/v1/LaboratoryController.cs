@@ -69,7 +69,7 @@ public class LaboratoryController : ControllerBase
     }
 
     [HttpPost("orders")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryView)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryCreate)]
     public async Task<IActionResult> CreateOrder([FromBody] CreateLabOrderRequest request)
     {
         if (request.PatientId == Guid.Empty)
@@ -146,7 +146,7 @@ public class LaboratoryController : ControllerBase
     }
 
     [HttpPut("orders/{id:guid}")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryView)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryEdit)]
     public async Task<IActionResult> UpdateOrder(Guid id, [FromBody] UpdateLabOrderRequest request)
     {
         var order = await _context.MedicalOrders.FirstOrDefaultAsync(o => o.Id == id && o.OrderType == MedicalOrderType.Lab && !o.IsDeleted);
@@ -164,7 +164,7 @@ public class LaboratoryController : ControllerBase
     }
 
     [HttpPost("orders/{id:guid}/complete")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryView)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryManageResults)]
     public async Task<IActionResult> CompleteOrder(Guid id, [FromBody] CompleteLabOrderRequest request)
     {
         var order = await _context.MedicalOrders.FirstOrDefaultAsync(o => o.Id == id && o.OrderType == MedicalOrderType.Lab && !o.IsDeleted);
@@ -210,6 +210,73 @@ public class LaboratoryController : ControllerBase
             .ToListAsync();
 
         return Ok(Result<object>.Success(results));
+    }
+
+    [HttpGet("stats")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryView)]
+    public async Task<IActionResult> GetStats()
+    {
+        var today = DateTime.UtcNow.Date;
+        var pendingOrders = await _context.MedicalOrders.CountAsync(o =>
+            o.OrderType == MedicalOrderType.Lab &&
+            (o.Status == MedicalOrderStatus.Ordered || o.Status == MedicalOrderStatus.InProgress) &&
+            !o.IsDeleted);
+        var completedToday = await _context.MedicalOrders.CountAsync(o =>
+            o.OrderType == MedicalOrderType.Lab &&
+            o.Status == MedicalOrderStatus.Completed &&
+            o.CompletedAt >= today && !o.IsDeleted);
+        var totalResults = await _context.MedicalOrders.CountAsync(o =>
+            o.OrderType == MedicalOrderType.Lab &&
+            o.Status == MedicalOrderStatus.Completed &&
+            !o.IsDeleted);
+
+        return Ok(Result<object>.Success(new
+        {
+            pendingOrders,
+            completedToday,
+            totalResults
+        }));
+    }
+
+    [HttpGet("pending")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryView)]
+    public async Task<IActionResult> GetPendingOrders()
+    {
+        var orders = await _context.MedicalOrders
+            .Where(o => o.OrderType == MedicalOrderType.Lab &&
+                (o.Status == MedicalOrderStatus.Ordered || o.Status == MedicalOrderStatus.InProgress) &&
+                !o.IsDeleted)
+            .OrderByDescending(o => o.OrderDate)
+            .Take(50)
+            .Select(o => new
+            {
+                o.Id,
+                o.OrderNumber,
+                PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
+                o.PatientId,
+                o.OrderDate,
+                Status = o.Status.ToString(),
+                o.IsUrgent,
+                o.Priority,
+                o.OrderItems,
+                o.ClinicalIndication
+            })
+            .ToListAsync();
+
+        return Ok(Result<object>.Success(orders));
+    }
+
+    [HttpDelete("orders/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryDelete)]
+    public async Task<IActionResult> DeleteOrder(Guid id)
+    {
+        var order = await _context.MedicalOrders.FirstOrDefaultAsync(o => o.Id == id && o.OrderType == MedicalOrderType.Lab && !o.IsDeleted);
+        if (order == null)
+            return NotFound(Result.Failure("Order not found"));
+
+        order.IsDeleted = true;
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Lab order deleted successfully"));
     }
 
     public class CreateLabOrderRequest

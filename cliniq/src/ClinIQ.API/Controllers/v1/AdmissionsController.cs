@@ -8,6 +8,7 @@ using ClinIQ.API.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using InvoiceStatus = ClinIQ.Domain.Enums.InvoiceStatus;
 
 namespace ClinIQ.API.Controllers.v1;
 
@@ -386,6 +387,240 @@ public class AdmissionsController : ControllerBase
             .ToListAsync();
 
         return Ok(Result<object>.Success(history));
+    }
+
+    [HttpGet("{id:guid}/billing")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.BillingView)]
+    public async Task<IActionResult> GetAdmissionBilling(Guid id)
+    {
+        var admission = await _context.Admissions
+            .Where(a => a.Id == id && !a.IsDeleted)
+            .Select(a => new
+            {
+                a.Id,
+                a.AdmissionNumber,
+                PatientName = a.Patient != null ? a.Patient.FirstName + " " + a.Patient.LastName : null,
+                a.PatientId,
+                a.AdmissionDate,
+                a.DischargeDate,
+                Status = a.Status.ToString(),
+                a.DepositAmount,
+                a.EstimatedCost,
+                a.CurrentBedId,
+                a.CurrentWardId
+            })
+            .FirstOrDefaultAsync();
+
+        if (admission == null)
+            return NotFound(Result.Failure("Admission not found"));
+
+        // Lookup bed and ward separately (no navigation properties)
+        decimal bedDailyRate = 0m;
+        string? bedNumber = null;
+        string? wardName = null;
+
+        if (admission.CurrentBedId.HasValue)
+        {
+            var bed = await _context.Beds.FirstOrDefaultAsync(b => b.Id == admission.CurrentBedId.Value && !b.IsDeleted);
+            if (bed != null)
+            {
+                bedNumber = bed.BedNumber;
+                bedDailyRate = bed.DailyRate ?? 0m;
+                var room = await _context.Rooms.FirstOrDefaultAsync(r => r.Id == bed.RoomId && !r.IsDeleted);
+                if (room != null && admission.CurrentWardId.HasValue)
+                {
+                    var ward = await _context.Wards.FirstOrDefaultAsync(w => w.Id == admission.CurrentWardId.Value && !w.IsDeleted);
+                    wardName = ward?.Name;
+                }
+            }
+        }
+
+        // Calculate bed charges from allocations
+        var allocations = await _context.BedAllocations
+            .Where(ba => ba.AdmissionId == id && !ba.IsDeleted)
+            .ToListAsync();
+
+        decimal totalBedCharges = 0;
+        var bedChargeDetails = new List<object>();
+
+        foreach (var alloc in allocations)
+        {
+            var allocBed = await _context.Beds.FirstOrDefaultAsync(b => b.Id == alloc.BedId && !b.IsDeleted);
+            var allocRoom = allocBed != null ? await _context.Rooms.FirstOrDefaultAsync(r => r.Id == allocBed.RoomId && !r.IsDeleted) : null;
+            var allocWard = allocRoom != null ? await _context.Wards.FirstOrDefaultAsync(w => w.Id == allocRoom.WardId && !w.IsDeleted) : null;
+
+            var endDate = alloc.ReleasedAt ?? DateTime.UtcNow;
+            var days = Math.Max(1, (int)(endDate - alloc.AllocatedAt).TotalDays);
+            var dailyRate = allocBed?.DailyRate ?? allocWard?.DailyRate ?? 0m;
+            var charge = days * dailyRate;
+            totalBedCharges += charge;
+
+            bedChargeDetails.Add(new
+            {
+                BedNumber = allocBed?.BedNumber,
+                RoomNumber = allocRoom?.RoomNumber,
+                WardName = allocWard?.Name,
+                alloc.AllocatedAt,
+                ReleasedAt = alloc.ReleasedAt,
+                Days = days,
+                DailyRate = dailyRate,
+                TotalCharge = charge
+            });
+        }
+
+        // Get existing invoice for this admission
+        var existingInvoice = await _context.Invoices
+            .Where(i => i.AdmissionId == id && !i.IsDeleted)
+            .OrderByDescending(i => i.InvoiceDate)
+            .Select(i => new
+            {
+                i.Id,
+                i.InvoiceNumber,
+                i.TotalAmount,
+                i.PaidAmount,
+                i.OutstandingAmount,
+                Status = i.Status.ToString()
+            })
+            .FirstOrDefaultAsync();
+
+        // Get existing invoice items
+        var invoiceItemsList = new List<object>();
+        if (existingInvoice != null)
+        {
+            invoiceItemsList = await _context.InvoiceItems
+                .Where(ii => ii.InvoiceId == existingInvoice.Id)
+                .Select(ii => new
+                {
+                    ii.ItemType,
+                    ii.ItemName,
+                    ii.Quantity,
+                    ii.UnitPrice,
+                    ii.Amount,
+                    ii.TotalAmount
+                })
+                .Cast<object>()
+                .ToListAsync();
+        }
+
+        return Ok(Result<object>.Success(new
+        {
+            admission,
+            bedCharges = bedChargeDetails,
+            totalBedCharges,
+            existingInvoice,
+            invoiceItems = invoiceItemsList
+        }));
+    }
+
+    [HttpPost("{id:guid}/generate-bill")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.BillingCreate)]
+    public async Task<IActionResult> GenerateBill(Guid id)
+    {
+        var tenantId = _tenantService.GetCurrentTenantId();
+        if (tenantId is null)
+            return BadRequest(Result.Failure("Unable to resolve the current organization."));
+
+        var admission = await _context.Admissions
+            .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
+        if (admission == null)
+            return NotFound(Result.Failure("Admission not found"));
+
+        // Check if invoice already exists
+        var existingInvoice = await _context.Invoices
+            .FirstOrDefaultAsync(i => i.AdmissionId == id && !i.IsDeleted);
+        if (existingInvoice != null)
+            return BadRequest(Result.Failure("Invoice already exists for this admission"));
+
+        // Calculate bed charges
+        var allocations = await _context.BedAllocations
+            .Where(ba => ba.AdmissionId == id && !ba.IsDeleted)
+            .ToListAsync();
+
+        decimal totalBedCharges = 0;
+        var invoiceItems = new List<Domain.Entities.Billing.InvoiceItem>();
+        int displayOrder = 1;
+
+        foreach (var alloc in allocations)
+        {
+            var bed = await _context.Beds.FirstOrDefaultAsync(b => b.Id == alloc.BedId && !b.IsDeleted);
+            var room = bed != null ? await _context.Rooms.FirstOrDefaultAsync(r => r.Id == bed.RoomId && !r.IsDeleted) : null;
+            var ward = room != null ? await _context.Wards.FirstOrDefaultAsync(w => w.Id == room.WardId && !w.IsDeleted) : null;
+
+            var endDate = alloc.ReleasedAt ?? DateTime.UtcNow;
+            var days = Math.Max(1, (int)(endDate - alloc.AllocatedAt).TotalDays);
+            var dailyRate = bed?.DailyRate ?? ward?.DailyRate ?? 0m;
+            var charge = days * dailyRate;
+            totalBedCharges += charge;
+
+            if (charge > 0)
+            {
+                invoiceItems.Add(new Domain.Entities.Billing.InvoiceItem
+                {
+                    ItemType = "BedCharge",
+                    ItemName = $"Bed Charge - {bed?.BedNumber ?? "N/A"} ({ward?.Name ?? "N/A"})",
+                    Description = $"Bed {bed?.BedNumber} in {ward?.Name} from {alloc.AllocatedAt:dd MMM} to {endDate:dd MMM} ({days} days)",
+                    Quantity = days,
+                    UnitPrice = dailyRate,
+                    Amount = charge,
+                    TotalAmount = charge,
+                    DisplayOrder = displayOrder++,
+                    ReferenceType = "BedAllocation",
+                    ReferenceId = alloc.Id
+                });
+            }
+        }
+
+        // Generate invoice number
+        var invoicePrefix = "INV-";
+        var lastNumbers = await _context.Invoices
+            .Where(i => i.TenantId == tenantId && i.InvoiceNumber.StartsWith(invoicePrefix))
+            .Select(i => i.InvoiceNumber)
+            .ToListAsync();
+        var maxNum = lastNumbers
+            .Select(n => int.TryParse(n.Substring(invoicePrefix.Length), out var num) ? num : 0)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        var invoice = new Domain.Entities.Billing.Invoice
+        {
+            InvoiceNumber = $"{invoicePrefix}{(maxNum + 1):D4}",
+            PatientId = admission.PatientId,
+            AdmissionId = admission.Id,
+            InvoiceDate = DateTime.UtcNow,
+            DueDate = DateTime.UtcNow.AddDays(30),
+            Status = InvoiceStatus.Draft,
+            SubTotal = totalBedCharges,
+            TotalAmount = totalBedCharges,
+            OutstandingAmount = totalBedCharges - (admission.DepositAmount ?? 0m),
+            PaidAmount = admission.DepositAmount ?? 0m,
+            Notes = $"IPD Discharge Bill - Admission #{admission.AdmissionNumber}",
+            TenantId = tenantId
+        };
+
+        _context.Invoices.Add(invoice);
+        await _context.SaveChangesAsync();
+
+        // Add invoice items
+        foreach (var item in invoiceItems)
+        {
+            item.InvoiceId = invoice.Id;
+            _context.InvoiceItems.Add(item);
+        }
+        await _context.SaveChangesAsync();
+
+        // Update admission status
+        admission.EstimatedCost = totalBedCharges;
+        await _context.SaveChangesAsync();
+
+        return Ok(Result<object>.Success(new
+        {
+            invoiceId = invoice.Id,
+            invoiceNumber = invoice.InvoiceNumber,
+            totalBedCharges,
+            depositDeducted = admission.DepositAmount ?? 0m,
+            outstandingAmount = invoice.OutstandingAmount,
+            itemCount = invoiceItems.Count
+        }, "Discharge bill generated successfully"));
     }
 }
 

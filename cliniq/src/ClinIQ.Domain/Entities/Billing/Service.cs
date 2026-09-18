@@ -1,4 +1,5 @@
 using ClinIQ.Domain.Common;
+using ClinIQ.Domain.Enums;
 
 namespace ClinIQ.Domain.Entities.Billing;
 
@@ -12,6 +13,9 @@ public class Service : TenantEntity
     public string? Description { get; set; }
     public Guid? CategoryId { get; set; }
     public Guid? DepartmentId { get; set; }
+
+    // Service Type (General, Laboratory, Radiology)
+    public ServiceType Type { get; set; } = ServiceType.General;
 
     // Pricing
     public decimal Price { get; set; }

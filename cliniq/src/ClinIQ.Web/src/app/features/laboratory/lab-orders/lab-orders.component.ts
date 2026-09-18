@@ -6,7 +6,11 @@ import { ApiService, PagedResult } from '../../../core/services/api.service';
   selector: 'app-lab-orders',
   template: `
     <app-main-layout>
-      <app-page-header title="Lab Orders" [breadcrumbs]="[{ label: 'Laboratory', route: '/laboratory' }, { label: 'Orders' }]"></app-page-header>
+      <app-page-header title="Lab Orders" [breadcrumbs]="[{ label: 'Laboratory', route: '/laboratory' }, { label: 'Orders' }]">
+        <button mat-raised-button color="primary" routerLink="new">
+          <mat-icon>add</mat-icon> New Order
+        </button>
+      </app-page-header>
       <div class="card">
         <div class="filters">
           <app-search-input placeholder="Search..." (search)="onSearch($event)"></app-search-input>

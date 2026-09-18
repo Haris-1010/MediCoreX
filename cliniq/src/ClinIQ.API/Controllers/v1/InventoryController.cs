@@ -54,7 +54,7 @@ public class InventoryController : ControllerBase
         [FromQuery] string? searchTerm = null,
         [FromQuery] string? categoryId = null)
     {
-        var query = _context.Items.Where(i => !i.IsDeleted && i.IsActive);
+        var query = _context.Items.Where(i => !i.IsDeleted );
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
@@ -197,7 +197,7 @@ public class InventoryController : ControllerBase
             ExpiryWarningDays = request.ExpiryWarningDays,
             DefaultLocation = request.DefaultLocation,
             DefaultWarehouseId = request.DefaultWarehouseId,
-            IsActive = true
+            IsActive = request.IsActive
         };
 
         _context.Items.Add(item);
@@ -248,6 +248,7 @@ public class InventoryController : ControllerBase
         item.ExpiryWarningDays = request.ExpiryWarningDays;
         item.DefaultLocation = request.DefaultLocation;
         item.DefaultWarehouseId = request.DefaultWarehouseId;
+        item.IsActive = request.IsActive;
 
         await _context.SaveChangesAsync();
         return Ok(Result.Success("Item updated successfully"));
@@ -347,6 +348,7 @@ public class InventoryController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.InventoryView)]
     public async Task<IActionResult> GetStock()
     {
+        var today = DateTime.Today;
         var stock = await _context.Items
             .Where(i => !i.IsDeleted && i.IsActive)
             .Select(i => new
@@ -355,6 +357,9 @@ public class InventoryController : ControllerBase
                 i.Name,
                 i.Code,
                 i.CurrentStock,
+                AvailableStock = _context.StockBatches
+                    .Where(b => b.ItemId == i.Id && b.IsActive && !b.IsExpired && b.AvailableQuantity > 0)
+                    .Sum(b => b.AvailableQuantity),
                 i.ReorderLevel,
                 i.MinimumStock,
                 i.MaximumStock,
@@ -441,6 +446,7 @@ public class InventoryController : ControllerBase
                 i.GenericName,
                 i.BrandName,
                 i.CurrentStock,
+                i.PurchasePrice,
                 i.SellingPrice,
                 StockStatus = i.CurrentStock <= 0 ? "OutOfStock" :
                     i.CurrentStock <= i.ReorderLevel ? "LowStock" : "InStock"
@@ -472,6 +478,134 @@ public class InventoryController : ControllerBase
             .ToListAsync();
 
         return Ok(Result<object>.Success(items));
+    }
+
+    [HttpGet("stock-batches/{itemId:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.InventoryView)]
+    public async Task<IActionResult> GetStockBatches(Guid itemId)
+    {
+        var today = DateTime.Today;
+        var batches = await _context.StockBatches
+            .Where(b => b.ItemId == itemId && b.IsActive && b.AvailableQuantity > 0)
+            .OrderBy(b => b.ExpiryDate)
+            .Select(b => new
+            {
+                b.Id,
+                b.BatchNumber,
+                b.ExpiryDate,
+                b.AvailableQuantity,
+                b.PurchasePrice,
+                b.SellingPrice,
+                b.MRP,
+                IsExpired = b.ExpiryDate.HasValue && b.ExpiryDate < today,
+                IsNearExpiry = b.ExpiryDate.HasValue && b.ExpiryDate >= today && b.ExpiryDate <= today.AddDays(30),
+                b.RackNumber,
+                b.ShelfNumber
+            })
+            .ToListAsync();
+
+        return Ok(Result<object>.Success(batches));
+    }
+
+    [HttpGet("stock-batches")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.InventoryView)]
+    public async Task<IActionResult> GetAllStockBatches(
+        [FromQuery] bool? expiredOnly = null,
+        [FromQuery] bool? nearExpiryOnly = null)
+    {
+        var today = DateTime.Today;
+        var warningDate = today.AddDays(30);
+
+        var query = _context.StockBatches
+            .Where(b => b.IsActive && b.AvailableQuantity > 0)
+            .Include(b => b.Item)
+            .AsQueryable();
+
+        if (expiredOnly == true)
+            query = query.Where(b => b.ExpiryDate.HasValue && b.ExpiryDate < today);
+        else if (nearExpiryOnly == true)
+            query = query.Where(b => b.ExpiryDate.HasValue && b.ExpiryDate >= today && b.ExpiryDate <= warningDate);
+
+        var batches = await query
+            .OrderBy(b => b.ExpiryDate)
+            .Select(b => new
+            {
+                b.Id,
+                b.ItemId,
+                ItemName = b.Item != null ? b.Item.Name : null,
+                ItemCode = b.Item != null ? b.Item.Code : null,
+                b.BatchNumber,
+                b.ExpiryDate,
+                b.AvailableQuantity,
+                b.PurchasePrice,
+                b.SellingPrice,
+                IsExpired = b.ExpiryDate.HasValue && b.ExpiryDate < today,
+                IsNearExpiry = b.ExpiryDate.HasValue && b.ExpiryDate >= today && b.ExpiryDate <= warningDate,
+                b.RackNumber,
+                b.ShelfNumber
+            })
+            .ToListAsync();
+
+        return Ok(Result<object>.Success(batches));
+    }
+
+    [HttpPut("stock-batches/expiry/{batchId:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.InventoryManage)]
+    public async Task<IActionResult> UpdateBatchExpiry(Guid batchId, [FromBody] UpdateExpiryRequest request)
+    {
+        var batch = await _context.StockBatches.FirstOrDefaultAsync(b => b.Id == batchId && b.IsActive);
+        if (batch == null)
+            return NotFound(Result.Failure("Stock batch not found"));
+
+        var today = DateTime.Today;
+        batch.ExpiryDate = request.ExpiryDate;
+        batch.IsExpired = request.ExpiryDate.HasValue && request.ExpiryDate < today;
+
+        if (batch.IsExpired)
+        {
+            batch.ExpiredQuantity = batch.AvailableQuantity;
+            batch.AvailableQuantity = 0;
+        }
+        else
+        {
+            batch.ExpiredQuantity = 0;
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Expiry date updated successfully"));
+    }
+
+    [HttpPut("stock-batches/batch-number/{batchId:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.InventoryManage)]
+    public async Task<IActionResult> UpdateBatchNumber(Guid batchId, [FromBody] UpdateBatchNumberRequest request)
+    {
+        var batch = await _context.StockBatches.FirstOrDefaultAsync(b => b.Id == batchId && b.IsActive);
+        if (batch == null)
+            return NotFound(Result.Failure("Stock batch not found"));
+
+        batch.BatchNumber = request.BatchNumber;
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Batch number updated successfully"));
+    }
+
+    [HttpPost("expire-batches")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.InventoryManage)]
+    public async Task<IActionResult> MarkExpiredBatches()
+    {
+        var today = DateTime.Today;
+        var expiredBatches = await _context.StockBatches
+            .Where(b => b.IsActive && b.ExpiryDate.HasValue && b.ExpiryDate < today && !b.IsExpired && b.AvailableQuantity > 0)
+            .ToListAsync();
+
+        foreach (var batch in expiredBatches)
+        {
+            batch.IsExpired = true;
+            batch.ExpiredQuantity = batch.AvailableQuantity;
+            batch.AvailableQuantity = 0;
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(Result<object>.Success(new { marked = expiredBatches.Count }, $"{expiredBatches.Count} batches marked as expired"));
     }
 
     [HttpGet("stats")]
@@ -529,6 +663,7 @@ public class InventoryController : ControllerBase
         public decimal ReorderQuantity { get; set; }
         public bool TracksExpiry { get; set; }
         public bool TracksBatches { get; set; }
+        public bool IsActive { get; set; }
         public int? ExpiryWarningDays { get; set; }
         public string? DefaultLocation { get; set; }
         public Guid? DefaultWarehouseId { get; set; }
@@ -542,5 +677,15 @@ public class InventoryController : ControllerBase
         public string? Type { get; set; }
         public string? Reason { get; set; }
         public string? Notes { get; set; }
+    }
+
+    public class UpdateExpiryRequest
+    {
+        public DateTime? ExpiryDate { get; set; }
+    }
+
+    public class UpdateBatchNumberRequest
+    {
+        public string? BatchNumber { get; set; }
     }
 }

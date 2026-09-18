@@ -20,7 +20,8 @@ public record ServiceDto(
     int? DurationMinutes,
     bool IsActive,
     int DisplayOrder,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    int Type
 );
 
 public record CreateServiceRequest(
@@ -39,7 +40,8 @@ public record CreateServiceRequest(
     string? InsuranceCode,
     int? DurationMinutes,
     bool IsActive,
-    int DisplayOrder
+    int DisplayOrder,
+    int Type
 );
 
 public record UpdateServiceRequest(
@@ -58,7 +60,8 @@ public record UpdateServiceRequest(
     string? InsuranceCode,
     int? DurationMinutes,
     bool IsActive,
-    int DisplayOrder
+    int DisplayOrder,
+    int Type
 );
 
 public record ServiceCategoryDto(

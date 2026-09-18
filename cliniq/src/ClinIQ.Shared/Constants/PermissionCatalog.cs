@@ -135,9 +135,31 @@ public static class PermissionCatalog
 
         // ---- Laboratory ----
         new(Permissions.LaboratoryView, "View", "Laboratory", "Clinical", 10),
+        new(Permissions.LaboratoryCreate, "Create", "Laboratory", "Clinical", 20),
+        new(Permissions.LaboratoryEdit, "Edit", "Laboratory", "Clinical", 30),
+        new(Permissions.LaboratoryDelete, "Delete", "Laboratory", "Clinical", 40),
+        new(Permissions.LaboratoryOrdersView, "View Orders", "Laboratory", "Clinical", 50),
+        new(Permissions.LaboratoryOrdersCreate, "Create Orders", "Laboratory", "Clinical", 60),
+        new(Permissions.LaboratoryOrdersEdit, "Edit Orders", "Laboratory", "Clinical", 70),
+        new(Permissions.LaboratoryOrdersDelete, "Delete Orders", "Laboratory", "Clinical", 80),
+        new(Permissions.LaboratoryResultsView, "View Results", "Laboratory", "Clinical", 90),
+        new(Permissions.LaboratoryResultsEdit, "Edit Results", "Laboratory", "Clinical", 100),
+        new(Permissions.LaboratoryManageResults, "Manage Results", "Laboratory", "Clinical", 110),
+        new(Permissions.LaboratoryPrint, "Print", "Laboratory", "Clinical", 120),
 
         // ---- Radiology ----
         new(Permissions.RadiologyView, "View", "Radiology", "Clinical", 10),
+        new(Permissions.RadiologyCreate, "Create", "Radiology", "Clinical", 20),
+        new(Permissions.RadiologyEdit, "Edit", "Radiology", "Clinical", 30),
+        new(Permissions.RadiologyDelete, "Delete", "Radiology", "Clinical", 40),
+        new(Permissions.RadiologyOrdersView, "View Orders", "Radiology", "Clinical", 50),
+        new(Permissions.RadiologyOrdersCreate, "Create Orders", "Radiology", "Clinical", 60),
+        new(Permissions.RadiologyOrdersEdit, "Edit Orders", "Radiology", "Clinical", 70),
+        new(Permissions.RadiologyOrdersDelete, "Delete Orders", "Radiology", "Clinical", 80),
+        new(Permissions.RadiologyResultsView, "View Results", "Radiology", "Clinical", 90),
+        new(Permissions.RadiologyResultsEdit, "Edit Results", "Radiology", "Clinical", 100),
+        new(Permissions.RadiologyReport, "Enter Reports", "Radiology", "Clinical", 110),
+        new(Permissions.RadiologyPrint, "Print", "Radiology", "Clinical", 120),
 
         // ---- Reports ----
         new(Permissions.ReportsView,      "View",      "Reports", "Analytics", 10),
