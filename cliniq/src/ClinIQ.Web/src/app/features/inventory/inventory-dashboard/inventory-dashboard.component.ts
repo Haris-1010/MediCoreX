@@ -32,15 +32,15 @@ import { ApiService } from '../../../core/services/api.service';
     </app-main-layout>
   `,
   styles: [`.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-    .stat-card { display: flex; align-items: center; gap: 1rem; background: white; padding: 1.5rem; border-radius: 8px; }
+    .stat-card { display: flex; align-items: center; gap: 1rem; background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
     .stat-card mat-icon { font-size: 40px; width: 40px; height: 40px; color: #3f51b5; }
     .stat-card.warn mat-icon { color: #ff9800; } .stat-card.danger mat-icon { color: #f44336; }
-    .stat-card h3 { margin: 0; font-size: 1.75rem; } .stat-card p { margin: 0; color: #666; }
+    .stat-card h3 { margin: 0; font-size: 1.75rem; } .stat-card p { margin: 0; color: var(--text-muted, #666); }
     .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-    .card { background: white; padding: 1.5rem; border-radius: 8px; } .card h3 { margin: 0 0 1rem; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; } .card h3 { margin: 0 0 1rem; }
     .item-list, .order-list { display: flex; flex-direction: column; gap: 0.5rem; }
-    .item, .order { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #f5f5f5; border-radius: 8px; }
-    .info strong { display: block; } .info span { font-size: 0.875rem; color: #666; }
+    .item, .order { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-hover, #f5f5f5); border-radius: 8px; }
+    .info strong { display: block; } .info span { font-size: 0.875rem; color: var(--text-muted, #666); }
     .stock { font-weight: 600; } .stock.critical { color: #f44336; }
     .empty { text-align: center; color: #999; padding: 2rem; }`]
 })

@@ -94,10 +94,10 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: #ffffff;
-    color: #333333;
+    background: var(--bg-sidebar, #ffffff);
+    color: var(--text-primary, #333333);
     overflow: hidden;
-    transition: width 0.2s ease;
+    transition: width 0.2s ease, background-color 0.3s ease, color 0.3s ease;
   }
      .sidebar.collapsed {
     overflow: visible;
@@ -110,12 +110,12 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
     /* Logo Section */
     .sidebar-header {
       padding: 1rem 1rem;
-      border-bottom: 1px solid #e0e0e0;
+      border-bottom: 1px solid var(--border-color, #e0e0e0);
       cursor: pointer;
     }
 
     .sidebar-header:hover {
-      background: #f8f9ff;
+      background: var(--bg-hover, #f8f9ff);
     }
 
     .sidebar.collapsed .sidebar-header {
@@ -136,7 +136,7 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
       width: 40px;
       height: 40px;
       border-radius: 8px;
-      background: linear-gradient(135deg, #1a237e 0%, #3f51b5 100%);
+      background: var(--accent-gradient, linear-gradient(135deg, #1a237e 0%, #3f51b5 100%));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -166,14 +166,14 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
     .brand {
       font-size: 1.35rem;
       font-weight: 700;
-      color: #1a237e;
+      color: var(--accent-primary, #1a237e);
       letter-spacing: 0.3px;
       line-height: 1.2;
     }
 
     .org-name {
       font-size: 0.75rem;
-      color: #666;
+      color: var(--text-muted, #666);
       font-weight: 400;
       margin-top: 0.15rem;
     }
@@ -184,8 +184,8 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      border-bottom: 1px solid #e0e0e0;
-      background: #fafafa;
+      border-bottom: 1px solid var(--border-color, #e0e0e0);
+      background: var(--bg-hover, #fafafa);
     }
 
     .sidebar.collapsed .sidebar-search {
@@ -202,7 +202,7 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
     }
 
     .search-icon {
-      color: #666;
+      color: var(--text-muted, #666);
       font-size: 20px;
       width: 20px;
       height: 20px;
@@ -213,13 +213,13 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
       border: none;
       outline: none;
       font-size: 0.875rem;
-      color: #333;
+      color: var(--text-primary, #333);
       background: transparent;
       font-family: inherit;
     }
 
     .search-input::placeholder {
-      color: #999;
+      color: var(--text-muted, #999);
     }
 
     /* Navigation */
@@ -244,7 +244,7 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
     }
 
     .sidebar-nav::-webkit-scrollbar-thumb {
-      background: #ccc;
+      background: var(--scrollbar-thumb, #ccc);
       border-radius: 2px;
     }
 
@@ -253,7 +253,7 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
       align-items: center;
       gap: 0.75rem;
       padding: 0.7rem 1rem;
-      color: #444;
+      color: var(--text-secondary, #444);
       text-decoration: none;
       border: none;
       background: none;
@@ -266,8 +266,8 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
     }
 
     .nav-item:hover {
-      background: #f0f0f0;
-      color: #1a237e;
+      background: var(--bg-hover, #f0f0f0);
+      color: var(--accent-primary, #1a237e);
     }
 
     .sidebar.collapsed .nav-item {
@@ -278,26 +278,26 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
     }
 
     .nav-item.active {
-      background: #e8eaf6;
-      color: #1a237e;
-      border-left-color: #1a237e;
+      background: var(--bg-hover, #e8eaf6);
+      color: var(--accent-primary, #1a237e);
+      border-left-color: var(--accent-primary, #1a237e);
       font-weight: 600;
     }
 
     .nav-item.active .nav-icon {
-      color: #1a237e;
+      color: var(--accent-primary, #1a237e);
     }
 
     .nav-icon {
       font-size: 20px;
       width: 20px;
       height: 20px;
-      color: #666;
+      color: var(--text-muted, #666);
     }
 
     .nav-item.active .nav-icon,
     .nav-item:hover .nav-icon {
-      color: #1a237e;
+      color: var(--accent-primary, #1a237e);
     }
 
     .nav-label {
@@ -318,7 +318,7 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
       font-size: 18px;
       width: 18px;
       height: 18px;
-      color: #999;
+      color: var(--text-muted, #999);
     }
 
     .toggle-icon.expanded {
@@ -361,10 +361,10 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
       min-width: 220px;
       max-height: none;
       overflow: visible;
-      background: #ffffff;
-      border: 1px solid #e0e0e0;
+      background: var(--bg-sidebar, #ffffff);
+      border: 1px solid var(--border-color, #e0e0e0);
       border-radius: 8px;
-      box-shadow: 6px 6px 24px rgba(0,0,0,0.14);
+      box-shadow: var(--shadow-lg, 6px 6px 24px rgba(0,0,0,0.14));
       padding: 0.5rem 0;
       opacity: 0;
       visibility: hidden;
@@ -413,10 +413,10 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
       padding: 0.35rem 1rem 0.5rem;
       font-size: 0.7rem;
       font-weight: 700;
-      color: #1a237e;
+      color: var(--accent-primary, #1a237e);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--border-color, #f0f0f0);
       margin-bottom: 0.25rem;
       white-space: nowrap;
     }
@@ -428,27 +428,27 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
     /* Footer */
     .sidebar-footer {
       padding: 0.75rem 1rem;
-      border-top: 1px solid #e0e0e0;
+      border-top: 1px solid var(--border-color, #e0e0e0);
       text-align: center;
-      background: #fafafa;
+      background: var(--bg-hover, #fafafa);
     }
 
     .version-badge {
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
-      background: #e8eaf6;
+      background: var(--bg-badge, #e8eaf6);
       padding: 0.25rem 0.6rem;
       border-radius: 12px;
       font-size: 0.65rem;
-      color: #1a237e;
+      color: var(--accent-primary, #1a237e);
       margin-bottom: 0.35rem;
       font-weight: 500;
     }
 
     .copyright {
       font-size: 0.65rem;
-      color: #888;
+      color: var(--text-muted, #888);
     }
   `]
 })

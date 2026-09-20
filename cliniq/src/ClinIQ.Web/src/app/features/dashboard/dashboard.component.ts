@@ -134,11 +134,11 @@ interface TodayAppointment {
     }
 
     .card {
-      background: white;
+      background: var(--bg-card, #fff);
       border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      box-shadow: var(--shadow-md, 0 1px 3px rgba(0, 0, 0, 0.08));
       padding: 1.25rem;
-      border: 1px solid #e8e8e8;
+      border: 1px solid var(--border-color, #e8e8e8);
     }
 
     .card-header {
@@ -147,14 +147,14 @@ interface TodayAppointment {
       align-items: center;
       margin-bottom: 1rem;
       padding-bottom: 0.75rem;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--border-color, #f0f0f0);
     }
 
     .card-header h3 {
       margin: 0;
       font-size: 1rem;
       font-weight: 600;
-      color: #1a237e;
+      color: var(--accent-primary, #1a237e);
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -164,30 +164,30 @@ interface TodayAppointment {
       font-size: 20px;
       width: 20px;
       height: 20px;
-      color: #1a237e;
+      color: var(--accent-primary, #1a237e);
     }
 
     .no-permissions {
       text-align: center;
       padding: 3rem 1rem;
-      background: white;
+      background: var(--bg-card, #fff);
       border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-      border: 1px solid #e8e8e8;
-      color: #64748b;
+      box-shadow: var(--shadow-md, 0 1px 3px rgba(0, 0, 0, 0.08));
+      border: 1px solid var(--border-color, #e8e8e8);
+      color: var(--text-secondary, #64748b);
     }
 
     .no-permissions mat-icon {
       font-size: 48px;
       width: 48px;
       height: 48px;
-      color: #94a3b8;
+      color: var(--text-muted, #94a3b8);
       margin-bottom: 1rem;
     }
 
     .no-permissions h3 {
       margin: 0 0 0.5rem;
-      color: #334155;
+      color: var(--text-primary, #334155);
     }
 
     .no-permissions p {

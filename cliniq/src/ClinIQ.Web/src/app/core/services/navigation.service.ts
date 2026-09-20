@@ -40,6 +40,7 @@ const NAV: NavItem[] = [
       { label: 'Queue Management', icon: 'queue', route: '/opd/queue', module: 'opd', permission: 'opd.view' },
       { label: 'Token Display', icon: 'confirmation_number', route: '/opd/display', module: 'opd', permission: 'opd.view' },
       { label: 'Token Generation', icon: 'receipt_long', route: '/opd/token', module: 'opd', permission: 'opd.view' },
+      { label: 'Token List', icon: 'list_alt', route: '/opd/tokens', module: 'opd', permission: 'opd.view' },
     ],
   },
 
@@ -58,7 +59,7 @@ const NAV: NavItem[] = [
   { label: 'Pharmacy', icon: 'local_pharmacy', route: '/pharmacy', module: 'pharmacy', permission: 'pharmacy.view' },
 
   {
-    label: 'Diagnostics', icon: 'diagnostic', module: 'diagnostics',
+    label: 'Diagnostics', icon: 'biotech',
     children: [
       { label: 'Laboratory', icon: 'science', route: '/laboratory', module: 'laboratory', permission: 'laboratory.view' },
       { label: 'Radiology', icon: 'medical_information', route: '/radiology', module: 'radiology', permission: 'radiology.view' },

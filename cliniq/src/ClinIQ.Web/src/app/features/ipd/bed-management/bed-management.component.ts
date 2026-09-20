@@ -190,10 +190,10 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
   styles: [`
     .ward-selector { margin-bottom: 1.5rem; }
     
-    .empty-state { text-align: center; padding: 4rem 2rem; background: white; border-radius: 12px; border: 1px solid #e0e0e0; }
-    .empty-state mat-icon { font-size: 72px; width: 72px; height: 72px; color: #ccc; }
-    .empty-state h3 { margin: 1rem 0 0.5rem; color: #333; }
-    .empty-state p { color: #888; margin-bottom: 1.5rem; }
+    .empty-state { text-align: center; padding: 4rem 2rem; background: var(--bg-card, #fff); border-radius: 12px; border: 1px solid var(--border-color, #e0e0e0); }
+    .empty-state mat-icon { font-size: 72px; width: 72px; height: 72px; color: var(--text-muted, #ccc); }
+    .empty-state h3 { margin: 1rem 0 0.5rem; color: var(--text-primary, #333); }
+    .empty-state p { color: var(--text-muted, #888); margin-bottom: 1.5rem; }
 
     /* Ward Info Header */
     .ward-info-header {
@@ -201,9 +201,9 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       justify-content: space-between;
       align-items: center;
       padding: 1rem 1.5rem;
-      background: white;
+      background: var(--bg-card, #fff);
       border-radius: 12px;
-      border: 1px solid #e0e0e0;
+      border: 1px solid var(--border-color, #e0e0e0);
       margin-bottom: 1.5rem;
       flex-wrap: wrap;
       gap: 1rem;
@@ -224,8 +224,8 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       color: white;
     }
     .ward-icon mat-icon { font-size: 24px; width: 24px; height: 24px; }
-    .ward-info-left h3 { margin: 0; font-size: 1.25rem; color: #333; }
-    .ward-info-left p { margin: 0; color: #666; font-size: 0.875rem; }
+    .ward-info-left h3 { margin: 0; font-size: 1.25rem; color: var(--text-primary, #333); }
+    .ward-info-left p { margin: 0; color: var(--text-secondary, #666); font-size: 0.875rem; }
     .ward-stats {
       display: flex;
       gap: 1rem;
@@ -254,7 +254,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     }
 
     .bed-card {
-      background: white;
+      background: var(--bg-card, #fff);
       border-radius: 16px;
       padding: 1.5rem 1rem;
       cursor: pointer;
@@ -269,19 +269,19 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     }
     .bed-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-      border-color: #3f51b5;
+      box-shadow: var(--shadow-lg, 0 8px 24px rgba(0,0,0,0.12));
+      border-color: var(--accent-primary, #3f51b5);
     }
-    .bed-card:focus { outline: none; border-color: #3f51b5; }
+    .bed-card:focus { outline: none; border-color: var(--accent-primary, #3f51b5); }
 
     /* Bed Status Variants */
-    .bed-available { border-color: #4caf50; background: linear-gradient(180deg, #f1f8e9 0%, #ffffff 100%); }
+    .bed-available { border-color: #4caf50; background: linear-gradient(180deg, var(--status-success-bg, #f1f8e9) 0%, var(--bg-card, #ffffff) 100%); }
     .bed-available:hover { border-color: #4caf50; }
-    .bed-occupied { border-color: #f44336; background: linear-gradient(180deg, #fce4ec 0%, #ffffff 100%); }
+    .bed-occupied { border-color: #f44336; background: linear-gradient(180deg, var(--status-error-bg, #fce4ec) 0%, var(--bg-card, #ffffff) 100%); }
     .bed-occupied:hover { border-color: #f44336; }
-    .bed-reserved { border-color: #ff9800; background: linear-gradient(180deg, #fff8e1 0%, #ffffff 100%); }
+    .bed-reserved { border-color: #ff9800; background: linear-gradient(180deg, var(--status-warning-bg, #fff3e0) 0%, var(--bg-card, #ffffff) 100%); }
     .bed-reserved:hover { border-color: #ff9800; }
-    .bed-maintenance { border-color: #9e9e9e; background: linear-gradient(180deg, #f5f5f5 0%, #ffffff 100%); }
+    .bed-maintenance { border-color: #9e9e9e; background: linear-gradient(180deg, var(--bg-hover, #f5f5f5) 0%, var(--bg-card, #ffffff) 100%); }
     .bed-maintenance:hover { border-color: #9e9e9e; }
 
     .bed-icon-wrapper {
@@ -313,7 +313,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       height: 18px;
       border-radius: 50%;
       border: 3px solid white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-md, 0 2px 4px rgba(0,0,0,0.1));
     }
     .bed-available .status-indicator { background: #4caf50; }
     .bed-occupied .status-indicator { background: #f44336; }
@@ -329,7 +329,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     }
     .bed-type {
       font-size: 0.75rem;
-      color: #666;
+      color: var(--text-muted, #666);
       text-transform: capitalize;
     }
     .room-badge {
@@ -353,10 +353,10 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       gap: 0.375rem;
       margin-top: 0.5rem;
       padding: 0.5rem;
-      background: #f5f5f5;
+      background: var(--bg-hover, #f5f5f5);
       border-radius: 8px;
       font-size: 0.8rem;
-      color: #333;
+      color: var(--text-primary, #333);
       width: 100%;
       white-space: nowrap;
       overflow: hidden;
@@ -404,9 +404,9 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       gap: 1.5rem;
       margin-top: 1.5rem;
       padding: 1rem;
-      background: white;
+      background: var(--bg-card, #fff);
       border-radius: 8px;
-      border: 1px solid #e0e0e0;
+      border: 1px solid var(--border-color, #e0e0e0);
       flex-wrap: wrap;
       justify-content: center;
     }
@@ -415,7 +415,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       align-items: center;
       gap: 0.5rem;
       font-size: 0.85rem;
-      color: #333;
+      color: var(--text-primary, #333);
     }
     .dot {
       width: 12px;
@@ -447,7 +447,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .bed-reserved .bed-icon-small { background: linear-gradient(135deg, #ff9800, #ffb74d); }
     .bed-maintenance .bed-icon-small { background: linear-gradient(135deg, #9e9e9e, #bdbdbd); }
     .dialog-title-row .bed-number { font-size: 1.25rem; font-weight: 700; color: #1a237e; }
-    .dialog-title-row .bed-type { font-size: 0.8rem; color: #666; text-transform: capitalize; }
+    .dialog-title-row .bed-type { font-size: 0.8rem; color: var(--text-muted, #666); text-transform: capitalize; }
 
     .bed-detail { min-width: 360px; }
     .detail-section { margin-bottom: 1.5rem; }
@@ -470,8 +470,8 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       border-bottom: 1px solid #f0f0f0;
     }
     .detail-row:last-child { border-bottom: none; }
-    .detail-row .label { font-weight: 500; color: #666; display: flex; align-items: center; gap: 0.375rem; }
-    .detail-row .value { color: #333; text-align: right; max-width: 65%; word-break: break-word; }
+    .detail-row .label { font-weight: 500; color: var(--text-muted, #666); display: flex; align-items: center; gap: 0.375rem; }
+    .detail-row .value { color: var(--text-primary, #333); text-align: right; max-width: 65%; word-break: break-word; }
     .status-icon { font-size: 16px; width: 16px; height: 16px; margin-right: 0.375rem; }
     .status-available { color: #4caf50; font-weight: 600; }
     .status-occupied { color: #f44336; font-weight: 600; }
@@ -481,8 +481,8 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .no-patient {
       text-align: center;
       padding: 2rem;
-      color: #888;
-      background: #fafafa;
+      color: var(--text-muted, #888);
+      background: var(--bg-hover, #f5f5f5);
       border-radius: 8px;
     }
     .no-patient mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 0.75rem; color: #4caf50; }

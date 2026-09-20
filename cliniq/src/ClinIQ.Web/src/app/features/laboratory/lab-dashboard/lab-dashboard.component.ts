@@ -12,6 +12,14 @@ import { ApiService } from '../../../core/services/api.service';
         <div class="stat-card"><mat-icon>science</mat-icon><div><h3>{{ stats.totalResults }}</h3><p>Total Results</p></div></div>
         <div class="stat-card"><mat-icon>check_circle</mat-icon><div><h3>{{ stats.completedToday }}</h3><p>Completed Today</p></div></div>
       </div>
+      <div class="action-bar">
+        <button mat-stroked-button routerLink="orders">
+          <mat-icon>list</mat-icon> All Orders
+        </button>
+        <button mat-raised-button color="primary" routerLink="orders/new">
+          <mat-icon>add</mat-icon> New Order
+        </button>
+      </div>
       <div class="card">
         <h3>Pending Lab Orders</h3>
         <table mat-table [dataSource]="orders">
@@ -24,13 +32,20 @@ import { ApiService } from '../../../core/services/api.service';
           <tr mat-header-row *matHeaderRowDef="columns"></tr>
           <tr mat-row *matRowDef="let row; columns: columns;"></tr>
         </table>
+        <div *ngIf="orders.length === 0" class="empty-state">
+          <mat-icon>check_circle_outline</mat-icon>
+          <p>No pending lab orders</p>
+        </div>
       </div>
     </app-main-layout>
   `,
   styles: [`.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-    .stat-card { display: flex; align-items: center; gap: 1rem; background: white; padding: 1.5rem; border-radius: 8px; }
-    .stat-card mat-icon { font-size: 40px; width: 40px; height: 40px; color: #3f51b5; } .stat-card h3 { margin: 0; font-size: 1.75rem; } .stat-card p { margin: 0; color: #666; }
-    .card { background: white; padding: 1.5rem; border-radius: 8px; } .card h3 { margin: 0 0 1rem; } table { width: 100%; }`]
+    .stat-card { display: flex; align-items: center; gap: 1rem; background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
+    .stat-card mat-icon { font-size: 40px; width: 40px; height: 40px; color: var(--accent-primary, #3f51b5); } .stat-card h3 { margin: 0; font-size: 1.75rem; } .stat-card p { margin: 0; color: var(--text-secondary, #666); }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; } .card h3 { margin: 0 0 1rem; } table { width: 100%; }
+    .action-bar { display: flex; justify-content: flex-end; margin-bottom: 1rem; gap: 0.5rem; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; padding: 2rem; color: var(--text-muted, #999); }
+    .empty-state mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 0.5rem; }`]
 })
 export class LabDashboardComponent implements OnInit {
   stats = { pendingOrders: 0, totalResults: 0, completedToday: 0 };

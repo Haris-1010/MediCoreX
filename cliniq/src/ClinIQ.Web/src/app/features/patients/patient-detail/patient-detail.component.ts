@@ -284,7 +284,7 @@ interface PatientDetail {
     }
 
     .card {
-      background: white;
+      background: var(--bg-card, #fff);
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       padding: 1.5rem;
@@ -317,7 +317,7 @@ interface PatientDetail {
     .meta {
       display: flex;
       gap: 1rem;
-      color: #666;
+      color: var(--text-secondary, #666);
       font-size: 0.875rem;
       margin-bottom: 0.5rem;
     }
@@ -345,7 +345,7 @@ interface PatientDetail {
 
     .info-section h4 {
       margin: 0 0 1rem;
-      color: #333;
+      color: var(--text-primary, #333);
       font-weight: 600;
     }
 
@@ -361,13 +361,13 @@ interface PatientDetail {
     }
 
     .info-item mat-icon {
-      color: #666;
+      color: var(--text-secondary, #666);
     }
 
     .info-item label {
       display: block;
       font-size: 0.75rem;
-      color: #666;
+      color: var(--text-secondary, #666);
     }
 
     .info-item span {
@@ -385,11 +385,11 @@ interface PatientDetail {
     .medical-section h4 {
       margin: 0 0 0.5rem;
       font-size: 0.875rem;
-      color: #666;
+      color: var(--text-secondary, #666);
     }
 
     .no-data {
-      color: #999;
+      color: var(--text-muted, #999);
       font-style: italic;
     }
 

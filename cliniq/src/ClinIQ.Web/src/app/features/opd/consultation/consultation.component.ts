@@ -56,6 +56,7 @@ import { NotificationService } from '../../../core/services/notification.service
 
             <div class="form-actions">
               <button mat-stroked-button type="button" (click)="orderLabs()"><mat-icon>science</mat-icon> Order Labs</button>
+              <button mat-stroked-button type="button" (click)="orderRadiology()"><mat-icon>radiology</mat-icon> Order Radiology</button>
               <button mat-raised-button color="primary" type="submit" [disabled]="saving">{{ saving ? 'Saving...' : 'Save & Complete' }}</button>
             </div>
           </form>
@@ -64,19 +65,19 @@ import { NotificationService } from '../../../core/services/notification.service
     </app-main-layout>
   `,
   styles: [`.consultation-grid { display: grid; grid-template-columns: 350px 1fr; gap: 1.5rem; }
-    .card { background: white; padding: 1.5rem; border-radius: 8px; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
     .patient-header { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; }
     .avatar { width: 60px; height: 60px; border-radius: 50%; background: #3f51b5; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 600; }
-    .patient-header h2 { margin: 0; } .patient-header p { margin: 0; color: #666; font-size: 0.875rem; }
+    .patient-header h2 { margin: 0; }     .patient-header p { margin: 0; color: var(--text-secondary, #666); font-size: 0.875rem; }
     .vitals { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; padding: 1rem 0; }
-    .vital { text-align: center; } .vital span { display: block; font-size: 0.75rem; color: #666; } .vital strong { font-size: 1rem; }
+    .vital { text-align: center; }     .vital span { display: block; font-size: 0.75rem; color: var(--text-secondary, #666); } .vital strong { font-size: 1rem; }
     .alerts { padding-top: 1rem; }
     .full-width { width: 100%; }
     .med-row { display: flex; gap: 0.5rem; align-items: center; } .med-row mat-form-field { flex: 1; }
     .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }`]
 })
 export class ConsultationComponent implements OnInit {
-  patient: any; vitals: any; form!: FormGroup; saving = false;
+  patient: any; vitals: any; visitId: any; form!: FormGroup; saving = false;
 
   constructor(private fb: FormBuilder, private api: ApiService, private route: ActivatedRoute, private router: Router, private notification: NotificationService) {}
 
@@ -92,13 +93,28 @@ export class ConsultationComponent implements OnInit {
   get medicationsArray(): FormArray { return this.form.get('medications') as FormArray; }
 
   loadData(id: string) {
-    this.api.get<any>(`v1/opd/consultation/${id}`).subscribe(r => { this.patient = r.patient; this.vitals = r.vitals; });
+    this.api.get<any>(`v1/opd/consultation/${id}`).subscribe(r => {
+      this.patient = r.patient;
+      this.vitals = r.vitals;
+      this.visitId = r.visitId || r.visit?.id || id;
+    });
   }
 
   addMedication() { this.medicationsArray.push(this.fb.group({ name: [''], dosage: [''], frequency: [''], duration: [''] })); }
   removeMedication(i: number) { this.medicationsArray.removeAt(i); }
   viewHistory() { this.router.navigate(['/patients', this.patient.id]); }
-  orderLabs() { this.router.navigate(['/laboratory/order'], { queryParams: { patientId: this.patient.id } }); }
+
+  orderLabs() {
+    this.router.navigate(['/laboratory/orders/new'], {
+      queryParams: { patientId: this.patient.id, visitId: this.visitId, doctorId: this.patient.doctorId || '' }
+    });
+  }
+
+  orderRadiology() {
+    this.router.navigate(['/radiology/orders/new'], {
+      queryParams: { patientId: this.patient.id, visitId: this.visitId, doctorId: this.patient.doctorId || '' }
+    });
+  }
 
   saveConsultation() {
     if (this.form.invalid) return;

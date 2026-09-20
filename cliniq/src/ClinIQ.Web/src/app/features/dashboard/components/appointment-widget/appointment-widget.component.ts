@@ -63,7 +63,7 @@ interface Appointment {
 
     .calendar-link a {
       font-size: 0.8rem;
-      color: #1a237e;
+      color: var(--accent-primary, #1a237e);
       text-decoration: none;
       font-weight: 500;
       display: flex;
@@ -92,7 +92,7 @@ interface Appointment {
       align-items: center;
       justify-content: center;
       padding: 2rem;
-      color: #666;
+      color: var(--text-secondary, #666);
       font-size: 0.9rem;
     }
 
@@ -110,19 +110,19 @@ interface Appointment {
       padding: 0.75rem 0.5rem;
       font-size: 0.8rem;
       font-weight: 600;
-      color: #1a237e;
-      border-bottom: 1px solid #e0e0e0;
+      color: var(--accent-primary, #1a237e);
+      border-bottom: 1px solid var(--border-color, #e0e0e0);
     }
 
     td {
       padding: 0.75rem 0.5rem;
       font-size: 0.85rem;
-      color: #333;
-      border-bottom: 1px solid #f0f0f0;
+      color: var(--text-primary, #333);
+      border-bottom: 1px solid var(--border-color, #f0f0f0);
     }
 
     tr:hover td {
-      background: #f8f9fa;
+      background: var(--table-row-hover, #f8f9fa);
     }
   `]
 })

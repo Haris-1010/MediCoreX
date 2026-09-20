@@ -49,7 +49,7 @@ import { NotificationService } from '../../../core/services/notification.service
   `,
   styles: [`
     .form-card {
-      background: white;
+      background: var(--bg-card, #fff);
       padding: 2rem;
       border-radius: 8px;
       max-width: 700px;
@@ -68,7 +68,7 @@ import { NotificationService } from '../../../core/services/notification.service
       gap: 1rem;
       margin-top: 1.5rem;
       padding-top: 1.5rem;
-      border-top: 1px solid #eee;
+      border-top: 1px solid var(--border-color, #e0e0e0);
     }
   `]
 })

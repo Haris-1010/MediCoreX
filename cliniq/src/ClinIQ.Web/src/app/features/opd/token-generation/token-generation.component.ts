@@ -295,13 +295,13 @@ import { MatDialog } from '@angular/material/dialog';
   `,
   styles: [`
     .token-form-container { max-width: 650px; margin: 0 auto; }
-    .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .card { background: var(--bg-card, #fff); padding: 2rem; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
     .card-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; }
-    .card-header mat-icon { font-size: 28px; width: 28px; height: 28px; color: #3f51b5; }
+    .card-header mat-icon { font-size: 28px; width: 28px; height: 28px; color: var(--accent-primary, #3f51b5); }
     .card-header h3 { margin: 0; font-size: 1.25rem; }
 
     .section { margin-bottom: 1.25rem; }
-    .section-label { display: block; font-weight: 600; font-size: 0.85rem; color: #555; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .section-label { display: block; font-weight: 600; font-size: 0.85rem; color: var(--text-secondary, #555); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
     .full-width { width: 100%; }
     .flex-grow { flex: 1; }
 
@@ -309,27 +309,27 @@ import { MatDialog } from '@angular/material/dialog';
     .quick-add-btn { height: 56px; white-space: nowrap; }
 
     .selected-patient-card { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: #e8eaf6; border-radius: 8px; margin-top: 0.5rem; }
-    .selected-patient-card mat-icon { color: #3f51b5; }
+    .selected-patient-card mat-icon { color: var(--accent-primary, #3f51b5); }
     .selected-patient-card .patient-info { flex: 1; }
     .selected-patient-card .patient-info strong { display: block; }
-    .selected-patient-card .patient-info span { font-size: 0.8rem; color: #666; }
+    .selected-patient-card .patient-info span { font-size: 0.8rem; color: var(--text-secondary, #666); }
 
     .fee-display { display: flex; align-items: flex-start; gap: 1rem; }
     .fee-display mat-form-field { flex: 1; }
-    .fee-default { padding: 1rem; background: #f5f5f5; border-radius: 8px; color: #666; font-size: 0.85rem; white-space: nowrap; }
+    .fee-default { padding: 1rem; background: var(--bg-input, #f5f5f5); border-radius: 8px; color: var(--text-secondary, #666); font-size: 0.85rem; white-space: nowrap; }
 
     .service-chips { margin-top: 0.25rem; }
 
     .total-bar { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; background: linear-gradient(135deg, #1a237e, #3f51b5); color: white; border-radius: 8px; margin: 1rem 0; }
     .total-bar strong { font-size: 1.5rem; }
 
-    .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #eee; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color, #eee); }
 
     /* Patient option in autocomplete */
     :host ::ng-deep .patient-option { display: flex; flex-direction: column; padding: 4px 0; }
     :host ::ng-deep .patient-option .name { font-weight: 500; }
-    :host ::ng-deep .patient-option .details { font-size: 0.75rem; color: #888; }
-    :host ::ng-deep .quick-add-option { color: #3f51b5; font-weight: 500; }
+    :host ::ng-deep .patient-option .details { font-size: 0.75rem; color: var(--text-muted, #888); }
+    :host ::ng-deep .quick-add-option { color: var(--accent-primary, #3f51b5); font-weight: 500; }
     :host ::ng-deep .quick-add-option mat-icon { margin-right: 8px; vertical-align: middle; }
 
     /* Receipt */
@@ -339,15 +339,15 @@ import { MatDialog } from '@angular/material/dialog';
     .success-animation h2 { margin: 0.5rem 0 0; color: #4caf50; }
     @keyframes scaleIn { from { transform: scale(0); } to { transform: scale(1); } }
 
-    .receipt-card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); max-width: 480px; width: 100%; }
+    .receipt-card { background: var(--bg-card, #fff); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); max-width: 480px; width: 100%; }
     .receipt-header { display: flex; justify-content: space-between; border-bottom: 3px solid #3f51b5; padding-bottom: 1rem; margin-bottom: 1rem; }
-    .hospital-info h2 { margin: 0; color: #1a237e; font-size: 1.25rem; }
-    .hospital-info p { margin: 0.15rem 0; font-size: 0.8rem; color: #666; }
-    .receipt-title h2 { margin: 0; color: #3f51b5; font-size: 1.5rem; }
-    .receipt-title p { margin: 0; font-size: 0.8rem; color: #666; }
+    .hospital-info h2 { margin: 0; color: var(--accent-primary, #1a237e); font-size: 1.25rem; }
+    .hospital-info p { margin: 0.15rem 0; font-size: 0.8rem; color: var(--text-secondary, #666); }
+    .receipt-title h2 { margin: 0; color: var(--accent-primary, #3f51b5); font-size: 1.5rem; }
+    .receipt-title p { margin: 0; font-size: 0.8rem; color: var(--text-secondary, #666); }
 
     .receipt-body .info-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; }
-    .receipt-body .info-row span { color: #888; font-size: 0.85rem; }
+    .receipt-body .info-row span { color: var(--text-muted, #888); font-size: 0.85rem; }
     .receipt-body .token-row { margin-top: 0.5rem; }
     .token-badge { font-size: 1.75rem; color: #3f51b5; font-weight: 700; background: #e8eaf6; padding: 0.25rem 0.75rem; border-radius: 6px; }
 
@@ -356,9 +356,9 @@ import { MatDialog } from '@angular/material/dialog';
     .grand-total { font-size: 1.25rem; font-weight: 700; color: #1a237e; border-top: 2px solid #3f51b5; padding-top: 0.75rem; margin-top: 0.5rem; display: flex; justify-content: space-between; }
 
     .receipt-footer { margin-top: 1.25rem; text-align: center; }
-    .payment-info, .time-info { display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.8rem; color: #666; margin: 0.25rem 0; }
+    .payment-info, .time-info { display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-secondary, #666); margin: 0.25rem 0; }
     .payment-info mat-icon, .time-info mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .proceed-text { margin-top: 1rem; font-weight: 600; color: #3f51b5; font-size: 0.9rem; }
+    .proceed-text { margin-top: 1rem; font-weight: 600; color: var(--accent-primary, #3f51b5); font-size: 0.9rem; }
 
     .receipt-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
 
@@ -397,7 +397,7 @@ export class TokenGenerationComponent implements OnInit, OnDestroy {
   @ViewChild('quickAddDialog') quickAddDialog!: TemplateRef<any>;
 
   tenant: any = null;
-  currencySymbol = '$';
+  currencySymbol = '';
   private destroy$ = new Subject<void>();
 
   allPatients: any[] = [];

@@ -91,7 +91,7 @@ export interface TableAction {
   styles: [`
     .table-container {
       position: relative;
-      background: white;
+      background: var(--bg-card, #fff);
       border-radius: 8px;
       overflow: hidden;
     }
@@ -118,7 +118,7 @@ export interface TableAction {
     }
 
     .mat-mdc-row.clickable:hover {
-      background: #f5f5f5;
+      background: var(--bg-hover, #f5f5f5);
     }
 
     .action-buttons {

@@ -15,12 +15,12 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
     </div>
   `,
   styles: [`
-    .patient-card { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; }
+    .patient-card { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--bg-card, #fff); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; }
     .patient-card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
     .avatar { width: 48px; height: 48px; border-radius: 50%; background: #3f51b5; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; }
     .info { flex: 1; }
     .info h4 { margin: 0; }
-    .info p { margin: 0; font-size: 0.875rem; color: #666; }
+    .info p { margin: 0; font-size: 0.875rem; color: var(--text-secondary, #666); }
   `]
 })
 export class PatientCardComponent {

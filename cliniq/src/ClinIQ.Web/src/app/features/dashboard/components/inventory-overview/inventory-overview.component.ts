@@ -45,15 +45,15 @@ interface InventoryOverview {
     .overview-header a mat-icon { font-size: 16px; width: 16px; height: 16px; }
     .overview-body { display: flex; align-items: center; justify-content: center; gap: 2.5rem; min-height: 210px; }
     .donut { width: 178px; height: 178px; border-radius: 50%; display: grid; place-items: center; transform: rotate(-90deg); }
-    .donut::before { content: ''; width: 136px; height: 136px; border-radius: 50%; background: #fff; }
-    .donut-center { position: absolute; display: flex; flex-direction: column; align-items: center; transform: rotate(90deg); color: #111; }
+    .donut::before { content: ''; width: 136px; height: 136px; border-radius: 50%; background: var(--bg-card, #fff); }
+    .donut-center { position: absolute; display: flex; flex-direction: column; align-items: center; transform: rotate(90deg); color: var(--text-primary, #111); }
     .donut-center strong { font-size: 1rem; }
     .donut-center span { font-size: 1.35rem; margin-top: .25rem; }
     .legend { display: flex; flex-direction: column; gap: .8rem; font-size: .78rem; }
     .legend div { display: flex; align-items: center; gap: .55rem; }
     .legend i { width: 18px; height: 18px; display: inline-block; }
     .total { background: #1168a7; } .expired { background: #3b86bb; } .near-expiry { background: #6fa4ca; } .near-finish { background: #9abbd3; }
-    .loading { min-height: 210px; display: grid; place-items: center; color: #6b7280; }
+    .loading { min-height: 210px; display: grid; place-items: center; color: var(--text-secondary, #6b7280); }
     @media (max-width: 640px) { .overview-body { flex-direction: column; gap: 1rem; } }
   `]
 })

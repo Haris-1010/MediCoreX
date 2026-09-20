@@ -59,7 +59,7 @@ import { TenantService } from '../../../core/services/tenant.service';
       </div>
     </app-main-layout>
   `,
-  styles: [`.card { background: white; padding: 1.5rem; border-radius: 8px; }
+  styles: [`.card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
     .slot-row { display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem; } .slot-row mat-form-field { flex: 1; }
     .form-actions { margin-top: 1rem; display: flex; justify-content: flex-end; }`]
 })
@@ -68,7 +68,7 @@ export class DoctorScheduleComponent implements OnInit {
   selectedDoctorId: string | null = null;
   scheduleForm!: FormGroup;
   saving = false;
-  currencySymbol = '$';
+  currencySymbol = '';
   days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   constructor(private fb: FormBuilder, private api: ApiService, private notification: NotificationService, private tenantService: TenantService) {

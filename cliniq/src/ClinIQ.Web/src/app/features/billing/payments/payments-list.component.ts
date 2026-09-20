@@ -50,7 +50,7 @@ import { ApiService, PagedResult } from '../../../core/services/api.service';
       </div>
     </app-main-layout>
   `,
-  styles: [`.card { background: white; padding: 1.5rem; border-radius: 8px; } .filters { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; } table { width: 100%; } th.right, td.right { text-align: right; }`]
+  styles: [`.card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; } .filters { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; } table { width: 100%; } th.right, td.right { text-align: right; }`]
 })
 export class PaymentsListComponent implements OnInit {
   payments: any[] = [];

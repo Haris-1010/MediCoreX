@@ -112,7 +112,7 @@ import { AudioAnnouncementService } from '../token-generation/audio-announcement
     }
 
     .card {
-      background: white;
+      background: var(--bg-card, #fff);
       border-radius: 10px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       overflow: hidden;
@@ -123,7 +123,7 @@ import { AudioAnnouncementService } from '../token-generation/audio-announcement
       align-items: center;
       gap: 0.75rem;
       padding: 1rem 1.5rem;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--border-color, #f0f0f0);
     }
     .card-title mat-icon { color: #3f51b5; }
     .card-title h3 { margin: 0; font-size: 1rem; }
@@ -151,7 +151,7 @@ import { AudioAnnouncementService } from '../token-generation/audio-announcement
     }
 
     .details h2 { margin: 0; font-size: 1.25rem; }
-    .details .mrn { margin: 0.25rem 0; color: #888; font-size: 0.85rem; }
+    .details .mrn { margin: 0.25rem 0; color: var(--text-muted, #888); font-size: 0.85rem; }
     .details .wait { margin: 0 0 1rem; color: #f57c00; font-size: 0.8rem; }
     .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
@@ -159,8 +159,8 @@ import { AudioAnnouncementService } from '../token-generation/audio-announcement
       text-align: center;
       padding: 3rem;
     }
-    .no-patient mat-icon { font-size: 64px; width: 64px; height: 64px; color: #ddd; }
-    .no-patient p { color: #888; margin: 1rem 0; }
+    .no-patient mat-icon { font-size: 64px; width: 64px; height: 64px; color: var(--text-muted, #ddd); }
+    .no-patient p { color: var(--text-muted, #888); margin: 1rem 0; }
 
     /* Waiting Queue */
     .queue-list { padding: 0.75rem; max-height: 500px; overflow-y: auto; }
@@ -172,14 +172,14 @@ import { AudioAnnouncementService } from '../token-generation/audio-announcement
       padding: 0.75rem;
       border-radius: 8px;
       margin-bottom: 0.5rem;
-      background: #f8f9fa;
+      background: var(--table-header-bg, #f8f9fa);
       transition: background 0.15s;
     }
-    .queue-item:hover { background: #f0f0f0; }
+    .queue-item:hover { background: var(--bg-hover, #f0f0f0); }
 
     .position {
       font-weight: 700;
-      color: #aaa;
+      color: var(--text-muted, #aaa);
       min-width: 24px;
       text-align: center;
       font-size: 0.85rem;
@@ -201,7 +201,7 @@ import { AudioAnnouncementService } from '../token-generation/audio-announcement
 
     .info { flex: 1; }
     .info h4 { margin: 0; font-size: 0.9rem; }
-    .info p { margin: 0.15rem 0 0; font-size: 0.75rem; color: #888; }
+    .info p { margin: 0.15rem 0 0; font-size: 0.75rem; color: var(--text-muted, #888); }
 
     .item-actions { display: flex; }
     .remove-btn { color: #e53935; }
@@ -209,7 +209,7 @@ import { AudioAnnouncementService } from '../token-generation/audio-announcement
     .empty {
       text-align: center;
       padding: 2rem;
-      color: #aaa;
+      color: var(--text-muted, #aaa);
     }
     .empty mat-icon { font-size: 48px; width: 48px; height: 48px; }
     .empty p { margin: 0.5rem 0 0; }
@@ -217,10 +217,10 @@ import { AudioAnnouncementService } from '../token-generation/audio-announcement
     .select-doctor {
       text-align: center;
       padding: 4rem;
-      color: #aaa;
+      color: var(--text-muted, #aaa);
     }
     .select-doctor mat-icon { font-size: 80px; width: 80px; height: 80px; }
-    .select-doctor h2 { margin: 1rem 0 0.5rem; color: #555; }
+    .select-doctor h2 { margin: 1rem 0 0.5rem; color: var(--text-secondary, #555); }
     .select-doctor p { margin: 0; }
   `]
 })

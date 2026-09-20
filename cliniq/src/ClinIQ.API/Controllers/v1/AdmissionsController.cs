@@ -161,6 +161,7 @@ public class AdmissionsController : ControllerBase
             Status = AdmissionStatus.Admitted,
             AdmissionReason = request.AdmissionReason,
             ProvisionalDiagnosis = request.ProvisionalDiagnosis,
+            DepositAmount = request.DepositAmount ?? 0m,
             Notes = request.Notes,
             TenantId = tenantId,
             BranchId = branchId
@@ -427,10 +428,15 @@ public class AdmissionsController : ControllerBase
                 bedNumber = bed.BedNumber;
                 bedDailyRate = bed.DailyRate ?? 0m;
                 var room = await _context.Rooms.FirstOrDefaultAsync(r => r.Id == bed.RoomId && !r.IsDeleted);
-                if (room != null && admission.CurrentWardId.HasValue)
+                if (room != null)
                 {
-                    var ward = await _context.Wards.FirstOrDefaultAsync(w => w.Id == admission.CurrentWardId.Value && !w.IsDeleted);
-                    wardName = ward?.Name;
+                    if (bedDailyRate == 0m) bedDailyRate = room.DailyRate ?? 0m;
+                    if (admission.CurrentWardId.HasValue)
+                    {
+                        var ward = await _context.Wards.FirstOrDefaultAsync(w => w.Id == admission.CurrentWardId.Value && !w.IsDeleted);
+                        wardName = ward?.Name;
+                        if (bedDailyRate == 0m) bedDailyRate = ward?.DailyRate ?? 0m;
+                    }
                 }
             }
         }
@@ -451,7 +457,7 @@ public class AdmissionsController : ControllerBase
 
             var endDate = alloc.ReleasedAt ?? DateTime.UtcNow;
             var days = Math.Max(1, (int)(endDate - alloc.AllocatedAt).TotalDays);
-            var dailyRate = allocBed?.DailyRate ?? allocWard?.DailyRate ?? 0m;
+            var dailyRate = allocBed?.DailyRate ?? allocRoom?.DailyRate ?? allocWard?.DailyRate ?? 0m;
             var charge = days * dailyRate;
             totalBedCharges += charge;
 
@@ -460,8 +466,10 @@ public class AdmissionsController : ControllerBase
                 BedNumber = allocBed?.BedNumber,
                 RoomNumber = allocRoom?.RoomNumber,
                 WardName = allocWard?.Name,
+                FromDate = alloc.AllocatedAt,
+                ToDate = alloc.ReleasedAt,
                 alloc.AllocatedAt,
-                ReleasedAt = alloc.ReleasedAt,
+                alloc.ReleasedAt,
                 Days = days,
                 DailyRate = dailyRate,
                 TotalCharge = charge
@@ -507,6 +515,7 @@ public class AdmissionsController : ControllerBase
             admission,
             bedCharges = bedChargeDetails,
             totalBedCharges,
+            depositAmount = admission.DepositAmount ?? 0m,
             existingInvoice,
             invoiceItems = invoiceItemsList
         }));
@@ -548,7 +557,7 @@ public class AdmissionsController : ControllerBase
 
             var endDate = alloc.ReleasedAt ?? DateTime.UtcNow;
             var days = Math.Max(1, (int)(endDate - alloc.AllocatedAt).TotalDays);
-            var dailyRate = bed?.DailyRate ?? ward?.DailyRate ?? 0m;
+            var dailyRate = bed?.DailyRate ?? room?.DailyRate ?? ward?.DailyRate ?? 0m;
             var charge = days * dailyRate;
             totalBedCharges += charge;
 
@@ -581,6 +590,14 @@ public class AdmissionsController : ControllerBase
             .DefaultIfEmpty(0)
             .Max();
 
+        var depositAmount = admission.DepositAmount ?? 0m;
+        var outstanding = Math.Max(0, totalBedCharges - depositAmount);
+        var refundAmount = Math.Max(0, depositAmount - totalBedCharges);
+
+        var invoiceStatus = outstanding <= 0 ? InvoiceStatus.Paid
+            : depositAmount > 0 ? InvoiceStatus.PartiallyPaid
+            : InvoiceStatus.Draft;
+
         var invoice = new Domain.Entities.Billing.Invoice
         {
             InvoiceNumber = $"{invoicePrefix}{(maxNum + 1):D4}",
@@ -588,13 +605,16 @@ public class AdmissionsController : ControllerBase
             AdmissionId = admission.Id,
             InvoiceDate = DateTime.UtcNow,
             DueDate = DateTime.UtcNow.AddDays(30),
-            Status = InvoiceStatus.Draft,
+            Status = invoiceStatus,
             SubTotal = totalBedCharges,
             TotalAmount = totalBedCharges,
-            OutstandingAmount = totalBedCharges - (admission.DepositAmount ?? 0m),
-            PaidAmount = admission.DepositAmount ?? 0m,
-            Notes = $"IPD Discharge Bill - Admission #{admission.AdmissionNumber}",
-            TenantId = tenantId
+            OutstandingAmount = outstanding,
+            PaidAmount = Math.Min(depositAmount, totalBedCharges),
+            Notes = refundAmount > 0
+                ? $"IPD Discharge Bill - Admission #{admission.AdmissionNumber}. Excess deposit of {refundAmount:C} to be refunded."
+                : $"IPD Discharge Bill - Admission #{admission.AdmissionNumber}",
+            TenantId = tenantId,
+            BranchId = admission.BranchId
         };
 
         _context.Invoices.Add(invoice);
@@ -617,10 +637,14 @@ public class AdmissionsController : ControllerBase
             invoiceId = invoice.Id,
             invoiceNumber = invoice.InvoiceNumber,
             totalBedCharges,
-            depositDeducted = admission.DepositAmount ?? 0m,
-            outstandingAmount = invoice.OutstandingAmount,
+            depositDeducted = Math.Min(depositAmount, totalBedCharges),
+            outstandingAmount = outstanding,
+            refundAmount,
+            invoiceStatus = invoiceStatus.ToString(),
             itemCount = invoiceItems.Count
-        }, "Discharge bill generated successfully"));
+        }, refundAmount > 0
+            ? $"Discharge bill generated. Excess deposit of {refundAmount:C} should be refunded to patient."
+            : "Discharge bill generated successfully"));
     }
 }
 
@@ -632,7 +656,8 @@ public record CreateAdmissionRequest(
     Guid? BedId,
     string? AdmissionReason,
     string? ProvisionalDiagnosis,
-    string? Notes
+    string? Notes,
+    decimal? DepositAmount = null
 );
 
 public record DischargeRequest(

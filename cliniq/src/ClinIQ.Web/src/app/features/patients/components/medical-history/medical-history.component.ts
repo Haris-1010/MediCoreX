@@ -52,11 +52,11 @@ import { ApiService } from '../../../../core/services/api.service';
   `,
   styles: [`
     .medical-history { padding: 1rem 0; }
-    .empty { text-align: center; padding: 2rem; color: #666; }
-    .empty mat-icon { font-size: 48px; width: 48px; height: 48px; color: #ccc; }
+    .empty { text-align: center; padding: 2rem; color: var(--text-secondary, #666); }
+    .empty mat-icon { font-size: 48px; width: 48px; height: 48px; color: var(--text-muted, #ccc); }
     .record-content { padding: 1rem 0; }
     .section { margin-bottom: 1rem; }
-    .section h5 { margin: 0 0 0.25rem; color: #666; font-size: 0.75rem; text-transform: uppercase; }
+    .section h5 { margin: 0 0 0.25rem; color: var(--text-secondary, #666); font-size: 0.75rem; text-transform: uppercase; }
     .section p { margin: 0; }
     .record-type { 
       display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; margin-right: 8px;
@@ -64,14 +64,14 @@ import { ApiService } from '../../../../core/services/api.service';
     .record-type.visit { background: #e8eaf6; color: #3f51b5; }
     .record-type.prescription { background: #e8f5e9; color: #2e7d32; }
     .med-list { display: flex; flex-direction: column; gap: 0.75rem; }
-    .med-item { background: #f8f9fa; border-radius: 8px; padding: 0.75rem 1rem; border-left: 3px solid #4caf50; }
-    .med-name { font-weight: 600; font-size: 0.95rem; color: #333; margin-bottom: 0.25rem; }
-    .med-details { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.8rem; color: #666; }
+    .med-item { background: var(--table-header-bg, #f8f9fa); border-radius: 8px; padding: 0.75rem 1rem; border-left: 3px solid #4caf50; }
+    .med-name { font-weight: 600; font-size: 0.95rem; color: var(--text-primary, #333); margin-bottom: 0.25rem; }
+    .med-details { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.8rem; color: var(--text-secondary, #666); }
     .med-details span { display: flex; align-items: center; gap: 4px; }
     .med-details mat-icon { font-size: 14px; width: 14px; height: 14px; }
     .med-timing { display: flex; gap: 0.4rem; margin-top: 0.4rem; }
     .timing-chip { background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 500; }
-    .med-instructions { margin-top: 0.4rem; font-size: 0.8rem; color: #888; display: flex; align-items: center; gap: 4px; }
+    .med-instructions { margin-top: 0.4rem; font-size: 0.8rem; color: var(--text-muted, #888); display: flex; align-items: center; gap: 4px; }
     .med-instructions mat-icon { font-size: 14px; width: 14px; height: 14px; }
   `]
 })

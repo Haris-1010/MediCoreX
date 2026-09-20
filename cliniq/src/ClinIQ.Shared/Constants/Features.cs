@@ -14,6 +14,8 @@ public static class Features
     public const string Wards = "wards";
     public const string Rooms = "rooms";
     public const string EMR = "emr";
+    public const string Laboratory = "laboratory";
+    public const string Radiology = "radiology";
     public const string Prescriptions = "prescriptions";
     public const string Billing = "billing";
     public const string Services = "services";

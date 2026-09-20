@@ -67,11 +67,11 @@ import { NotificationService } from '../../../core/services/notification.service
     </app-main-layout>
   `,
   styles: [`
-    .form-card { background: white; padding: 2rem; border-radius: 8px; max-width: 700px; }
+    .form-card { background: var(--bg-card, #fff); padding: 2rem; border-radius: 8px; max-width: 700px; }
     .form-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
     .form-grid mat-form-field { flex: 1; min-width: 200px; }
     .full-width { flex-basis: 100% !important; }
-    .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #eee; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color, #e0e0e0); }
   `]
 })
 export class WardFormComponent implements OnInit {

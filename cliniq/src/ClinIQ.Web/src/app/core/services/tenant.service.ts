@@ -112,11 +112,15 @@ export class TenantService {
   }
 
   formatCurrency(amount: number): string {
-    const currency = this.getSetting('currency') || 'USD';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency
-    }).format(amount);
+    const currency = this.getSetting('currency') || 'PKR';
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency
+      }).format(amount);
+    } catch {
+      return `Rs. ${amount}`;
+    }
   }
 
   getCurrencySymbol(): string {
@@ -154,7 +158,7 @@ export class TenantService {
       country: tenant.country,
       postalCode: tenant.postalCode,
       settings: {
-        currency: tenant.currency || 'USD',
+        currency: tenant.currency || 'PKR',
         timezone: tenant.timezone || 'UTC',
         dateFormat: 'dd/MM/yyyy',
         timeFormat: 'hh:mm a',

@@ -101,14 +101,14 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
   `,
   styles: [`
     .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-    .summary-card { display: flex; align-items: center; gap: 1rem; background: white; padding: 1.25rem; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #f0f0f0; }
-    .summary-card .icon { font-size: 32px; width: 32px; height: 32px; color: #3f51b5; }
+    .summary-card { display: flex; align-items: center; gap: 1rem; background: var(--bg-card, #fff); padding: 1.25rem; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid var(--border-color, #f0f0f0); }
+    .summary-card .icon { font-size: 32px; width: 32px; height: 32px; color: var(--accent-primary, #3f51b5); }
     .summary-card.warning .icon { color: #f57c00; }
     .summary-card.refund .icon { color: #e91e63; }
-    .summary-card .card-content h3 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #1a1a1a; }
-    .summary-card .card-content p { margin: 0.25rem 0 0; font-size: 0.85rem; color: #666; }
-    .summary-card .card-content small { display: block; margin-top: 0.25rem; font-size: 0.75rem; color: #888; }
-    .card { background: white; padding: 1.5rem; border-radius: 8px; }
+    .summary-card .card-content h3 { margin: 0; font-size: 1.5rem; font-weight: 700; color: var(--text-primary, #1a1a1a); }
+    .summary-card .card-content p { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--text-secondary, #666); }
+    .summary-card .card-content small { display: block; margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-muted, #888); }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
     .filters { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
     table { width: 100%; }
     .overdue { color: #f44336; font-weight: 600; }

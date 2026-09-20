@@ -12,7 +12,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
 
         optionsBuilder.UseSqlServer(
-            "Server=DESKTOP-4LT3VRG;Database=ClinIQ;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True");
+            "Server=LAPTOP-9RLFOJO3;Database=MediCoreX;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True");
 
         // Provide stub services for design-time (migrations only)
         var tenantService = new StubTenantService();

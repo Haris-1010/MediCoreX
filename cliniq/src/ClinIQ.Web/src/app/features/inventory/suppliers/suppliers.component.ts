@@ -74,13 +74,13 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       </div>
     </app-main-layout>
   `,
-  styles: [`.card { background: white; padding: 1.5rem; border-radius: 8px; } .filters { display: flex; gap: 1rem; margin-bottom: 1rem; }
+  styles: [`.card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; } .filters { display: flex; gap: 1rem; margin-bottom: 1rem; }
     table { width: 100%; } h3 { margin: 0 0 1rem; } .form-row { display: flex; gap: 1rem; margin-bottom: 0.25rem; } .form-row mat-form-field { flex: 1; }
     .flex-2 { flex: 2; } .full-width { width: 100%; } .section-label { font-size: 0.85rem; font-weight: 600; color: #3f51b5; margin: 1rem 0 0.25rem; }
     .checkboxes { gap: 1.5rem; align-items: center; }
     .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; }
     .badge-active { background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; }
-    .badge-inactive { background: #fce4ec; color: #c62828; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; }`]
+    .badge-inactive { background: var(--status-error-bg, #ffebee); color: #c62828; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; }`]
 })
 export class SuppliersComponent implements OnInit {
   suppliers: any[] = [];
@@ -88,7 +88,7 @@ export class SuppliersComponent implements OnInit {
   totalCount = 0; pageSize = 10; pageIndex = 0; searchTerm = '';
   showForm = false; editId: string | null = null; saving = false;
   form!: FormGroup;
-  currencySymbol = '$';
+  currencySymbol = '';
 
   constructor(private api: ApiService, private fb: FormBuilder, private notification: NotificationService, private tenantService: TenantService, private dialog: MatDialog) {
     this.currencySymbol = tenantService.getCurrencySymbol();

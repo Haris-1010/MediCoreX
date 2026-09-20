@@ -98,20 +98,20 @@ import { SharedModule } from '../../../shared/shared.module';
     </div>
   `,
   styles: [`
-    .print-container { max-width: 800px; margin: 0 auto; padding: 2rem; background: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; }
+    .print-container { max-width: 800px; margin: 0 auto; padding: 2rem; background: var(--bg-card, #fff); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text-primary, #333); }
     .invoice-header { display: flex; justify-content: space-between; margin-bottom: 2rem; }
     .invoice-title h1 { margin: 0; color: #1a237e; font-size: 2rem; letter-spacing: 2px; }
     .invoice-number { margin: 4px 0 0; color: #666; font-size: 1.1rem; }
     .invoice-meta p { margin: 4px 0; font-size: 0.9rem; }
     .status-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
-    .status-badge.pending { background: #fff3e0; color: #e65100; }
+    .status-badge.pending { background: var(--status-warning-bg, #fff3e0); color: #e65100; }
     .status-badge.paid { background: #e8f5e9; color: #2e7d32; }
-    .status-badge.overdue { background: #ffebee; color: #c62828; }
-    .status-badge.cancelled { background: #f5f5f5; color: #616161; }
+    .status-badge.overdue { background: var(--status-error-bg, #ffebee); color: #c62828; }
+    .status-badge.cancelled { background: var(--bg-hover, #f5f5f5); color: #616161; }
     .status-badge.refunded { background: #e3f2fd; color: #1565c0; }
     .status-badge.partial { background: #fff8e1; color: #f9a825; }
-    .status-badge.draft { background: #f5f5f5; color: #757575; }
-    .patient-info { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; }
+    .status-badge.draft { background: var(--bg-hover, #f5f5f5); color: #757575; }
+    .patient-info { background: var(--bg-muted, #f5f5f5); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; }
     .info-row { display: flex; gap: 0.5rem; margin-bottom: 0.25rem; font-size: 0.9rem; }
     .info-row .label { font-weight: 600; min-width: 80px; }
     .items-table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; }
@@ -119,7 +119,7 @@ import { SharedModule } from '../../../shared/shared.module';
     .items-table th.right { text-align: right; }
     .items-table td { padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-size: 0.9rem; }
     .items-table td.right { text-align: right; }
-    .totals-section { margin-left: auto; max-width: 300px; padding: 1rem; background: #f5f5f5; border-radius: 8px; margin-bottom: 2rem; }
+    .totals-section { margin-left: auto; max-width: 300px; padding: 1rem; background: var(--bg-hover, #f5f5f5); border-radius: 8px; margin-bottom: 2rem; }
     .total-row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.9rem; }
     .total-row.grand { border-top: 2px solid #333; font-weight: 700; font-size: 1.1rem; }
     .total-row.overdue { color: #f44336; }

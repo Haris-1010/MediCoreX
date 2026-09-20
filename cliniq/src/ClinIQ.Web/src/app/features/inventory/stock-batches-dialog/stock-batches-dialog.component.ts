@@ -84,8 +84,8 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .batch-card {
-      background: white;
-      border: 1px solid #e0e0e0;
+      background: var(--bg-card, #fff);
+      border: 1px solid var(--border-color, #e0e0e0);
       border-left: 4px solid #4caf50;
       border-radius: 8px;
       padding: 1rem;
@@ -94,12 +94,12 @@ import { NotificationService } from '../../../core/services/notification.service
 
     .batch-card.expired {
       border-left-color: #f44336;
-      background: #fff5f5;
+      background: var(--status-error-bg, #ffebee);
     }
 
     .batch-card.near-expiry {
       border-left-color: #ff9800;
-      background: #fff8e1;
+      background: var(--status-warning-bg, #fff3e0);
     }
 
     .batch-header {
@@ -123,12 +123,12 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .badge.expired {
-      background: #ffebee;
+      background: var(--status-error-bg, #ffebee);
       color: #c62828;
     }
 
     .badge.near-expiry {
-      background: #fff3e0;
+      background: var(--status-warning-bg, #fff3e0);
       color: #e65100;
     }
 
@@ -154,7 +154,7 @@ import { NotificationService } from '../../../core/services/notification.service
     .field .value {
       font-size: 0.9rem;
       font-weight: 500;
-      color: #333;
+      color: var(--text-primary, #333);
     }
 
     .expiry-edit {
@@ -180,7 +180,7 @@ import { NotificationService } from '../../../core/services/notification.service
     .batch-location {
       margin-top: 0.5rem;
       padding-top: 0.5rem;
-      border-top: 1px dashed #e0e0e0;
+      border-top: 1px dashed var(--border-color, #e0e0e0);
       font-size: 0.78rem;
       color: #7986cb;
       display: flex;

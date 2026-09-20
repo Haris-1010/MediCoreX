@@ -56,7 +56,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
             </div>
             <div class="detail-row" *ngIf="r.dailyRate">
               <mat-icon>attach_money</mat-icon>
-              <span>{{ r.dailyRate | currency:'PKR':'symbol':'1.0-0' }}/day</span>
+              <span>{{ r.dailyRate | currencyFormat }}/day</span>
             </div>
           </div>
 
@@ -231,9 +231,9 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     }
 
     .room-card {
-      background: white;
+      background: var(--bg-card, #fff);
       border-radius: 16px;
-      border: 1px solid #e8eaf6;
+      border: 1px solid var(--border-color, #e8eaf6);
       overflow: hidden;
       transition: all 0.25s ease;
       display: flex;
@@ -241,7 +241,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     }
     .room-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 12px 32px rgba(63, 81, 181, 0.15);
+      box-shadow: var(--shadow-lg, 0 12px 32px rgba(63, 81, 181, 0.15));
       border-color: #3f51b5;
     }
 
@@ -268,7 +268,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.1));
     }
     .room-icon-wrapper mat-icon { font-size: 28px; width: 28px; height: 28px; color: white; }
     .room-general .room-icon-wrapper { background: linear-gradient(135deg, #4caf50, #66bb6a); }
@@ -279,7 +279,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
 
     .room-info { flex: 1; min-width: 0; }
     .room-info h3 { margin: 0 0 0.25rem; font-size: 1.125rem; font-weight: 700; color: #1a237e; }
-    .room-info p { margin: 0; font-size: 0.8rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .room-info p { margin: 0; font-size: 0.8rem; color: var(--text-muted, #666); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .room-type-badge {
       padding: 0.25rem 0.75rem;
       border-radius: 20px;
@@ -302,7 +302,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       gap: 0.625rem;
       padding: 0.5rem 0;
       font-size: 0.85rem;
-      color: #444;
+      color: var(--text-primary, #444);
     }
     .detail-row mat-icon { font-size: 18px; width: 18px; height: 18px; color: #7986cb; flex-shrink: 0; }
     .free-badge { color: #4caf50; font-weight: 600; font-size: 0.75rem; margin-left: 0.375rem; }
@@ -334,8 +334,8 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       justify-content: flex-end;
       gap: 0.375rem;
       padding: 0.75rem 1.25rem;
-      background: #fafafa;
-      border-top: 1px solid #f0f0f0;
+      background: var(--bg-hover, #fafafa);
+      border-top: 1px solid var(--border-color, #f0f0f0);
     }
     .action-btn {
       width: 36px;
@@ -357,9 +357,9 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .empty-state {
       text-align: center;
       padding: 4rem 2rem;
-      background: white;
+      background: var(--bg-card, #fff);
       border-radius: 16px;
-      border: 2px dashed #e0e0e0;
+      border: 2px dashed var(--border-color, #e0e0e0);
     }
     .empty-icon {
       width: 100px;
@@ -372,8 +372,8 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       margin: 0 auto 1.5rem;
     }
     .empty-icon mat-icon { font-size: 48px; width: 48px; height: 48px; color: #3f51b5; }
-    .empty-state h3 { margin: 0 0 0.5rem; color: #333; font-size: 1.25rem; }
-    .empty-state p { color: #888; margin-bottom: 1.5rem; }
+    .empty-state h3 { margin: 0 0 0.5rem; color: var(--text-primary, #333); font-size: 1.25rem; }
+    .empty-state p { color: var(--text-muted, #888); margin-bottom: 1.5rem; }
 
     /* Dialog Styles */
     .form-row { display: flex; gap: 1rem; }

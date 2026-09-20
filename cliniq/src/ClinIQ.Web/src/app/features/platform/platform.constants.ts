@@ -20,6 +20,8 @@ export const PLATFORM_FEATURES: PlatformFeature[] = [
   { key: 'doctors', label: 'Doctors', icon: 'stethoscope', description: 'Doctor management' },
   { key: 'staff', label: 'Staff', icon: 'badge', description: 'Staff management' },
   { key: 'departments', label: 'Departments', icon: 'apartment', description: 'Department management' },
+  { key: 'laboratory', label: 'Laboratory', icon: 'science', description: 'Lab orders, results, and tests' },
+  { key: 'radiology', label: 'Radiology', icon: 'medical_information', description: 'Radiology orders and reports' },
   { key: 'users', label: 'Users', icon: 'manage_accounts', description: 'User management' },
   { key: 'roles', label: 'Roles', icon: 'shield', description: 'Role and permission management' },
   { key: 'reports', label: 'Reports', icon: 'bar_chart', description: 'Standard reports' },

@@ -32,16 +32,16 @@ import { NotificationService } from '../../../core/services/notification.service
     </div>
   `,
   styles: [`
-    .platform-login { min-height: 100vh; display: grid; place-items: center; background: #101827; padding: 24px; }
-    .login-panel { width: min(430px, 100%); background: white; padding: 36px; border-radius: 12px; box-shadow: 0 18px 50px rgba(0,0,0,.28); }
-    .brand { display: flex; align-items: center; gap: 10px; color: #1f5f63; font-weight: 700; letter-spacing: .02em; }
-    .brand mat-icon { color: #d97706; }
-    h1 { margin: 28px 0 8px; color: #172033; }
-    .muted { color: #64748b; line-height: 1.5; margin-bottom: 28px; }
+    .platform-login { min-height: 100vh; display: grid; place-items: center; background: var(--bg-primary, #101827); padding: 24px; }
+    .login-panel { width: min(430px, 100%); background: var(--bg-card, white); padding: 36px; border-radius: 12px; box-shadow: var(--shadow-md, 0 18px 50px rgba(0,0,0,.28)); }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--accent-primary, #1f5f63); font-weight: 700; letter-spacing: .02em; }
+    .brand mat-icon { color: var(--warning, #d97706); }
+    h1 { margin: 28px 0 8px; color: var(--text-primary, #172033); }
+    .muted { color: var(--text-muted, #64748b); line-height: 1.5; margin-bottom: 28px; }
     .full-width { width: 100%; margin-bottom: 12px; }
     button { min-height: 46px; }
     mat-spinner { margin: auto; }
-    .back-link { display: block; margin-top: 18px; text-align: center; color: #1f5f63; text-decoration: none; }
+    .back-link { display: block; margin-top: 18px; text-align: center; color: var(--accent-primary, #1f5f63); text-decoration: none; }
   `]
 })
 export class PlatformLoginComponent implements OnInit {

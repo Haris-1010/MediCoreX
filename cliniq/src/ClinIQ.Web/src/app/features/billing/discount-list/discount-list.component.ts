@@ -70,13 +70,13 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     </app-main-layout>
   `,
   styles: [`
-    .card { background: white; padding: 1.5rem; border-radius: 8px; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
     table { width: 100%; }
     .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
     .status-badge.active { background: #e8f5e9; color: #2e7d32; }
     .status-badge.inactive { background: #fbe9e7; color: #c62828; }
-    .empty-state { text-align: center; padding: 3rem; color: #666; }
-    .empty-state mat-icon { font-size: 48px; width: 48px; height: 48px; color: #ccc; }
+    .empty-state { text-align: center; padding: 3rem; color: var(--text-secondary, #666); }
+    .empty-state mat-icon { font-size: 48px; width: 48px; height: 48px; color: var(--text-muted, #ccc); }
   `]
 })
 export class DiscountListComponent implements OnInit {

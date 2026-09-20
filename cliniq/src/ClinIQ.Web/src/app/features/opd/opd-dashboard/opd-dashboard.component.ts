@@ -94,7 +94,7 @@ import { SignalRService } from '../../../core/services/signalr.service';
       display: flex;
       align-items: center;
       gap: 1rem;
-      background: white;
+      background: var(--bg-card, #fff);
       padding: 1.25rem 1.5rem;
       border-radius: 10px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -110,12 +110,12 @@ import { SignalRService } from '../../../core/services/signalr.service';
     .stat-icon.progress { background: #e8f5e9; color: #388e3c; }
     .stat-icon.done { background: #f3e5f5; color: #7b1fa2; }
     .stat-card h3 { margin: 0; font-size: 1.75rem; line-height: 1; }
-    .stat-card p { margin: 0.25rem 0 0; color: #888; font-size: 0.85rem; }
+    .stat-card p { margin: 0.25rem 0 0; color: var(--text-muted, #888); font-size: 0.85rem; }
 
     .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 
     .card {
-      background: white;
+      background: var(--bg-card, #fff);
       border-radius: 10px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       overflow: hidden;
@@ -125,7 +125,7 @@ import { SignalRService } from '../../../core/services/signalr.service';
       align-items: center;
       justify-content: space-between;
       padding: 1rem 1.5rem;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--border-color, #f0f0f0);
     }
     .card-header h3 { margin: 0; font-size: 1rem; }
     .badge { background: #e8eaf6; color: #3f51b5; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
@@ -140,7 +140,7 @@ import { SignalRService } from '../../../core/services/signalr.service';
       border-radius: 8px;
       transition: background 0.15s;
     }
-    .doctor-item:hover { background: #f5f5f5; }
+    .doctor-item:hover { background: var(--bg-hover, #f5f5f5); }
 
     .avatar {
       width: 42px; height: 42px;
@@ -153,11 +153,11 @@ import { SignalRService } from '../../../core/services/signalr.service';
     }
     .info { flex: 1; }
     .info h4 { margin: 0; font-size: 0.9rem; }
-    .info p { margin: 0.15rem 0 0; font-size: 0.8rem; color: #888; }
+    .info p { margin: 0.15rem 0 0; font-size: 0.8rem; color: var(--text-muted, #888); }
 
     .queue-badge { text-align: center; }
     .queue-badge .count { display: block; font-size: 1.25rem; font-weight: 700; color: #3f51b5; }
-    .queue-badge .label { font-size: 0.65rem; color: #aaa; }
+    .queue-badge .label { font-size: 0.65rem; color: var(--text-muted, #aaa); }
 
     .queue-item {
       display: flex;
@@ -167,7 +167,7 @@ import { SignalRService } from '../../../core/services/signalr.service';
       border-radius: 8px;
       transition: background 0.15s;
     }
-    .queue-item:hover { background: #f5f5f5; }
+    .queue-item:hover { background: var(--bg-hover, #f5f5f5); }
     .queue-item.called { background: #fff8e1; border-left: 3px solid #ffc107; }
     .queue-item.in-progress { background: #e8f5e9; border-left: 3px solid #4caf50; }
 
@@ -198,7 +198,7 @@ import { SignalRService } from '../../../core/services/signalr.service';
     .empty {
       text-align: center;
       padding: 2rem;
-      color: #aaa;
+      color: var(--text-muted, #aaa);
     }
     .empty mat-icon { font-size: 48px; width: 48px; height: 48px; }
     .empty p { margin: 0.5rem 0 0; }

@@ -17,23 +17,39 @@ import { NotificationService } from '../../../core/services/notification.service
           <div class="info-row"><span>MRN:</span><strong>{{ order.mrn }}</strong></div>
           <div class="info-row"><span>Ordered By:</span><strong>Dr. {{ order.orderedBy }}</strong></div>
           <div class="info-row"><span>Date:</span><strong>{{ order.orderDate | date:'mediumDate' }}</strong></div>
+          <div class="info-row"><span>Status:</span><strong><app-status-badge [status]="order.status"></app-status-badge></strong></div>
+          <div class="info-row" *ngIf="order.clinicalIndication"><span>Indication:</span><strong>{{ order.clinicalIndication }}</strong></div>
         </div>
         <div class="card results-form">
           <h3>Test Results</h3>
-          <div class="test-result" *ngFor="let test of order.tests">
-            <h4>{{ test.testName }}</h4>
-            <div class="parameters">
-              <div class="param" *ngFor="let param of test.parameters">
-                <mat-form-field appearance="outline"><mat-label>{{ param.name }}</mat-label><input matInput [(ngModel)]="param.value" [placeholder]="param.unit"></mat-form-field>
-                <span class="range">Range: {{ param.normalRange }}</span>
-                <mat-icon *ngIf="isAbnormal(param)" color="warn">warning</mat-icon>
+          <div class="test-result" *ngFor="let test of tests; let ti = index">
+            <div class="test-header">
+              <h4>{{ test.testName }}</h4>
+              <span class="sample-badge" *ngIf="test.sampleType">{{ test.sampleType }}</span>
+            </div>
+            <div class="parameters" *ngIf="test.parameters && test.parameters.length > 0">
+              <div class="param" *ngFor="let param of test.parameters; let pi = index">
+                <mat-form-field appearance="outline" class="param-field">
+                  <mat-label>{{ param.name }}</mat-label>
+                  <input matInput [(ngModel)]="param.value" [placeholder]="param.unit || 'Value'">
+                </mat-form-field>
+                <div class="param-meta">
+                  <span class="range" *ngIf="param.normalRange">Ref: {{ param.normalRange }} {{ param.unit }}</span>
+                  <mat-icon *ngIf="isAbnormal(param)" color="warn" class="warning-icon" matTooltip="Out of range">warning</mat-icon>
+                </div>
               </div>
+            </div>
+            <div class="simple-test" *ngIf="!test.parameters || test.parameters.length === 0">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Result for {{ test.testName }}</mat-label>
+                <textarea matInput [(ngModel)]="test.simpleResult" rows="2" placeholder="Enter result..."></textarea>
+              </mat-form-field>
             </div>
           </div>
           <mat-form-field appearance="outline" class="full-width"><mat-label>Comments</mat-label><textarea matInput [(ngModel)]="comments" rows="3"></textarea></mat-form-field>
           <div class="form-actions">
             <button mat-stroked-button routerLink="/laboratory">Cancel</button>
-            <button mat-stroked-button (click)="save()">Save Draft</button>
+            <button mat-stroked-button (click)="save()" [disabled]="saving">{{ saving ? 'Saving...' : 'Save Draft' }}</button>
             <button mat-raised-button color="primary" (click)="complete()" [disabled]="saving">{{ saving ? 'Processing...' : 'Complete & Publish' }}</button>
           </div>
         </div>
@@ -41,41 +57,110 @@ import { NotificationService } from '../../../core/services/notification.service
     </app-main-layout>
   `,
   styles: [`.results-grid { display: grid; grid-template-columns: 300px 1fr; gap: 1.5rem; }
-    .card { background: white; padding: 1.5rem; border-radius: 8px; } .card h3 { margin: 0 0 1rem; }
-    .info-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #eee; } .info-row span { color: #666; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; } .card h3 { margin: 0 0 1rem; }
+    .info-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color, #eee); } .info-row span { color: var(--text-secondary, #666); }
     .test-result { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #eee; }
-    .test-result h4 { margin: 0 0 1rem; color: #3f51b5; }
-    .parameters { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-    .param { display: flex; align-items: center; gap: 0.5rem; } .param mat-form-field { flex: 1; } .range { font-size: 0.75rem; color: #666; }
+    .test-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+    .test-header h4 { margin: 0; color: var(--accent-primary, #3f51b5); }
+    .sample-badge { font-size: 0.7rem; background: #e8eaf6; color: #3f51b5; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
+    .parameters { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem 1rem; }
+    .param { display: flex; flex-direction: column; gap: 2px; }
+    .param-field { margin-bottom: -1.5em !important; }
+    .param-meta { display: flex; align-items: center; gap: 4px; }
+    .range { font-size: 0.7rem; color: var(--text-secondary, #666); }
+    .warning-icon { font-size: 16px; width: 16px; height: 16px; }
     .full-width { width: 100%; }
     .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }`]
 })
 export class ResultEntryComponent implements OnInit {
-  order: any; comments = ''; saving = false;
+  order: any;
+  tests: any[] = [];
+  comments = '';
+  saving = false;
 
   constructor(private api: ApiService, private route: ActivatedRoute, private router: Router, private notification: NotificationService) {}
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
-    if (id) this.api.getById<any>('v1/laboratory/orders', id).subscribe(r => this.order = r);
+    if (id) {
+      this.api.getById<any>('v1/laboratory/orders', id).subscribe(r => {
+        this.order = r;
+        this.tests = this.normalizeTests(r.tests || r.Tests, r.orderItems);
+      });
+    }
+  }
+
+  private normalizeTests(tests: any, orderItems: any): any[] {
+    let rawTests: any[] = [];
+    if (Array.isArray(tests)) rawTests = tests;
+    else if (typeof tests === 'string' && tests.trim()) { try { rawTests = JSON.parse(tests); } catch { rawTests = []; } }
+    else if (tests && typeof tests === 'object') rawTests = [tests];
+    if (rawTests.length === 0 && orderItems) {
+      if (Array.isArray(orderItems)) rawTests = orderItems;
+      else if (typeof orderItems === 'string') { try { rawTests = JSON.parse(orderItems); } catch { rawTests = []; } }
+    }
+    return rawTests.map(t => {
+      if (typeof t === 'string') return { testName: t, simpleResult: '', parameters: [] };
+      return {
+        testName: t.testName || t.name || 'Unknown Test',
+        sampleType: t.sampleType || '',
+        simpleResult: t.simpleResult || t.result || '',
+        parameters: Array.isArray(t.parameters) ? t.parameters.map((p: any) => ({
+          name: p.name || p.parameterName || '',
+          value: p.value || '',
+          unit: p.unit || '',
+          normalRange: p.normalRange || p.range || '',
+          isAbnormal: p.isAbnormal || false
+        })) : []
+      };
+    });
   }
 
   isAbnormal(param: any): boolean {
     if (!param.value || !param.normalRange) return false;
-    const [min, max] = param.normalRange.split('-').map((n: string) => parseFloat(n));
     const val = parseFloat(param.value);
-    return val < min || val > max;
+    if (isNaN(val)) return false;
+    const range = param.normalRange.replace(/[<>]/g, '');
+    const parts = range.split('-');
+    if (parts.length === 2) {
+      const min = parseFloat(parts[0]);
+      const max = parseFloat(parts[1]);
+      if (!isNaN(min) && !isNaN(max)) return val < min || val > max;
+    }
+    return false;
   }
 
   save() {
-    this.api.put('v1/laboratory/orders', this.order.id, { tests: this.order.tests, comments: this.comments, status: 'InProgress' }).subscribe(() => this.notification.success('Draft saved'));
+    if (!this.order) return;
+    this.saving = true;
+    this.api.put('v1/laboratory/orders', this.order.id, {
+      tests: this.buildResultsPayload(),
+      comments: this.comments,
+      status: 'InProgress'
+    }).subscribe({
+      next: () => { this.notification.success('Draft saved'); this.saving = false; },
+      error: () => this.saving = false
+    });
   }
 
   complete() {
+    if (!this.order) return;
     this.saving = true;
-    this.api.post(`v1/laboratory/orders/${this.order.id}/complete`, { tests: this.order.tests, comments: this.comments }).subscribe({
+    this.api.post(`v1/laboratory/orders/${this.order.id}/complete`, {
+      tests: this.buildResultsPayload(),
+      comments: this.comments
+    }).subscribe({
       next: () => { this.notification.success('Results published'); this.router.navigate(['/laboratory']); },
       error: () => this.saving = false
     });
+  }
+
+  private buildResultsPayload(): any[] {
+    return this.tests.map(t => ({
+      testName: t.testName,
+      sampleType: t.sampleType || null,
+      simpleResult: t.simpleResult || null,
+      parameters: t.parameters || []
+    }));
   }
 }

@@ -343,7 +343,7 @@ const STORAGE_KEY = 'patientFormFieldVisibility';
     }
 
     .card {
-      background: white;
+      background: var(--bg-card, #fff);
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
       padding: 1.5rem;
@@ -351,11 +351,11 @@ const STORAGE_KEY = 'patientFormFieldVisibility';
     }
 
     .required-card {
-      border-left: 4px solid #3f51b5;
+      border-left: 4px solid var(--accent-primary, #3f51b5);
     }
 
     .optional-card {
-      border-left: 4px solid #e0e0e0;
+      border-left: 4px solid var(--border-color, #e0e0e0);
     }
 
     .card-header-row {
@@ -372,12 +372,12 @@ const STORAGE_KEY = 'patientFormFieldVisibility';
       margin: 0;
       font-size: 1.1rem;
       font-weight: 600;
-      color: #333;
+      color: var(--text-primary, #333);
     }
 
     .required-badge {
       background: #e8eaf6;
-      color: #3f51b5;
+      color: var(--accent-primary, #3f51b5);
       padding: 0.25rem 0.75rem;
       border-radius: 12px;
       font-size: 0.75rem;
@@ -401,7 +401,7 @@ const STORAGE_KEY = 'patientFormFieldVisibility';
     .optional-section {
       margin-bottom: 1rem;
       padding-bottom: 1rem;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--border-color, #f0f0f0);
     }
 
     .optional-section:last-child {
@@ -412,7 +412,7 @@ const STORAGE_KEY = 'patientFormFieldVisibility';
     .optional-section h4 {
       font-size: 0.9rem;
       font-weight: 600;
-      color: #555;
+      color: var(--text-secondary, #555);
       margin: 0 0 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -426,12 +426,12 @@ const STORAGE_KEY = 'patientFormFieldVisibility';
       display: block;
       font-size: 0.85rem;
       font-weight: 500;
-      color: #666;
+      color: var(--text-secondary, #666);
       margin-bottom: 0.5rem;
     }
 
     .chip-section input {
-      border: 1px solid #e0e0e0;
+      border: 1px solid var(--border-color, #e0e0e0);
       border-radius: 4px;
       padding: 0.5rem;
       width: 100%;

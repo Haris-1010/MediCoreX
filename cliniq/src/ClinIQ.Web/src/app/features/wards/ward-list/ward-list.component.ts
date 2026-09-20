@@ -83,29 +83,29 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     </app-main-layout>
   `,
   styles: [`
-    .card { background: white; padding: 1.5rem; border-radius: 8px; margin-top: 1rem; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; margin-top: 1rem; }
     .ward-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
-    .stat-card { background: white; padding: 1.25rem; border-radius: 8px; display: flex; align-items: center; gap: 1rem; }
+    .stat-card { background: var(--bg-card, #fff); padding: 1.25rem; border-radius: 8px; display: flex; align-items: center; gap: 1rem; }
     .stat-card mat-icon { font-size: 28px; width: 28px; height: 28px; color: #1a237e; }
     .stat-card.available mat-icon { color: #2e7d32; }
     .stat-card.occupied mat-icon { color: #c62828; }
-    .stat-value { display: block; font-size: 1.5rem; font-weight: 700; color: #333; }
-    .stat-label { font-size: 0.75rem; color: #999; }
+    .stat-value { display: block; font-size: 1.5rem; font-weight: 700; color: var(--text-primary, #333); }
+    .stat-label { font-size: 0.75rem; color: var(--text-muted, #999); }
     .loading-container { display: flex; justify-content: center; padding: 3rem; }
-    .empty-state { text-align: center; padding: 3rem; color: #666; }
+    .empty-state { text-align: center; padding: 3rem; color: var(--text-muted, #666); }
     .empty-icon { font-size: 48px; width: 48px; height: 48px; color: #ccc; margin-bottom: 1rem; }
-    .empty-state h3 { margin: 0 0 0.5rem; color: #333; }
+    .empty-state h3 { margin: 0 0 0.5rem; color: var(--text-primary, #333); }
     .empty-state p { margin: 0 0 1.5rem; }
     .ward-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; margin-top: 0.5rem; }
-    .ward-card { background: #fafafa; border: 1px solid #eee; border-radius: 10px; padding: 1.25rem; transition: box-shadow 0.2s; }
-    .ward-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .ward-card { background: var(--bg-hover, #f5f5f5); border: 1px solid var(--border-color, #e0e0e0); border-radius: 10px; padding: 1.25rem; transition: box-shadow 0.2s; }
+    .ward-card:hover { box-shadow: var(--shadow-md, 0 2px 12px rgba(0,0,0,0.08)); }
     .ward-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
     .ward-avatar { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #1a237e, #0d47a1); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; }
     .ward-info { flex: 1; }
     .ward-info h3 { margin: 0; font-size: 1rem; }
-    .ward-code { font-size: 0.75rem; color: #999; }
+    .ward-code { font-size: 0.75rem; color: var(--text-muted, #999); }
     .ward-details { margin-bottom: 1rem; }
-    .detail-row { display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.85rem; color: #666; }
+    .detail-row { display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.85rem; color: var(--text-muted, #666); }
     .bed-progress { margin-top: auto; }
     .progress-bar { height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; margin-bottom: 0.5rem; }
     .progress-fill { height: 100%; background: linear-gradient(90deg, #2e7d32, #66bb6a); border-radius: 3px; transition: width 0.3s; }

@@ -62,16 +62,16 @@ import { InvoiceDetailDialogComponent } from './invoice-detail-dialog/invoice-de
     .empty-state {
       text-align: center;
       padding: 3rem 1rem;
-      color: #999;
+      color: var(--text-muted, #999);
     }
     .empty-state mat-icon {
       font-size: 56px;
       width: 56px;
       height: 56px;
-      color: #d0d0d0;
+      color: var(--text-muted, #d0d0d0);
       margin-bottom: 0.75rem;
     }
-    .empty-state h4 { margin: 0 0 0.25rem; color: #666; font-size: 1rem; }
+    .empty-state h4 { margin: 0 0 0.25rem; color: var(--text-secondary, #666); font-size: 1rem; }
     .empty-state p { margin: 0; font-size: 0.85rem; }
 
     .billing-summary-bar {
@@ -79,11 +79,11 @@ import { InvoiceDetailDialogComponent } from './invoice-detail-dialog/invoice-de
       justify-content: space-between;
       align-items: center;
       padding: 0.6rem 1rem;
-      background: #f8f9fa;
+      background: var(--table-header-bg, #f8f9fa);
       border-radius: 8px;
       margin-bottom: 0.75rem;
       font-size: 0.8rem;
-      color: #666;
+      color: var(--text-secondary, #666);
     }
     .summary-totals { display: flex; gap: 1.25rem; }
     .paid-col { color: #2e7d32; }
@@ -94,8 +94,8 @@ import { InvoiceDetailDialogComponent } from './invoice-detail-dialog/invoice-de
       justify-content: space-between;
       align-items: center;
       padding: 1rem 1.15rem;
-      background: #fff;
-      border: 1px solid #e8e8e8;
+      background: var(--bg-card, #fff);
+      border: 1px solid var(--border-color, #e8e8e8);
       border-radius: 10px;
       margin-bottom: 0.5rem;
       cursor: pointer;
@@ -125,12 +125,12 @@ import { InvoiceDetailDialogComponent } from './invoice-detail-dialog/invoice-de
     .invoice-icon mat-icon.status-default { background: #f5f5f5; color: #757575; }
 
     .invoice-info { display: flex; flex-direction: column; gap: 2px; }
-    .invoice-number { font-weight: 600; font-size: 0.9rem; color: #333; }
-    .invoice-date { font-size: 0.78rem; color: #888; }
+    .invoice-number { font-weight: 600; font-size: 0.9rem; color: var(--text-primary, #333); }
+    .invoice-date { font-size: 0.78rem; color: var(--text-muted, #888); }
 
     .invoice-card-right { display: flex; align-items: center; gap: 1rem; }
     .invoice-amounts { text-align: right; display: flex; flex-direction: column; gap: 1px; }
-    .amount-total { font-weight: 700; font-size: 0.95rem; color: #333; }
+    .amount-total { font-weight: 700; font-size: 0.95rem; color: var(--text-primary, #333); }
     .amount-due { font-size: 0.75rem; color: #d32f2f; }
     .amount-paid { font-size: 0.75rem; color: #2e7d32; font-style: italic; }
 

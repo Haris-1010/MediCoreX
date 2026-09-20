@@ -84,7 +84,7 @@ interface BedStats {
 
     .circle-bg {
       fill: none;
-      stroke: #eee;
+      stroke: var(--border-color, #eee);
       stroke-width: 3.8;
     }
 
@@ -101,7 +101,7 @@ interface BedStats {
     }
 
     .percentage {
-      fill: #333;
+      fill: var(--text-primary, #333);
       font-size: 0.5em;
       text-anchor: middle;
       font-weight: 600;
@@ -131,7 +131,7 @@ interface BedStats {
 
     .stat-label {
       font-size: 0.75rem;
-      color: #666;
+      color: var(--text-secondary, #666);
     }
 
     .ward-list {
@@ -154,7 +154,7 @@ interface BedStats {
     .ward-bar {
       flex: 1;
       height: 8px;
-      background: #eee;
+      background: var(--border-color, #eee);
       border-radius: 4px;
       overflow: hidden;
     }
@@ -168,7 +168,7 @@ interface BedStats {
 
     .ward-count {
       font-size: 0.75rem;
-      color: #666;
+      color: var(--text-secondary, #666);
       min-width: 50px;
       text-align: right;
     }

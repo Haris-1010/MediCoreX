@@ -97,15 +97,15 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     </app-main-layout>
   `,
   styles: [`
-    .card { background: white; padding: 1.5rem; border-radius: 8px; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
     .filters { display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center; }
     table { width: 100%; }
 
     .loading-container { display: flex; justify-content: center; padding: 3rem; }
 
-    .empty-state { text-align: center; padding: 3rem; color: #666; }
+    .empty-state { text-align: center; padding: 3rem; color: var(--text-muted, #666); }
     .empty-icon { font-size: 48px; width: 48px; height: 48px; color: #ccc; margin-bottom: 1rem; }
-    .empty-state h3 { margin: 0 0 0.5rem; color: #333; }
+    .empty-state h3 { margin: 0 0 0.5rem; color: var(--text-primary, #333); }
     .empty-state p { margin: 0 0 1.5rem; }
 
     .dept-name { display: flex; align-items: center; gap: 0.75rem; }
@@ -116,7 +116,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       font-weight: 700; font-size: 0.9rem;
     }
     .dept-title { font-weight: 600; font-size: 0.9rem; }
-    .dept-code { font-size: 0.75rem; color: #999; }
+    .dept-code { font-size: 0.75rem; color: var(--text-muted, #999); }
 
     .status-chip {
       display: inline-block; padding: 0.15rem 0.6rem; border-radius: 12px;

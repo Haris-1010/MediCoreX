@@ -240,23 +240,23 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     </ng-template>
   `,
   styles: [`
-    .empty-state { text-align: center; padding: 4rem 2rem; background: white; border-radius: 10px; }
-    .empty-state mat-icon { font-size: 72px; width: 72px; height: 72px; color: #ccc; }
-    .empty-state h3 { margin: 1rem 0 0.5rem; color: #333; }
-    .empty-state p { color: #888; margin-bottom: 1.5rem; }
+    .empty-state { text-align: center; padding: 4rem 2rem; background: var(--bg-card, #fff); border-radius: 10px; }
+    .empty-state mat-icon { font-size: 72px; width: 72px; height: 72px; color: var(--text-muted, #ccc); }
+    .empty-state h3 { margin: 1rem 0 0.5rem; color: var(--text-primary, #333); }
+    .empty-state p { color: var(--text-muted, #888); margin-bottom: 1.5rem; }
     .empty-actions { display: flex; gap: 1rem; justify-content: center; }
 
     .ward-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-    .ward-card { background: white; border-radius: 10px; padding: 1.25rem; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
-    .ward-card:hover { border-color: #3f51b5; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .ward-card { background: var(--bg-card, #fff); border-radius: 10px; padding: 1.25rem; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
+    .ward-card:hover { border-color: var(--accent-primary, #3f51b5); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .ward-card.selected { border-color: #3f51b5; background: #e8eaf6; }
 
     .ward-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
     .ward-icon { width: 48px; height: 48px; border-radius: 12px; background: #e8eaf6; display: flex; align-items: center; justify-content: center; }
-    .ward-icon mat-icon { color: #3f51b5; }
+    .ward-icon mat-icon { color: var(--accent-primary, #3f51b5); }
     .ward-title { flex: 1; }
     .ward-title h3 { margin: 0; font-size: 1.1rem; }
-    .ward-title p { margin: 2px 0 0; font-size: 0.8rem; color: #888; }
+    .ward-title p { margin: 2px 0 0; font-size: 0.8rem; color: var(--text-muted, #888); }
     .ward-actions button { transform: scale(0.85); }
 
     .ward-stats { display: flex; gap: 1rem; margin-bottom: 0.75rem; }
@@ -264,19 +264,19 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .stat .num { display: block; font-size: 1.25rem; font-weight: 700; }
     .stat .num.avail { color: #4caf50; }
     .stat .num.occ { color: #f44336; }
-    .stat .label { font-size: 0.7rem; color: #888; text-transform: uppercase; }
+    .stat .label { font-size: 0.7rem; color: var(--text-muted, #888); text-transform: uppercase; }
 
-    .ward-bar { height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; }
+    .ward-bar { height: 6px; background: var(--border-color, #e0e0e0); border-radius: 3px; overflow: hidden; }
     .bar-fill { height: 100%; background: linear-gradient(90deg, #4caf50, #f44336); border-radius: 3px; }
 
-    .detail-panel { background: white; border-radius: 10px; padding: 1.5rem; margin-top: 1rem; }
+    .detail-panel { background: var(--bg-card, #fff); border-radius: 10px; padding: 1.5rem; margin-top: 1rem; }
     .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .detail-header h2 { margin: 0; font-size: 1.2rem; }
 
-    .room-card { background: #f8f9fa; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; border: 1px solid #e0e0e0; }
+    .room-card { background: var(--table-header-bg, #f8f9fa); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--border-color, #e0e0e0); }
     .room-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
     .room-info h4 { margin: 0; }
-    .room-info p { margin: 2px 0 0; font-size: 0.8rem; color: #888; }
+    .room-info p { margin: 2px 0 0; font-size: 0.8rem; color: var(--text-muted, #888); }
     .room-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .room-actions button { font-size: 0.8rem; }
 
@@ -287,10 +287,10 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .bed-tile.bed-reserved { border-color: #ff9800; background: #fff3e0; }
     .bed-tile.bed-maintenance { border-color: #9e9e9e; background: #f5f5f5; }
     .bed-num { display: block; font-weight: 700; font-size: 1.1rem; }
-    .bed-type { display: block; font-size: 0.7rem; color: #666; }
+    .bed-type { display: block; font-size: 0.7rem; color: var(--text-secondary, #666); }
     .bed-patient { display: flex; align-items: center; justify-content: center; gap: 2px; margin-top: 4px; font-size: 0.7rem; color: #c62828; }
     .bed-patient mat-icon { font-size: 12px; width: 12px; height: 12px; }
-    .no-beds, .no-data { text-align: center; color: #aaa; padding: 1rem; font-size: 0.85rem; }
+    .no-beds, .no-data { text-align: center; color: var(--text-muted, #aaa); padding: 1rem; font-size: 0.85rem; }
 
     .form-row { display: flex; gap: 1rem; }
     .form-row mat-form-field { flex: 1; }

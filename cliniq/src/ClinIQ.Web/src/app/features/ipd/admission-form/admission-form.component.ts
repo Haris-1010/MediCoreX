@@ -50,6 +50,14 @@ import { NotificationService } from '../../../core/services/notification.service
             </mat-form-field>
           </div>
 
+          <h3>Payment</h3>
+          <div class="form-row">
+            <mat-form-field appearance="outline"><mat-label>Deposit Amount</mat-label>
+              <input matInput type="number" formControlName="depositAmount" min="0" placeholder="0">
+              <span matPrefix>PKR&nbsp;</span>
+            </mat-form-field>
+          </div>
+
           <mat-form-field appearance="outline" class="full-width"><mat-label>Reason for Admission</mat-label><textarea matInput formControlName="admissionReason" rows="3"></textarea></mat-form-field>
           <mat-form-field appearance="outline" class="full-width"><mat-label>Provisional Diagnosis</mat-label><input matInput formControlName="provisionalDiagnosis"></mat-form-field>
 
@@ -85,7 +93,7 @@ export class AdmissionFormComponent implements OnInit {
     this.form = this.fb.group({
       patientId: ['', Validators.required], patientSearch: [''], admissionType: ['Planned', Validators.required],
       doctorId: ['', Validators.required], doctorSearch: [''], wardId: ['', Validators.required], bedId: ['', Validators.required],
-      admissionReason: ['', Validators.required], provisionalDiagnosis: ['']
+      admissionReason: ['', Validators.required], provisionalDiagnosis: [''], depositAmount: [0]
     });
     this.api.get<any>('v1/wards').subscribe(r => {
       this.wards = Array.isArray(r) ? r : [];
@@ -150,7 +158,8 @@ export class AdmissionFormComponent implements OnInit {
       wardId: v.wardId || null,
       bedId: v.bedId || null,
       admissionReason: v.admissionReason,
-      provisionalDiagnosis: v.provisionalDiagnosis || null
+      provisionalDiagnosis: v.provisionalDiagnosis || null,
+      depositAmount: v.depositAmount || 0
     };
     this.api.post('v1/admissions', payload).subscribe({
       next: () => { this.notification.success('Patient admitted successfully'); this.router.navigate(['/ipd/admissions']); },

@@ -212,7 +212,7 @@ interface Patient {
     }
 
     .patient-row:hover {
-      background: #f5f5f5;
+      background: var(--bg-hover, #f5f5f5);
     }
 
     .patient-name {
@@ -226,7 +226,7 @@ interface Patient {
 
     .patient-name .email {
       font-size: 0.75rem;
-      color: #666;
+      color: var(--text-secondary, #666);
     }
 
     .blood-group {

@@ -18,9 +18,9 @@ import { NotificationService } from '../../../core/services/notification.service
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Patient *</mat-label>
               <input matInput formControlName="patientSearch" [matAutocomplete]="patientAuto" (input)="onPatientSearch($event)" placeholder="Search patient by name or ID">
-              <mat-autocomplete #patientAuto="matAutocomplete" (optionSelected)="onPatientSelected($event)">
-                <mat-option *ngFor="let p of filteredPatients$ | async" [value]="p.id">
-                  {{ p.name }} ({{ p.patientId }})
+              <mat-autocomplete #patientAuto="matAutocomplete" [displayWith]="displayPatient" (optionSelected)="onPatientSelected($event)">
+                <mat-option *ngFor="let p of filteredPatients$ | async" [value]="p">
+                  {{ p.fullName }} ({{ p.mrn || p.id }})
                 </mat-option>
               </mat-autocomplete>
               <mat-error>Patient is required</mat-error>
@@ -29,16 +29,21 @@ import { NotificationService } from '../../../core/services/notification.service
           <div class="form-row" *ngIf="selectedPatient">
             <div class="selected-patient">
               <mat-icon>person</mat-icon>
-              <span><strong>{{ selectedPatient.name }}</strong> &mdash; {{ selectedPatient.patientId }}</span>
+              <span><strong>{{ selectedPatient.fullName }}</strong> &mdash; {{ selectedPatient.mrn }}</span>
             </div>
           </div>
           <div class="form-row">
             <mat-form-field appearance="outline">
               <mat-label>Doctor *</mat-label>
-              <mat-select formControlName="doctorId">
-                <mat-option value="">Select Doctor</mat-option>
-                <mat-option *ngFor="let d of doctors" [value]="d.id">Dr. {{ d.name }}</mat-option>
-              </mat-select>
+              <input matInput [matAutocomplete]="doctorAuto" formControlName="doctorSearch" placeholder="Search doctor by name or specialty..." (focus)="onDoctorFocus()" (input)="onDoctorInput($event)">
+              <mat-autocomplete #doctorAuto="matAutocomplete" [displayWith]="displayDoctor" (optionSelected)="onDoctorSelected($event)">
+                <mat-option *ngFor="let d of filteredDoctors" [value]="d">
+                  <div class="autocomplete-option">
+                    <span class="name">Dr. {{ d.fullName }}</span>
+                    <span class="detail">{{ d.specialization || '' }}</span>
+                  </div>
+                </mat-option>
+              </mat-autocomplete>
               <mat-error>Doctor is required</mat-error>
             </mat-form-field>
             <mat-form-field appearance="outline">
@@ -97,20 +102,28 @@ import { NotificationService } from '../../../core/services/notification.service
       </div>
     </app-main-layout>
   `,
-  styles: [`.form-card { background: white; padding: 1.5rem; border-radius: 8px; max-width: 800px; }
+  styles: [`    .form-card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; max-width: 800px; }
     .form-row { display: flex; gap: 1rem; margin-bottom: 0.5rem; }
     .form-row mat-form-field { flex: 1; min-width: 0; }
     .full-width { width: 100%; }
     .selected-patient { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; background: #e8eaf6; border-radius: 6px; margin-bottom: 0.5rem; }
-    .selected-patient mat-icon { color: #3f51b5; }
-    .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; }`]
+    .selected-patient mat-icon { color: var(--accent-primary, #3f51b5); }
+    .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color, #eee); }
+    :host ::ng-deep .autocomplete-option { display: flex; flex-direction: column; padding: 4px 0; }
+    :host ::ng-deep .autocomplete-option .name { font-weight: 500; }
+    :host ::ng-deep .autocomplete-option .detail { font-size: 0.75rem; color: var(--text-muted, #888); }
+    :host ::ng-deep .mat-mdc-autocomplete-panel { max-height: 300px !important; border-radius: 8px !important; border: 1px solid #c5cae9 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option { padding: 10px 16px !important; line-height: 1.4 !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option:hover { background-color: #e8eaf6 !important; }`]
 })
 export class RadiologyOrderFormComponent implements OnInit {
   orderForm!: FormGroup;
-  doctors: any[] = [];
   filteredPatients$!: Observable<any[]>;
   selectedPatient: any = null;
   saving = false;
+
+  filteredDoctors: any[] = [];
+  allDoctors: any[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -124,6 +137,7 @@ export class RadiologyOrderFormComponent implements OnInit {
       patientSearch: ['', Validators.required],
       patientId: ['', Validators.required],
       doctorId: ['', Validators.required],
+      doctorSearch: [''],
       modality: ['', Validators.required],
       bodyPart: ['', Validators.required],
       priority: ['Routine'],
@@ -131,13 +145,11 @@ export class RadiologyOrderFormComponent implements OnInit {
       specialInstructions: ['']
     });
 
-    this.api.get<any[]>('v1/doctors').subscribe(r => this.doctors = r);
-
     this.filteredPatients$ = this.orderForm.get('patientSearch')!.valueChanges.pipe(
       debounceTime(300),
       distinctUntilChanged(),
       switchMap(term => term && term.length >= 2
-        ? this.api.get<any[]>('v1/patients/search', { searchTerm: term })
+        ? this.api.get<any[]>('v1/patients/search', { term: term, limit: 20 })
         : of([])
       )
     );
@@ -151,15 +163,60 @@ export class RadiologyOrderFormComponent implements OnInit {
     }
   }
 
+  displayPatient(p: any): string {
+    if (!p) return '';
+    if (typeof p === 'string') return p;
+    return `${p.fullName || ''} (${p.mrn || ''})`;
+  }
+
   onPatientSelected(event: any) {
-    const patientId = event.option.value;
-    this.api.getById<any>('v1/patients', patientId).subscribe(p => {
-      this.selectedPatient = p;
-      this.orderForm.patchValue({
-        patientId: p.id,
-        patientSearch: p.name
-      });
+    const patient = event.option.value;
+    this.selectedPatient = patient;
+    this.orderForm.patchValue({
+      patientId: patient.id,
+      patientSearch: patient.fullName || patient
     });
+  }
+
+  private normalizeList<T>(value: any): T[] {
+    if (Array.isArray(value)) return value as T[];
+    if (!value || typeof value !== 'object') return [];
+    if (Array.isArray(value.items)) return value.items as T[];
+    if (Array.isArray(value.data)) return value.data as T[];
+    if (Array.isArray(value.results)) return value.results as T[];
+    return [];
+  }
+
+  onDoctorFocus() {
+    if (this.allDoctors.length === 0) {
+      this.api.get<any[]>('v1/doctors').subscribe(r => {
+        this.allDoctors = this.normalizeList(r);
+        this.filteredDoctors = this.allDoctors;
+      });
+    }
+  }
+
+  onDoctorInput(event: any) {
+    const term = (event.target.value || '').toLowerCase();
+    if (!term) {
+      this.filteredDoctors = this.allDoctors;
+      return;
+    }
+    this.filteredDoctors = this.allDoctors.filter(d =>
+      (d.fullName || '').toLowerCase().includes(term) ||
+      (d.specialization || '').toLowerCase().includes(term)
+    );
+  }
+
+  displayDoctor(d: any): string {
+    if (!d) return '';
+    if (typeof d === 'string') return d;
+    return `Dr. ${d.fullName || ''} - ${d.specialization || ''}`;
+  }
+
+  onDoctorSelected(e: any) {
+    const doctor = e.option.value;
+    this.orderForm.patchValue({ doctorId: doctor.id, doctorSearch: doctor.fullName });
   }
 
   onSubmit() {

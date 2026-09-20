@@ -83,7 +83,7 @@ import { TenantService } from '../../../core/services/tenant.service';
 export class PrescriptionItemDialogComponent implements OnInit {
   form!: FormGroup;
   saving = false;
-  currencySymbol = '$';
+  currencySymbol = '';
 
   constructor(
     private fb: FormBuilder,

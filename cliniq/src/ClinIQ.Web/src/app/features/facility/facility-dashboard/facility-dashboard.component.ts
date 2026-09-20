@@ -57,13 +57,13 @@ import { ApiService } from '../../../core/services/api.service';
   `,
   styles: [`.tab-content { padding: 1.5rem; }
     .facility-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
-    .facility-card { background: white; padding: 1.5rem; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .facility-card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; text-align: center; box-shadow: var(--shadow-sm, 0 2px 4px rgba(0,0,0,0.1)); }
     .facility-card mat-icon { font-size: 48px; width: 48px; height: 48px; color: #3f51b5; }
-    .facility-card h4 { margin: 0.5rem 0 0; } .facility-card p { margin: 0; color: #666; }
-    table { width: 100%; background: white; }
-    .empty-state { display: flex; flex-direction: column; align-items: center; padding: 3rem; color: #999; background: white; border-radius: 8px; }
+    .facility-card h4 { margin: 0.5rem 0 0; } .facility-card p { margin: 0; color: var(--text-muted, #666); }
+    table { width: 100%; background: var(--bg-card, #fff); }
+    .empty-state { display: flex; flex-direction: column; align-items: center; padding: 3rem; color: var(--text-muted, #999); background: var(--bg-card, #fff); border-radius: 8px; }
     .empty-state mat-icon { font-size: 64px; width: 64px; height: 64px; margin-bottom: 1rem; opacity: 0.5; }
-    .empty-state h4 { margin: 0 0 0.5rem; color: #666; }
+    .empty-state h4 { margin: 0 0 0.5rem; color: var(--text-muted, #666); }
     .empty-state p { margin: 0; }`]
 })
 export class FacilityDashboardComponent implements OnInit {

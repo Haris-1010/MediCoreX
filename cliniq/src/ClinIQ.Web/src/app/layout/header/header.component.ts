@@ -5,6 +5,7 @@ import { takeUntil } from 'rxjs/operators';
 import { AuthService, User } from '../../core/services/auth.service';
 import { TenantService, Tenant, Branch } from '../../core/services/tenant.service';
 import { SignalRService, NotificationMessage } from '../../core/services/signalr.service';
+import { ThemeService } from '../../core/services/theme.service';
 
 @Component({
   standalone: false,
@@ -44,6 +45,11 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
         <span class="user-name">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
       </div>
 
+      <!-- Dark Mode Toggle -->
+      <button mat-icon-button (click)="toggleTheme()" class="action-btn theme-toggle" [matTooltip]="isDark ? 'Light Mode' : 'Dark Mode'">
+        <mat-icon>{{ isDark ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
+
       <!-- Settings -->
       <button mat-icon-button routerLink="/settings" class="action-btn" matTooltip="Settings">
         <mat-icon>settings</mat-icon>
@@ -63,26 +69,27 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
       left: 0;
       right: 0;
       z-index: 1000;
-      background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
-      color: #1e293b;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(102,126,234,0.08);
+      background: var(--bg-header, linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%));
+      color: var(--text-primary, #1e293b);
+      box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.06));
       padding: 0 16px;
       height: 64px;
       display: flex;
       align-items: center;
       gap: 4px;
-      border-bottom: 1px solid rgba(102,126,234,0.1);
+      border-bottom: 1px solid var(--border-color, rgba(102,126,234,0.1));
+      transition: background 0.3s ease, color 0.3s ease;
     }
 
     .menu-btn {
-      color: #475569;
+      color: var(--text-secondary, #475569);
       margin-right: 8px;
       transition: all 0.2s ease;
     }
 
     .menu-btn:hover {
-      background: #f1f5f9;
-      color: #667eea;
+      background: var(--bg-hover, #f1f5f9);
+      color: var(--accent-primary, #667eea);
     }
 
     .hospital-name-container {
@@ -97,7 +104,7 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
     }
 
     .hospital-name {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--accent-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
       color: #ffffff;
       border-radius: 25px;
       padding: 6px 24px;
@@ -119,19 +126,19 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
     }
 
     .branch-selector {
-      color: #475569;
+      color: var(--text-secondary, #475569);
       margin-right: 16px;
-      background: #f8fafc;
+      background: var(--bg-badge, #f8fafc);
       border-radius: 10px;
       padding: 4px 12px;
       min-height: 36px;
       transition: all 0.2s ease;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--border-color, #e2e8f0);
     }
 
     .branch-selector:hover {
-      background: #f1f5f9;
-      border-color: #cbd5e1;
+      background: var(--bg-hover, #f1f5f9);
+      border-color: var(--border-color, #cbd5e1);
     }
 
     /* User display (no dropdown) */
@@ -139,13 +146,13 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      background: rgba(255,255,255,0.7);
+      background: var(--bg-badge, rgba(255,255,255,0.7));
       border-radius: 28px;
       padding: 3px 16px 3px 3px;
       min-height: 40px;
       max-height: 40px;
       margin-right: 8px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--border-color, #e2e8f0);
       overflow: hidden;
       white-space: nowrap;
     }
@@ -155,7 +162,7 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
       height: 34px;
       min-width: 34px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--accent-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -168,7 +175,7 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
     .user-name {
       font-weight: 600;
       font-size: 13px;
-      color: #334155;
+      color: var(--text-primary, #334155);
       max-width: 160px;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -178,18 +185,23 @@ import { SignalRService, NotificationMessage } from '../../core/services/signalr
 
     /* Settings / Logout icon buttons */
     .action-btn {
-      color: #475569;
+      color: var(--text-secondary, #475569);
       transition: all 0.2s ease;
     }
 
     .action-btn:hover {
-      background: #f1f5f9;
-      color: #667eea;
+      background: var(--bg-hover, #f1f5f9);
+      color: var(--accent-primary, #667eea);
+    }
+
+    .theme-toggle:hover {
+      background: var(--badge-warning-bg, #fef3c7);
+      color: var(--warning, #d97706);
     }
 
     .logout-btn:hover {
-      background: #fee2e2;
-      color: #dc2626;
+      background: var(--badge-danger-bg, #fee2e2);
+      color: var(--danger, #dc2626);
     }
 
     @media (max-width: 768px) {
@@ -228,6 +240,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   branches: Branch[] = [];
   notifications: NotificationMessage[] = [];
   unreadCount = 0;
+  isDark = false;
 
   private destroy$ = new Subject<void>();
 
@@ -235,6 +248,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private tenantService: TenantService,
     private signalRService: SignalRService,
+    private themeService: ThemeService,
     private router: Router
   ) {}
 
@@ -271,6 +285,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
         this.unreadCount++;
       }
     });
+
+    this.themeService.theme$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(theme => {
+      this.isDark = theme === 'dark';
+    });
   }
 
   ngOnDestroy(): void {
@@ -290,6 +310,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
       this.tenantService.setCurrentBranch(branch);
       window.location.reload();
     });
+  }
+
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
   }
 
   getNotificationIcon(type: string): string {

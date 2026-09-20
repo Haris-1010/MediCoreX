@@ -109,11 +109,11 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
             </ng-container>
             <ng-container matColumnDef="dailyRate">
               <th mat-header-cell *matHeaderCellDef>Rate/Day</th>
-              <td mat-cell *matCellDef="let c">{{ c.dailyRate | currency }}</td>
+              <td mat-cell *matCellDef="let c">{{ c.dailyRate | currencyFormat }}</td>
             </ng-container>
             <ng-container matColumnDef="totalCharge">
               <th mat-header-cell *matHeaderCellDef>Total</th>
-              <td mat-cell *matCellDef="let c">{{ c.totalCharge | currency }}</td>
+              <td mat-cell *matCellDef="let c">{{ c.totalCharge | currencyFormat }}</td>
             </ng-container>
             <tr mat-header-row *matHeaderRowDef="billingColumns"></tr>
             <tr mat-row *matRowDef="let row; columns: billingColumns;"></tr>
@@ -123,15 +123,19 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
           <div class="billing-summary" *ngIf="bedCharges.length > 0">
             <div class="billing-summary-item">
               <div class="label">Total Bed Charges</div>
-              <div class="value">{{ totalBedCharges | currency }}</div>
+              <div class="value">{{ totalBedCharges | currencyFormat }}</div>
             </div>
             <div class="billing-summary-item">
               <div class="label">Deposit Deducted</div>
-              <div class="value paid">{{ depositAmount | currency }}</div>
+              <div class="value paid">{{ depositAmount | currencyFormat }}</div>
             </div>
-            <div class="billing-summary-item">
+            <div class="billing-summary-item" *ngIf="refundAmount > 0">
+              <div class="label">Refund Due</div>
+              <div class="value refund">{{ refundAmount | currencyFormat }}</div>
+            </div>
+            <div class="billing-summary-item" *ngIf="outstandingAmount > 0">
               <div class="label">Outstanding Amount</div>
-              <div class="value outstanding">{{ outstandingAmount | currency }}</div>
+              <div class="value outstanding">{{ outstandingAmount | currencyFormat }}</div>
             </div>
           </div>
 
@@ -154,23 +158,24 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
   `,
   styles: [`
     .profile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
-    .card { background: white; padding: 1.5rem; border-radius: 8px; }
-    .card h3 { margin: 0 0 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; color: #333; }
-    .card h3 mat-icon { font-size: 20px; width: 20px; height: 20px; color: #3f51b5; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
+    .card h3 { margin: 0 0 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; color: var(--text-primary, #333); }
+    .card h3 mat-icon { font-size: 20px; width: 20px; height: 20px; color: var(--accent-primary, #3f51b5); }
     .full-width { grid-column: 1 / -1; }
-    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid #f0f0f0; }
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--border-color, #f0f0f0); }
     .info-row:last-child { border-bottom: none; }
-    .info-row span { color: #888; font-size: 0.85rem; }
-    .info-row strong { color: #333; text-align: right; max-width: 60%; }
+    .info-row span { color: var(--text-muted, #888); font-size: 0.85rem; }
+    .info-row strong { color: var(--text-primary, #333); text-align: right; max-width: 60%; }
     .mono { font-family: monospace; font-size: 0.8rem; }
-    .no-data { text-align: center; color: #aaa; padding: 1rem; }
+    .no-data { text-align: center; color: var(--text-muted, #aaa); padding: 1rem; }
     .full-width table { width: 100%; }
-    .billing-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #f0f0f0; }
-    .billing-summary-item { text-align: center; padding: 0.75rem; background: #f8f9fa; border-radius: 6px; }
-    .billing-summary-item .label { font-size: 0.8rem; color: #888; margin-bottom: 0.25rem; }
-    .billing-summary-item .value { font-size: 1.25rem; font-weight: 600; color: #333; }
+    .billing-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--border-color, #f0f0f0); }
+    .billing-summary-item { text-align: center; padding: 0.75rem; background: var(--bg-hover, #f8f9fa); border-radius: 6px; }
+    .billing-summary-item .label { font-size: 0.8rem; color: var(--text-muted, #888); margin-bottom: 0.25rem; }
+    .billing-summary-item .value { font-size: 1.25rem; font-weight: 600; color: var(--text-primary, #333); }
     .billing-summary-item .value.outstanding { color: #f44336; }
     .billing-summary-item .value.paid { color: #4caf50; }
+    .billing-summary-item .value.refund { color: #ff9800; }
     .invoice-info { background: #e8f5e9; padding: 1rem; border-radius: 6px; margin-top: 1rem; border-left: 4px solid #4caf50; }
     .invoice-info .label { font-size: 0.8rem; color: #2e7d32; }
     .invoice-info .value { font-weight: 600; color: #2e7d32; }
@@ -188,6 +193,7 @@ export class AdmissionDetailComponent implements OnInit {
   totalBedCharges: number = 0;
   depositAmount: number = 0;
   outstandingAmount: number = 0;
+  refundAmount: number = 0;
   existingInvoice: any = null;
   invoiceItems: any[] = [];
   generatingBill: boolean = false;
@@ -221,12 +227,15 @@ export class AdmissionDetailComponent implements OnInit {
         this.billingData = data;
         this.bedCharges = data.bedCharges || [];
         this.totalBedCharges = data.totalBedCharges || 0;
+        this.depositAmount = data.depositAmount || 0;
         this.existingInvoice = data.existingInvoice || null;
         this.invoiceItems = data.invoiceItems || [];
-        this.outstandingAmount = this.totalBedCharges;
+        this.outstandingAmount = Math.max(0, this.totalBedCharges - this.depositAmount);
+        this.refundAmount = Math.max(0, this.depositAmount - this.totalBedCharges);
         if (this.existingInvoice) {
           this.outstandingAmount = this.existingInvoice.outstandingAmount || 0;
-          this.depositAmount = this.existingInvoice.depositDeducted || 0;
+          this.depositAmount = this.existingInvoice.paidAmount || this.depositAmount;
+          this.refundAmount = Math.max(0, (this.existingInvoice.paidAmount || 0) - this.totalBedCharges);
         }
       },
       error: (err) => { console.error('Failed to load billing data', err); }

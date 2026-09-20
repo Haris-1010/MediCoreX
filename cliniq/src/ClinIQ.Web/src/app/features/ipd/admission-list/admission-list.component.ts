@@ -60,7 +60,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     </app-main-layout>
   `,
   styles: [`
-    .card { background: white; padding: 1.5rem; border-radius: 8px; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
     .filters { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
     table { width: 100%; }
     .delete-item { color: #e53935 !important; }

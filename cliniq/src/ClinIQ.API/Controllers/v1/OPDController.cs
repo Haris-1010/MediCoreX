@@ -117,13 +117,20 @@ public class OPDController : ControllerBase
                 q.Id,
                 q.TokenNumber,
                 PatientName = q.Patient != null ? q.Patient.FirstName + " " + q.Patient.LastName : null,
+                PatientMRN = q.Patient != null ? q.Patient.MRN : null,
                 DoctorName = q.DoctorId != null
                     ? _context.Users.Where(u => u.Id == q.DoctorId).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault()
                     : null,
                 q.DoctorId,
                 Status = q.Status.ToString(),
                 q.JoinedAt,
-                q.CalledAt
+                q.CalledAt,
+                Services = _context.InvoiceItems
+                    .Where(ii => ii.Invoice != null && ii.Invoice.PatientId == q.PatientId
+                        && ii.Invoice.InvoiceDate.Date == today
+                        && !ii.Invoice.IsDeleted)
+                    .Select(ii => new { ii.ItemName, ii.Amount, ii.Quantity })
+                    .ToList()
             })
             .ToListAsync();
 

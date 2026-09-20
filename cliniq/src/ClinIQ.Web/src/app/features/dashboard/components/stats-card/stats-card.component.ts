@@ -25,12 +25,12 @@ import { Component, Input } from '@angular/core';
       display: flex;
       align-items: center;
       gap: 1rem;
-      background: white;
+      background: var(--bg-card, #fff);
       border-radius: 12px;
       padding: 1.5rem 1.75rem;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-      border: 1px solid #e8e8e8;
-      border-left: 5px solid #1a237e;
+      box-shadow: var(--shadow-md, 0 4px 16px rgba(0, 0, 0, 0.08));
+      border: 1px solid var(--border-color, #e8e8e8);
+      border-left: 5px solid var(--accent-primary, #1a237e);
       min-height: 120px;
       height: 100%;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -56,12 +56,12 @@ import { Component, Input } from '@angular/core';
       font-size: 28px;
       width: 28px;
       height: 28px;
-      color: #1a237e;
+      color: var(--accent-primary, #1a237e);
     }
 
      .stats-primary .stats-icon { background: #e8eaf6; }
-    .stats-primary .stats-icon mat-icon { color: #1a237e; }
-    .stats-primary { border-left-color: #1a237e; }
+    .stats-primary .stats-icon mat-icon { color: var(--accent-primary, #1a237e); }
+    .stats-primary { border-left-color: var(--accent-primary, #1a237e); }
 
     .stats-accent .stats-icon { background: #e0f2f1; }
     .stats-accent .stats-icon mat-icon { color: #00695c; }
@@ -100,12 +100,12 @@ import { Component, Input } from '@angular/core';
       margin: 0.35rem 0 0;
       font-size: 0.95rem;
       font-weight: 600;
-      color: #1a237e;
+      color: var(--accent-primary, #1a237e);
     }
 
     .stats-subtitle {
       font-size: 0.8rem;
-      color: #475569;
+      color: var(--text-secondary, #475569);
       margin-top: 0.3rem;
       font-weight: 500;
     }

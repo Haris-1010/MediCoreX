@@ -13,6 +13,9 @@ import { ApiService } from '../../../core/services/api.service';
         <div class="stat-card"><mat-icon>description</mat-icon><div><h3>{{ stats.totalReports }}</h3><p>Total Reports</p></div></div>
       </div>
       <div class="action-bar">
+        <button mat-stroked-button routerLink="orders">
+          <mat-icon>list</mat-icon> All Orders
+        </button>
         <button mat-raised-button color="primary" routerLink="orders/new">
           <mat-icon>add</mat-icon> New Order
         </button>
@@ -61,13 +64,13 @@ import { ApiService } from '../../../core/services/api.service';
     </app-main-layout>
   `,
   styles: [`.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-    .stat-card { display: flex; align-items: center; gap: 1rem; background: white; padding: 1.5rem; border-radius: 8px; }
-    .stat-card mat-icon { font-size: 40px; width: 40px; height: 40px; color: #3f51b5; }
-    .stat-card h3 { margin: 0; font-size: 1.75rem; } .stat-card p { margin: 0; color: #666; }
-    .card { background: white; padding: 1.5rem; border-radius: 8px; margin-top: 0.5rem; }
+    .stat-card { display: flex; align-items: center; gap: 1rem; background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
+    .stat-card mat-icon { font-size: 40px; width: 40px; height: 40px; color: var(--accent-primary, #3f51b5); }
+    .stat-card h3 { margin: 0; font-size: 1.75rem; } .stat-card p { margin: 0; color: var(--text-secondary, #666); }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; margin-top: 0.5rem; }
     .card h3 { margin: 0 0 1rem; } table { width: 100%; }
     .action-bar { display: flex; justify-content: flex-end; margin-bottom: 1rem; }
-    .empty-state { display: flex; flex-direction: column; align-items: center; padding: 2rem; color: #999; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; padding: 2rem; color: var(--text-muted, #999); }
     .empty-state mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 0.5rem; }`]
 })
 export class RadiologyDashboardComponent implements OnInit {

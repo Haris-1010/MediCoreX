@@ -40,8 +40,8 @@ import { Component } from '@angular/core';
     .insurance-container { padding: 1.5rem; }
     .coming-soon-card { max-width: 600px; margin: 2rem auto; text-align: center; padding: 2rem; }
     .coming-soon-icon { font-size: 64px; width: 64px; height: 64px; color: #3f51b5; margin-bottom: 1rem; }
-    .coming-soon-card h2 { margin: 0.5rem 0; color: #333; }
-    .coming-soon-card p { color: #666; margin-bottom: 1.5rem; }
+    .coming-soon-card h2 { margin: 0.5rem 0; color: var(--text-primary, #333); }
+    .coming-soon-card p { color: var(--text-muted, #666); margin-bottom: 1.5rem; }
     .feature-list { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; }
     .feature-item {
       display: flex; align-items: center; gap: 0.5rem;

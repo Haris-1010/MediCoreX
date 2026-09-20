@@ -9,6 +9,7 @@ using ClinIQ.Domain.Entities.Identity;
 using ClinIQ.API.Authorization;
 using ClinIQ.Infrastructure.Data.Seeding;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,6 +76,16 @@ try
     // it is safe on every start; it is how the DB stays in sync with the code.
     using (var scope = app.Services.CreateScope())
     {
+        try
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            await db.Database.MigrateAsync();
+        }
+        catch (Exception migrateEx)
+        {
+            Log.Warning(migrateEx, "Auto-migration failed. Pending migrations may need manual application.");
+        }
+
         try
         {
             var seeder = scope.ServiceProvider.GetRequiredService<PermissionSeeder>();

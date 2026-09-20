@@ -79,13 +79,13 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
   `,
   styles: [`
     .discharge-layout { display: grid; grid-template-columns: 380px 1fr; gap: 1.5rem; }
-    .card { background: white; padding: 1.5rem; border-radius: 8px; }
-    .card h3 { margin: 0 0 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; color: #333; }
-    .card h3 mat-icon { font-size: 20px; width: 20px; height: 20px; color: #3f51b5; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
+    .card h3 { margin: 0 0 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; color: var(--text-primary, #333); }
+    .card h3 mat-icon { font-size: 20px; width: 20px; height: 20px; color: var(--accent-primary, #3f51b5); }
 
-    .summary-card .info-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; }
-    .summary-card .info-row span { color: #888; font-size: 0.85rem; }
-    .summary-card .info-row strong { color: #333; }
+    .summary-card .info-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color, #f0f0f0); }
+    .summary-card .info-row span { color: var(--text-muted, #888); font-size: 0.85rem; }
+    .summary-card .info-row strong { color: var(--text-primary, #333); }
     .mono { font-family: monospace; font-size: 0.8rem; }
 
     .full-w { width: 100%; }

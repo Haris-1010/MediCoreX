@@ -58,7 +58,7 @@ import { NotificationService } from '../../../core/services/notification.service
       </div>
     </app-main-layout>
   `,
-  styles: [`.card { background: white; padding: 1.5rem; border-radius: 8px; max-width: 800px; } h3 { margin: 1.5rem 0 1rem; } h3:first-child { margin-top: 0; }
+  styles: [`.card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; max-width: 800px; } h3 { margin: 1.5rem 0 1rem; } h3:first-child { margin-top: 0; }
     .form-row { display: flex; gap: 1rem; } .form-row mat-form-field { flex: 1; } .full-width { width: 100%; }
     .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; }`]
 })

@@ -9,6 +9,7 @@ import { QueueManagementComponent } from './queue-management/queue-management.co
 import { ConsultationComponent } from './consultation/consultation.component';
 import { TokenDisplayComponent } from './token-display/token-display.component';
 import { TokenGenerationComponent } from './token-generation/token-generation.component';
+import { TokenListComponent } from './token-list/token-list.component';
 import { AudioAnnouncementService } from './token-generation/audio-announcement.service';
 
 const routes: Routes = [
@@ -16,7 +17,8 @@ const routes: Routes = [
   { path: 'queue', component: QueueManagementComponent },
   { path: 'consultation/:id', component: ConsultationComponent },
   { path: 'display', component: TokenDisplayComponent },
-  { path: 'token', component: TokenGenerationComponent }
+  { path: 'token', component: TokenGenerationComponent },
+  { path: 'tokens', component: TokenListComponent }
 ];
 
 @NgModule({
@@ -28,6 +30,12 @@ const routes: Routes = [
     TokenGenerationComponent
   ],
   providers: [AudioAnnouncementService],
-  imports: [CommonModule, SharedModule, LayoutModule, RouterModule.forChild(routes)]
+  imports: [
+    CommonModule,
+    SharedModule,
+    LayoutModule,
+    RouterModule.forChild(routes),
+    TokenListComponent
+  ]
 })
 export class OpdModule { }

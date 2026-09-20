@@ -232,8 +232,8 @@ public static class PermissionCatalog
             ["suppliers"]       = Features.Inventory,
             ["purchase_orders"] = Features.Procurement,
             ["pharmacy"]        = Features.Pharmacy,
-            ["laboratory"]      = Features.EMR,
-            ["radiology"]       = Features.EMR,
+            ["laboratory"]      = Features.Laboratory,
+            ["radiology"]       = Features.Radiology,
             ["reports"]         = Features.Reports,
         };
 

@@ -56,11 +56,12 @@ public class ServiceService : IServiceService
         q = q.OrderBy(s => s.DisplayOrder).ThenBy(s => s.Name);
 
         var totalCount = await q.CountAsync(cancellationToken);
-        var items = await q
+        var entities = await q
             .Skip((query.PageNumber - 1) * query.PageSize)
             .Take(query.PageSize)
-            .Select(s => MapToDto(s))
             .ToListAsync(cancellationToken);
+
+        var items = entities.Select(MapToDto).ToList();
 
         return PaginatedResult<ServiceDto>.Success(items, totalCount, query.PageNumber, query.PageSize);
     }

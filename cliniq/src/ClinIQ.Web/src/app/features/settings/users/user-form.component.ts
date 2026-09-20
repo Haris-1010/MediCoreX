@@ -86,25 +86,25 @@ import { ApiService } from '../../../core/services/api.service';
     </app-main-layout>
   `,
   styles: [`
-    .page-card { background: #fff; border: 1px solid rgba(0, 0, 0, 0.06); border-radius: 12px; padding: 1.5rem; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04); }
+    .page-card { background: var(--bg-card, #fff); border: 1px solid var(--border-color, rgba(0, 0, 0, 0.06)); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow-md, 0 8px 24px rgba(15, 23, 42, 0.04)); }
     .page-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
-    .page-header h2 { margin: 0; color: #1f2937; }
-    .page-header p { margin: 0.4rem 0 0; color: #6b7280; }
-    .form-container { background: white; padding: 24px; border-radius: 8px; }
+    .page-header h2 { margin: 0; color: var(--text-primary, #1f2937); }
+    .page-header p { margin: 0.4rem 0 0; color: var(--text-muted, #6b7280); }
+    .form-container { background: var(--bg-card, white); padding: 24px; border-radius: 8px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
     .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #333; }
-    .form-control { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text-primary, #333); }
+    .form-control { width: 100%; padding: 10px; border: 1px solid var(--border-color, #d1d5db); border-radius: 8px; font-size: 14px; box-sizing: border-box; }
     .form-control:focus { border-color: #2196f3; outline: none; }
     .checkbox-group { display: flex; flex-wrap: wrap; gap: 16px; }
     .checkbox-label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #eee; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color, #eee); }
     .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
     .btn-primary { background: #2196f3; color: white; }
     .btn-primary:hover { background: #1976d2; }
     .btn-primary:disabled { background: #ccc; }
-    .btn-outline { background: white; border: 1px solid #ddd; color: #333; }
-    .btn-outline:hover { background: #f5f5f5; }
+    .btn-outline { background: var(--bg-card, white); border: 1px solid var(--border-color, #ddd); color: var(--text-primary, #333); }
+    .btn-outline:hover { background: var(--bg-primary, #f5f5f5); }
   `]
 })
 export class UserFormComponent implements OnInit {

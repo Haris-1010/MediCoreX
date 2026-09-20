@@ -45,12 +45,12 @@ export interface BreadcrumbItem {
       align-items: center;
       gap: 0.25rem;
       font-size: 0.875rem;
-      color: #666;
+      color: var(--text-muted, #666);
       margin-bottom: 0.5rem;
     }
 
     .breadcrumb a {
-      color: #3f51b5;
+      color: var(--accent-primary, #3f51b5);
       text-decoration: none;
     }
 
@@ -68,12 +68,12 @@ export interface BreadcrumbItem {
       margin: 0;
       font-size: 1.5rem;
       font-weight: 600;
-      color: #333;
+      color: var(--text-primary, #333);
     }
 
     .subtitle {
       margin: 0.25rem 0 0;
-      color: #666;
+      color: var(--text-muted, #666);
       font-size: 0.875rem;
     }
 

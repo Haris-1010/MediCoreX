@@ -64,7 +64,7 @@ import { CommonModule } from '@angular/common';
     }
     .contact-value {
       font-size: 12px;
-      color: #64748b;
+      color: var(--text-muted, #64748b);
       font-weight: 500;
     }
     .brand-right {

@@ -1,0 +1,147 @@
+.token-list-container {
+  padding: 1.5rem;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 1rem;
+}
+
+.loading-text {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 1rem;
+}
+
+.error-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: var(--danger);
+}
+
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 0.5rem;
+}
+
+.empty-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.empty-sub {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.token-number-cell {
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-waiting {
+  background: var(--badge-warning-bg);
+  color: var(--badge-warning-text);
+}
+
+.status-called {
+  background: var(--badge-info-bg);
+  color: var(--badge-info-text);
+}
+
+.status-in-consultation {
+  background: var(--badge-success-bg);
+  color: var(--badge-success-text);
+}
+
+.status-completed {
+  background: var(--bg-badge);
+  color: var(--text-muted);
+}
+
+.status-cancelled {
+  background: var(--badge-danger-bg);
+  color: var(--badge-danger-text);
+}
+
+.summary-section {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.summary-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.summary-label.waiting {
+  color: var(--warning);
+}
+
+.summary-label.consultation {
+  color: var(--success);
+}
+
+.summary-label.completed {
+  color: var(--text-muted);
+}
+
+.summary-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+  .summary-section {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}

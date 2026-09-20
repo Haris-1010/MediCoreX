@@ -117,17 +117,17 @@ import { PrintBrandHeaderComponent } from '../../../shared/components/print-bran
     </div>
   `,
   styles: [`
-    .print-container { max-width: 800px; margin: 0 auto; padding: 2rem; background: white; }
+    .print-container { max-width: 800px; margin: 0 auto; padding: 2rem; background: var(--bg-card, #fff); }
     .rx-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
     .rx-title h1 { margin: 0; color: #1a237e; font-size: 1.5rem; }
-    .rx-number { margin: 4px 0 0; color: #666; font-size: 0.9rem; }
+    .rx-number { margin: 4px 0 0; color: var(--text-muted, #666); font-size: 0.9rem; }
     .rx-meta p { margin: 4px 0; font-size: 0.9rem; }
-    .patient-info { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
+    .patient-info { background: var(--bg-muted, #f5f5f5); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
     .info-row { display: flex; gap: 0.5rem; margin-bottom: 0.25rem; font-size: 0.9rem; }
     .info-row .label { font-weight: 600; min-width: 80px; }
     .medicines-table table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
     .medicines-table th { background: #1a237e; color: white; padding: 8px 12px; text-align: left; font-size: 0.8rem; }
-    .medicines-table td { padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-size: 0.85rem; }
+    .medicines-table td { padding: 8px 12px; border-bottom: 1px solid var(--border-color, #e0e0e0); font-size: 0.85rem; }
     .timing { margin-left: 4px; font-size: 0.75rem; color: #1a237e; font-weight: 600; }
     .instructions { margin-bottom: 2rem; }
     .instructions h4 { margin: 0 0 0.25rem; color: #1a237e; font-size: 0.9rem; }

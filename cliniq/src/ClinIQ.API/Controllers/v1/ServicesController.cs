@@ -69,7 +69,7 @@ public class ServicesController : ControllerBase
     [RequirePermission(Permissions.ServicesView)]
     public async Task<IActionResult> GetServicesByCategory(Guid categoryId, CancellationToken ct = default)
     {
-        var result = await _serviceService.GetServicesByCategoryAsync(categoryId, ct);
+        var result = await _serviceService.GetServicesByCategoryAsync(categoryId, cancellationToken: ct);
         return Ok(result);
     }
 

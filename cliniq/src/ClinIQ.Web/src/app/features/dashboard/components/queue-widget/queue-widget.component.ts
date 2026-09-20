@@ -49,14 +49,14 @@ interface QueueItem {
       align-items: center;
       justify-content: center;
       padding: 2rem;
-      color: #666;
+      color: var(--text-secondary, #666);
     }
 
     .empty-state mat-icon {
       font-size: 48px;
       width: 48px;
       height: 48px;
-      color: #ccc;
+      color: var(--text-muted, #ccc);
       margin-bottom: 0.5rem;
     }
 
@@ -72,7 +72,7 @@ interface QueueItem {
       gap: 1rem;
       padding: 0.75rem;
       border-radius: 8px;
-      background: #f5f5f5;
+      background: var(--bg-input, #f5f5f5);
       transition: all 0.2s;
     }
 
@@ -104,7 +104,7 @@ interface QueueItem {
 
     .doctor-name {
       font-size: 0.75rem;
-      color: #666;
+      color: var(--text-secondary, #666);
     }
 
     .queue-meta {
@@ -116,7 +116,7 @@ interface QueueItem {
 
     .wait-time {
       font-size: 0.75rem;
-      color: #666;
+      color: var(--text-secondary, #666);
     }
   `]
 })

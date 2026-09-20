@@ -30,7 +30,7 @@ import { Component, Input } from '@angular/core';
 
     .loading-message {
       margin-top: 1rem;
-      color: #666;
+      color: var(--text-muted, #666);
     }
   `]
 })

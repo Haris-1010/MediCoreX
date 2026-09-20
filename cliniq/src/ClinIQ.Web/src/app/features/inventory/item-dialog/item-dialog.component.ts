@@ -216,12 +216,12 @@ h2[mat-dialog-title] {
   padding: 18px 24px;
   font-size: 21px;
   font-weight: 600;
-  color: #172033;
-  border-bottom: 1px solid #edf0f5;
+  color: var(--text-primary, #172033);
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
 }
 
 h2[mat-dialog-title] mat-icon {
-  color: #1f3b64;
+  color: var(--accent-primary, #1f3b64);
   font-size: 23px;
   width: 23px;
   height: 23px;
@@ -234,7 +234,7 @@ mat-dialog-content {
   padding: 22px 24px 10px !important;
   box-sizing: border-box;
   overflow-x: hidden;
-  background: #fff;
+  background: var(--bg-card, #fff);
 }
 
 .full-width {
@@ -262,10 +262,10 @@ mat-form-field {
   gap: 8px;
   margin: 14px 0 8px;
   padding-bottom: 7px;
-  border-bottom: 1px solid #edf0f5;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
   font-size: 12px;
   font-weight: 700;
-  color: #1f3b64;
+  color: var(--accent-primary, #1f3b64);
   text-transform: uppercase;
   letter-spacing: 0.7px;
 }
@@ -276,7 +276,7 @@ mat-form-field {
   width: 4px;
   height: 16px;
   border-radius: 4px;
-  background: #1f3b64;
+  background: var(--accent-primary, #1f3b64);
 }
 
 .checkboxes {
@@ -285,14 +285,14 @@ mat-form-field {
   align-items: center;
   margin-top: 8px;
   padding: 12px 14px;
-  background: #f7f9fc;
-  border: 1px solid #edf0f5;
+  background: var(--bg-hover, #f5f5f5);
+  border: 1px solid var(--border-color, #e0e0e0);
   border-radius: 8px;
 }
 
 .current-stock {
-  background: linear-gradient(135deg, #eef6ff, #f7fbff);
-  border: 1px solid #d9eaff;
+  background: linear-gradient(135deg, var(--bg-hover, #eef6ff), var(--bg-card, #f7fbff));
+  border: 1px solid var(--border-color, #e0e0e0);
   padding: 14px 16px;
   border-radius: 10px;
   margin-bottom: 18px;
@@ -304,20 +304,20 @@ mat-form-field {
 .current-stock span {
   font-size: 14px;
   font-weight: 500;
-  color: #475569;
+  color: var(--text-secondary, #475569);
 }
 
 .current-stock strong {
   font-size: 17px;
   font-weight: 700;
-  color: #1f3b64;
+  color: var(--accent-primary, #1f3b64);
 }
 
 mat-dialog-actions {
   padding: 14px 24px 18px !important;
   margin: 0 !important;
-  border-top: 1px solid #edf0f5;
-  background: #fafbfc;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+  background: var(--bg-hover, #f5f5f5);
 }
 
 mat-dialog-actions button {
@@ -359,7 +359,7 @@ export class ItemDialogComponent implements OnInit {
   adjustForm!: FormGroup;
   categories: any[] = [];
   saving = false;
-  currencySymbol = '$';
+  currencySymbol = '';
 
   get modeIcon(): string {
     if (this.data.mode === 'add') return 'add_box';

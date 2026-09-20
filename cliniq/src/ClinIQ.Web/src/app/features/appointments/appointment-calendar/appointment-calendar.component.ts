@@ -53,7 +53,7 @@ import { ApiService } from '../../../core/services/api.service';
     </app-main-layout>
   `,
   styles: [`
-    .card { background: white; padding: 1.5rem; border-radius: 8px; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
 
     .calendar-header {
       display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;
@@ -61,7 +61,7 @@ import { ApiService } from '../../../core/services/api.service';
     .calendar-header h3 { margin: 0; min-width: 200px; text-align: center; font-size: 1.1rem; color: #1a237e; }
 
     .legend {
-      margin-left: auto; display: flex; gap: 1rem; font-size: 0.75rem; color: #666;
+      margin-left: auto; display: flex; gap: 1rem; font-size: 0.75rem; color: var(--text-muted, #666);
     }
     .legend-item { display: flex; align-items: center; gap: 4px; }
     .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
@@ -76,15 +76,15 @@ import { ApiService } from '../../../core/services/api.service';
     }
 
     .calendar-day {
-      background: white; min-height: 100px; padding: 0.4rem; cursor: pointer;
+      background: var(--bg-card, #fff); min-height: 100px; padding: 0.4rem; cursor: pointer;
       transition: background 0.15s;
     }
-    .calendar-day:hover { background: #f5f5f5; }
-    .calendar-day.other-month { background: #fafafa; }
+    .calendar-day:hover { background: var(--bg-hover, #f5f5f5); }
+    .calendar-day.other-month { background: var(--bg-hover, #f5f5f5); }
     .calendar-day.other-month .day-number { color: #bbb; }
     .calendar-day.today { background: #e3f2fd; }
     .calendar-day.today .day-number { color: #1565c0; font-weight: 700; }
-    .calendar-day.has-appointments { background: #fafbff; }
+    .calendar-day.has-appointments { background: var(--bg-muted, #f5f5f5); }
 
     .day-number { font-weight: 500; font-size: 0.85rem; display: block; margin-bottom: 2px; }
 
@@ -94,14 +94,14 @@ import { ApiService } from '../../../core/services/api.service';
       display: flex; align-items: center; gap: 4px;
       padding: 2px 4px; border-radius: 3px;
       border-left: 3px solid #2196f3;
-      background: #f5f7ff;
+      background: var(--bg-muted, #f5f5f5);
       font-size: 0.65rem;
       line-height: 1.3;
       overflow: hidden;
     }
     .apt-info { display: flex; flex-direction: column; overflow: hidden; }
     .apt-time { font-weight: 600; color: #3f51b5; }
-    .apt-name { color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .apt-name { color: var(--text-primary, #333); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .apt-doctor { color: #7986cb; font-size: 0.6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     .more-count {

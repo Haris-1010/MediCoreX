@@ -65,7 +65,7 @@ import { Component, Input } from '@angular/core';
       left: 50%;
       transform: translateX(-50%);
       font-size: 0.625rem;
-      color: #666;
+      color: var(--text-secondary, #666);
       white-space: nowrap;
     }
 
@@ -81,7 +81,7 @@ import { Component, Input } from '@angular/core';
       align-items: center;
       gap: 0.5rem;
       font-size: 0.75rem;
-      color: #666;
+      color: var(--text-secondary, #666);
     }
 
     .legend-color {

@@ -128,14 +128,14 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .filters { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
     .status-filter { width: 150px; }
     .loading-container { display: flex; justify-content: center; padding: 3rem; }
-    .empty-state { text-align: center; padding: 3rem 1rem; color: #64748b; }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted, #64748b); }
     .empty-icon { font-size: 64px; width: 64px; height: 64px; color: #94a3b8; margin-bottom: 1rem; }
     .full-width-table { width: 100%; }
     .prescription-row { cursor: pointer; }
-    .prescription-row:hover { background: #f5f5f5; }
+    .prescription-row:hover { background: var(--bg-hover, #f5f5f5); }
     .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 500; }
     .status-badge.dispensed { background: #e8f5e9; color: #2e7d32; }
-    .status-badge.pending { background: #fff3e0; color: #e65100; }
+    .status-badge.pending { background: var(--status-warning-bg, #fff3e0); color: #e65100; }
     .delete-action { color: #f44336; }
   `]
 })

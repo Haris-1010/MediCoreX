@@ -7,6 +7,8 @@ import { PlatformLayoutComponent } from './platform-layout/platform-layout.compo
 import { OrganizationListComponent } from './organization-list/organization-list.component';
 import { OrganizationFormComponent } from './organization-form/organization-form.component';
 import { PlatformAdminsComponent } from './platform-admins/platform-admins.component';
+import { RolesManagementComponent } from './roles-management/roles-management.component';
+import { UserPermissionsComponent } from './user-permissions/user-permissions.component';
 import { PlatformGuard } from '../../core/guards/platform.guard';
 
 const routes: Routes = [
@@ -20,7 +22,9 @@ const routes: Routes = [
       { path: 'organizations', component: OrganizationListComponent },
       { path: 'organizations/new', component: OrganizationFormComponent },
       { path: 'organizations/:id', component: OrganizationFormComponent },
-      { path: 'admins', component: PlatformAdminsComponent }
+      { path: 'admins', component: PlatformAdminsComponent },
+      { path: 'roles', component: RolesManagementComponent },
+      { path: 'user-permissions', component: UserPermissionsComponent }
     ]
   }
 ];
@@ -31,7 +35,9 @@ const routes: Routes = [
     PlatformLayoutComponent,
     OrganizationListComponent,
     OrganizationFormComponent,
-    PlatformAdminsComponent
+    PlatformAdminsComponent,
+    RolesManagementComponent,
+    UserPermissionsComponent
   ],
   imports: [CommonModule, SharedModule, RouterModule.forChild(routes)]
 })

@@ -1,42 +1,19 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 EndProject
-
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{B2C3D4E5-F6A7-8901-BCDE-F12345678901}"
-EndProject
-
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinIQ.Domain", "src\ClinIQ.Domain\ClinIQ.Domain.csproj", "{C3D4E5F6-A7B8-9012-CDEF-123456789012}"
 EndProject
-
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinIQ.Shared", "src\ClinIQ.Shared\ClinIQ.Shared.csproj", "{D4E5F6A7-B8C9-0123-DEF1-234567890123}"
 EndProject
-
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinIQ.Application", "src\ClinIQ.Application\ClinIQ.Application.csproj", "{E5F6A7B8-C9D0-1234-EF12-345678901234}"
 EndProject
-
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinIQ.Infrastructure", "src\ClinIQ.Infrastructure\ClinIQ.Infrastructure.csproj", "{F6A7B8C9-D0E1-2345-F123-456789012345}"
 EndProject
-
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinIQ.API", "src\ClinIQ.API\ClinIQ.API.csproj", "{A7B8C9D0-E1F2-3456-0123-567890123456}"
 EndProject
-
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinIQ.Domain.Tests", "tests\ClinIQ.Domain.Tests\ClinIQ.Domain.Tests.csproj", "{B8C9D0E1-F2A3-4567-1234-678901234567}"
-EndProject
-
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinIQ.Application.Tests", "tests\ClinIQ.Application.Tests\ClinIQ.Application.Tests.csproj", "{C9D0E1F2-A3B4-5678-2345-789012345678}"
-EndProject
-
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinIQ.Infrastructure.Tests", "tests\ClinIQ.Infrastructure.Tests\ClinIQ.Infrastructure.Tests.csproj", "{D0E1F2A3-B4C5-6789-3456-890123456789}"
-EndProject
-
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinIQ.API.Tests", "tests\ClinIQ.API.Tests\ClinIQ.API.Tests.csproj", "{E1F2A3B4-C5D6-7890-4567-901234567890}"
-EndProject
-
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,22 +40,6 @@ Global
 		{A7B8C9D0-E1F2-3456-0123-567890123456}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7B8C9D0-E1F2-3456-0123-567890123456}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7B8C9D0-E1F2-3456-0123-567890123456}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B8C9D0E1-F2A3-4567-1234-678901234567}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B8C9D0E1-F2A3-4567-1234-678901234567}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B8C9D0E1-F2A3-4567-1234-678901234567}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B8C9D0E1-F2A3-4567-1234-678901234567}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C9D0E1F2-A3B4-5678-2345-789012345678}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C9D0E1F2-A3B4-5678-2345-789012345678}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C9D0E1F2-A3B4-5678-2345-789012345678}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C9D0E1F2-A3B4-5678-2345-789012345678}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D0E1F2A3-B4C5-6789-3456-890123456789}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D0E1F2A3-B4C5-6789-3456-890123456789}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D0E1F2A3-B4C5-6789-3456-890123456789}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D0E1F2A3-B4C5-6789-3456-890123456789}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E1F2A3B4-C5D6-7890-4567-901234567890}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E1F2A3B4-C5D6-7890-4567-901234567890}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E1F2A3B4-C5D6-7890-4567-901234567890}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E1F2A3B4-C5D6-7890-4567-901234567890}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -89,9 +50,5 @@ Global
 		{E5F6A7B8-C9D0-1234-EF12-345678901234} = {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 		{F6A7B8C9-D0E1-2345-F123-456789012345} = {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 		{A7B8C9D0-E1F2-3456-0123-567890123456} = {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
-		{B8C9D0E1-F2A3-4567-1234-678901234567} = {B2C3D4E5-F6A7-8901-BCDE-F12345678901}
-		{C9D0E1F2-A3B4-5678-2345-789012345678} = {B2C3D4E5-F6A7-8901-BCDE-F12345678901}
-		{D0E1F2A3-B4C5-6789-3456-890123456789} = {B2C3D4E5-F6A7-8901-BCDE-F12345678901}
-		{E1F2A3B4-C5D6-7890-4567-901234567890} = {B2C3D4E5-F6A7-8901-BCDE-F12345678901}
 	EndGlobalSection
 EndGlobal

@@ -34,15 +34,15 @@ import { NotificationService } from '../../../core/services/notification.service
     </app-main-layout>
   `,
   styles: [`
-    .card { background: white; padding: 1.5rem; border-radius: 8px; margin-top: 1rem; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; margin-top: 1rem; }
     .bed-stats { display: flex; gap: 1rem; }
-    .stat-pill { display: flex; align-items: center; gap: 0.5rem; background: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.875rem; font-weight: 600; }
+    .stat-pill { display: flex; align-items: center; gap: 0.5rem; background: var(--bg-card, #fff); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.875rem; font-weight: 600; }
     .stat-pill.available { color: #2e7d32; border: 1px solid #a5d6a7; }
     .stat-pill.occupied { color: #c62828; border: 1px solid #ef9a9a; }
     .stat-pill.total { color: #1565c0; border: 1px solid #90caf9; }
     .stat-pill mat-icon { font-size: 18px; width: 18px; height: 18px; }
     .loading-container { display: flex; justify-content: center; padding: 3rem; }
-    .empty-state { text-align: center; padding: 3rem; color: #666; }
+    .empty-state { text-align: center; padding: 3rem; color: var(--text-muted, #666); }
     .empty-icon { font-size: 48px; width: 48px; height: 48px; color: #ccc; }
     .bed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem; }
     .bed-card { border: 2px solid #e0e0e0; border-radius: 10px; padding: 1rem; text-align: center; transition: all 0.2s; }
@@ -51,8 +51,8 @@ import { NotificationService } from '../../../core/services/notification.service
     .bed-card.maintenance { border-color: #fff9c4; background: #fffde7; }
     .bed-icon mat-icon { font-size: 32px; width: 32px; height: 32px; color: #1a237e; }
     .bed-number { font-size: 1.1rem; font-weight: 700; margin: 0.25rem 0; }
-    .bed-room { font-size: 0.75rem; color: #999; }
-    .bed-type { font-size: 0.75rem; color: #666; margin-bottom: 0.5rem; }
+    .bed-room { font-size: 0.75rem; color: var(--text-muted, #999); }
+    .bed-type { font-size: 0.75rem; color: var(--text-muted, #666); margin-bottom: 0.5rem; }
     .bed-status-badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 8px; font-size: 0.7rem; font-weight: 600; }
     .bed-status-badge.available { background: #c8e6c9; color: #2e7d32; }
     .bed-status-badge.occupied { background: #ffcdd2; color: #c62828; }

@@ -81,7 +81,7 @@ import { ApiService } from '../../../../core/services/api.service';
 
     .last-edited {
       font-size: 0.75rem;
-      color: #999;
+      color: var(--text-muted, #999);
     }
 
     .toolbar {
@@ -89,8 +89,8 @@ import { ApiService } from '../../../../core/services/api.service';
       align-items: center;
       gap: 0.25rem;
       padding: 0.5rem;
-      background: #f8f9fa;
-      border: 1px solid #e0e0e0;
+      background: var(--table-header-bg, #f8f9fa);
+      border: 1px solid var(--border-color, #e0e0e0);
       border-bottom: none;
       border-radius: 4px 4px 0 0;
       flex-wrap: wrap;
@@ -106,12 +106,12 @@ import { ApiService } from '../../../../core/services/api.service';
       background: transparent;
       border-radius: 4px;
       cursor: pointer;
-      color: #555;
+      color: var(--text-secondary, #555);
       transition: background 0.2s;
     }
 
     .toolbar-btn:hover {
-      background: #e0e0e0;
+      background: var(--bg-hover, #e0e0e0);
     }
 
     .toolbar-btn mat-icon {
@@ -123,44 +123,44 @@ import { ApiService } from '../../../../core/services/api.service';
     .toolbar-divider {
       width: 1px;
       height: 24px;
-      background: #ddd;
+      background: var(--border-color, #ddd);
       margin: 0 0.25rem;
     }
 
     .font-select {
       padding: 0.25rem 0.5rem;
-      border: 1px solid #ddd;
+      border: 1px solid var(--border-color, #ddd);
       border-radius: 4px;
       font-size: 0.8rem;
-      background: white;
-      color: #555;
+      background: var(--bg-card, #fff);
+      color: var(--text-secondary, #555);
       outline: none;
     }
 
     .notes-editor {
       min-height: 150px;
       padding: 1rem;
-      border: 1px solid #e0e0e0;
+      border: 1px solid var(--border-color, #e0e0e0);
       border-radius: 0 0 4px 4px;
       outline: none;
       font-size: 0.9rem;
       line-height: 1.6;
-      color: #333;
+      color: var(--text-primary, #333);
     }
 
     .notes-editor:empty:before {
       content: attr(data-placeholder);
-      color: #999;
+      color: var(--text-muted, #999);
     }
 
     .notes-editor:focus {
-      border-color: #1a237e;
+      border-color: var(--accent-primary, #1a237e);
     }
 
     .color-picker {
       position: absolute;
-      background: white;
-      border: 1px solid #ddd;
+      background: var(--bg-card, #fff);
+      border: 1px solid var(--border-color, #ddd);
       border-radius: 4px;
       padding: 0.5rem;
       display: flex;
@@ -176,7 +176,7 @@ import { ApiService } from '../../../../core/services/api.service';
       height: 24px;
       border-radius: 4px;
       cursor: pointer;
-      border: 1px solid #ddd;
+      border: 1px solid var(--border-color, #ddd);
     }
 
     .color-option:hover {

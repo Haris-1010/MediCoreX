@@ -77,7 +77,7 @@ export interface PasswordResetDialogData {
   styles: [`
     .user-info {
       margin-bottom: 1rem;
-      color: #333;
+      color: var(--text-primary, #333);
     }
 
     .full-width {
@@ -88,14 +88,14 @@ export interface PasswordResetDialogData {
     .password-requirements {
       margin-top: 1rem;
       padding: 0.75rem;
-      background: #f5f5f5;
+      background: var(--bg-hover, #f5f5f5);
       border-radius: 4px;
     }
 
     .password-requirements p {
       margin: 0 0 0.5rem;
       font-size: 0.875rem;
-      color: #333;
+      color: var(--text-primary, #333);
     }
 
     .password-requirements ul {
@@ -105,12 +105,12 @@ export interface PasswordResetDialogData {
 
     .password-requirements li {
       font-size: 0.8rem;
-      color: #666;
+      color: var(--text-secondary, #666);
       margin-bottom: 0.25rem;
     }
 
     .password-requirements li.valid {
-      color: #2e7d32;
+      color: var(--success, #2e7d32);
     }
 
     mat-dialog-content {

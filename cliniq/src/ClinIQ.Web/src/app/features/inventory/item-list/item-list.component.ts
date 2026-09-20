@@ -36,7 +36,7 @@ import { StockBatchesDialogComponent } from '../stock-batches-dialog/stock-batch
       </div>
     </app-main-layout>
   `,
-  styles: [`.card { background: white; padding: 1.5rem; border-radius: 8px; } .filters { display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center; } table { width: 100%; } .low { color: #ff9800; font-weight: 600; } .out { color: #f44336; font-weight: 600; }`]
+  styles: [`.card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; } .filters { display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center; } table { width: 100%; } .low { color: #ff9800; font-weight: 600; } .out { color: #f44336; font-weight: 600; }`]
 })
 export class ItemListComponent implements OnInit {
   items: any[] = []; categories: any[] = [];

@@ -33,7 +33,7 @@ export interface ConfirmDialogData {
     }
     mat-dialog-content p {
       font-size: 0.9rem;
-      color: #555;
+      color: var(--text-secondary, #555);
       line-height: 1.5;
       margin: 0;
     }
@@ -45,7 +45,7 @@ export interface ConfirmDialogData {
       padding: 16px 24px 0;
       margin: 0;
       font-size: 1.1rem;
-      color: #1a237e;
+      color: var(--accent-primary, #1a237e);
     }
   `]
 })

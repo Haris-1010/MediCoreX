@@ -10,8 +10,14 @@ import { NotificationService } from '../../../core/services/notification.service
     <app-main-layout>
       <app-page-header title="Enter Radiology Report" [breadcrumbs]="[{ label: 'Radiology', route: '/radiology' }, { label: 'Report Entry' }]"></app-page-header>
 
-      <div *ngIf="!order" class="loading-container">
+      <div *ngIf="!order && !error" class="loading-container">
         <mat-spinner diameter="40"></mat-spinner>
+      </div>
+
+      <div *ngIf="error" class="loading-container">
+        <mat-icon style="font-size:48px;width:48px;height:48px;color:#ef4444;">error_outline</mat-icon>
+        <p>Failed to load order. It may not exist or you may not have permission.</p>
+        <button mat-raised-button color="primary" routerLink="/radiology">Back to Radiology</button>
       </div>
 
       <div *ngIf="order" class="report-page">
@@ -53,10 +59,10 @@ import { NotificationService } from '../../../core/services/notification.service
   styles: [`.loading-container { display: flex; justify-content: center; padding: 4rem; }
     .report-page { max-width: 1000px; }
     .report-grid { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; }
-    .card { background: white; padding: 1.5rem; border-radius: 8px; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
     .card h3 { margin: 0 0 1rem; font-size: 1.1rem; }
-    .info-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #eee; }
-    .info-row span { color: #666; }
+    .info-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color, #eee); }
+    .info-row span { color: var(--text-secondary, #666); }
     .full-width { width: 100%; }
     .checkbox-row { margin-bottom: 1rem; }
     .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }`]
@@ -67,6 +73,7 @@ export class RadiologyReportEntryComponent implements OnInit {
   resultNotes = '';
   abnormalFindings = false;
   saving = false;
+  error = false;
 
   constructor(
     private api: ApiService,
@@ -78,7 +85,13 @@ export class RadiologyReportEntryComponent implements OnInit {
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.api.getById<any>('v1/radiology/orders', id).subscribe(r => this.order = r);
+      this.api.getById<any>('v1/radiology/orders', id).subscribe({
+        next: r => this.order = r,
+        error: () => {
+          this.error = true;
+          this.notification.error('Failed to load radiology order');
+        }
+      });
     }
   }
 

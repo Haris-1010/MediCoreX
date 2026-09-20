@@ -64,22 +64,22 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     </app-main-layout>
   `,
   styles: [`
-    .page-card { background: #fff; border: 1px solid rgba(0, 0, 0, 0.06); border-radius: 12px; padding: 1.5rem; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04); }
+    .page-card { background: var(--bg-card, #fff); border: 1px solid var(--border-color, rgba(0, 0, 0, 0.06)); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow-md, 0 8px 24px rgba(15, 23, 42, 0.04)); }
     .page-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
-    .page-header h2 { margin: 0; color: #1f2937; }
-    .page-header p { margin: 0.4rem 0 0; color: #6b7280; }
+    .page-header h2 { margin: 0; color: var(--text-primary, #1f2937); }
+    .page-header p { margin: 0.4rem 0 0; color: var(--text-muted, #6b7280); }
     .table-container { overflow-x: auto; }
-    .data-table { width: 100%; border-collapse: collapse; background: white; }
-    .data-table th, .data-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #eee; }
-    .data-table th { background: #f8fafc; font-weight: 600; }
-    .data-table tr:hover { background: #f9fafb; }
+    .data-table { width: 100%; border-collapse: collapse; background: var(--bg-card, white); }
+    .data-table th, .data-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border-color, #eee); color: var(--text-primary, inherit); }
+    .data-table th { background: var(--table-header-bg, #f8fafc); font-weight: 600; color: var(--text-muted, inherit); }
+    .data-table tr:hover { background: var(--table-row-hover, #f9fafb); }
     .badge { padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
-    .badge-info { background: #dbeafe; color: #1d4ed8; }
-    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-info { background: var(--badge-info-bg, #dbeafe); color: var(--badge-info-text, #1d4ed8); }
+    .badge-warning { background: var(--badge-warning-bg, #fef3c7); color: var(--badge-warning-text, #92400e); }
     .actions { white-space: nowrap; }
     .actions button { margin-right: 4px; }
     .page-header button mat-icon { margin-right: 4px; }
-    .empty-state { padding: 2rem !important; text-align: center; color: #64748b; }
+    .empty-state { padding: 2rem !important; text-align: center; color: var(--text-muted, #64748b); }
   `]
 })
 export class RoleListComponent implements OnInit {

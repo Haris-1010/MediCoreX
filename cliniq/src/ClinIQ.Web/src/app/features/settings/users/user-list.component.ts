@@ -85,22 +85,22 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     </app-main-layout>
   `,
   styles: [`
-    .page-card { background: #fff; border: 1px solid rgba(0, 0, 0, 0.06); border-radius: 12px; padding: 1.5rem; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04); }
+    .page-card { background: var(--bg-card, #fff); border: 1px solid var(--border-color, rgba(0, 0, 0, 0.06)); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow-md, 0 8px 24px rgba(15, 23, 42, 0.04)); }
     .page-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
-    .page-header h2 { margin: 0; color: #1f2937; }
-    .page-header p { margin: 0.4rem 0 0; color: #6b7280; }
+    .page-header h2 { margin: 0; color: var(--text-primary, #1f2937); }
+    .page-header p { margin: 0.4rem 0 0; color: var(--text-muted, #6b7280); }
     .filters { margin-bottom: 20px; }
     .filters input { width: 300px; }
     .table-container { overflow-x: auto; }
     .data-table { width: 100%; border-collapse: collapse; }
-    .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-    .data-table th { background: #f8fafc; font-weight: 600; }
-    .data-table tr:hover { background: #f9fafb; }
+    .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color, #eee); }
+    .data-table th { background: var(--table-header-bg, #f8fafc); font-weight: 600; }
+    .data-table tr:hover { background: var(--table-row-hover, #f9fafb); }
     .badge { padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; margin-right: 4px; display: inline-block; }
-    .badge-info { background: #dbeafe; color: #1d4ed8; }
-    .badge-muted { background: #e5e7eb; color: #4b5563; }
-    .badge-success { background: #dcfce7; color: #166534; }
-    .badge-danger { background: #fee2e2; color: #991b1b; }
+    .badge-info { background: var(--badge-info-bg, #dbeafe); color: var(--badge-info-text, #1d4ed8); }
+    .badge-muted { background: var(--bg-hover, #e5e7eb); color: var(--text-secondary, #4b5563); }
+    .badge-success { background: var(--badge-success-bg, #dcfce7); color: var(--badge-success-text, #166534); }
+    .badge-danger { background: var(--badge-danger-bg, #fee2e2); color: var(--badge-danger-text, #991b1b); }
     .actions { white-space: nowrap; }
     .actions button { margin-right: 2px; }
     .pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px; }

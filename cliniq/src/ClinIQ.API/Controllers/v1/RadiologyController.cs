@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ClinIQ.Domain.Enums;
 using ClinIQ.Infrastructure.Data;
 using ClinIQ.Shared.Models;
@@ -57,7 +58,7 @@ public class RadiologyController : ControllerBase
                 o.OrderDate,
                 Status = o.Status.ToString(),
                 o.IsUrgent,
-                o.Priority,
+                Priority = o.Priority.ToString(),
                 o.ClinicalIndication,
                 o.OrderItems,
                 o.Results,
@@ -82,19 +83,32 @@ public class RadiologyController : ControllerBase
         var count = await _context.MedicalOrders.CountAsync(o => o.OrderType == MedicalOrderType.Radiology && o.OrderDate.Date == DateTime.UtcNow.Date);
         var orderNumber = $"RAD-{DateTime.UtcNow:yyyyMMdd}-{(count + 1):D4}";
 
+        var orderItems = JsonSerializer.Serialize(new
+        {
+            request.Modality,
+            request.BodyPart
+        });
+
+        int priorityValue = request.Priority?.ToLower() switch
+        {
+            "urgent" => 2,
+            "emergent" => 3,
+            _ => 1
+        };
+
         var order = new Domain.Entities.Clinical.MedicalOrder
         {
             OrderNumber = orderNumber,
             PatientId = request.PatientId,
-            OrderedById = request.OrderedById ?? Guid.Empty,
+            OrderedById = request.DoctorId ?? request.OrderedById ?? Guid.Empty,
             VisitId = request.VisitId,
             AdmissionId = request.AdmissionId,
             OrderType = MedicalOrderType.Radiology,
             Status = MedicalOrderStatus.Ordered,
             OrderDate = DateTime.UtcNow,
-            Priority = request.Priority,
-            IsUrgent = request.IsUrgent,
-            OrderItems = request.OrderItems,
+            Priority = priorityValue,
+            IsUrgent = request.IsUrgent || request.Priority?.ToLower() == "urgent" || request.Priority?.ToLower() == "emergent",
+            OrderItems = request.OrderItems ?? orderItems,
             ClinicalIndication = request.ClinicalIndication,
             SpecialInstructions = request.SpecialInstructions,
             Notes = request.Notes
@@ -145,7 +159,7 @@ public class RadiologyController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.RadiologyView)]
     public async Task<IActionResult> GetReport(Guid id)
     {
-        var report = await _context.MedicalOrders
+        var raw = await _context.MedicalOrders
             .Where(o => o.Id == id && o.OrderType == MedicalOrderType.Radiology && !o.IsDeleted)
             .Select(o => new
             {
@@ -154,6 +168,7 @@ public class RadiologyController : ControllerBase
                 PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
                 o.PatientId,
                 o.OrderedById,
+                OrderedBy = _context.Users.Where(u => u.Id == o.OrderedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
                 o.OrderDate,
                 o.ClinicalIndication,
                 o.OrderItems,
@@ -164,8 +179,29 @@ public class RadiologyController : ControllerBase
             })
             .FirstOrDefaultAsync();
 
-        if (report == null)
+        if (raw == null)
             return NotFound(Result.Failure("Report not found"));
+
+        var (modality, bodyPart) = ExtractModalityBodyPart(raw.OrderItems);
+
+        var report = new
+        {
+            raw.Id,
+            raw.OrderNumber,
+            raw.PatientName,
+            raw.PatientId,
+            raw.OrderedById,
+            raw.OrderedBy,
+            raw.OrderDate,
+            raw.ClinicalIndication,
+            Modality = modality,
+            BodyPart = bodyPart,
+            OrderItems = ParseOrderItems(raw.OrderItems),
+            raw.Results,
+            raw.ResultNotes,
+            raw.AbnormalFlags,
+            raw.CompletedAt
+        };
 
         return Ok(Result<object>.Success(report));
     }
@@ -212,16 +248,76 @@ public class RadiologyController : ControllerBase
                 o.OrderNumber,
                 PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
                 o.PatientId,
+                OrderedBy = _context.Users.Where(u => u.Id == o.OrderedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
                 o.OrderDate,
                 Status = o.Status.ToString(),
                 o.IsUrgent,
-                o.Priority,
+                Priority = o.Priority.ToString(),
                 o.OrderItems,
                 o.ClinicalIndication
             })
             .ToListAsync();
 
         return Ok(Result<object>.Success(orders));
+    }
+
+    [HttpGet("orders/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.RadiologyView)]
+    public async Task<IActionResult> GetOrder(Guid id)
+    {
+        var raw = await _context.MedicalOrders
+            .Where(o => o.Id == id && o.OrderType == MedicalOrderType.Radiology && !o.IsDeleted)
+            .Select(o => new
+            {
+                o.Id,
+                o.OrderNumber,
+                PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
+                o.PatientId,
+                o.OrderedById,
+                OrderedBy = _context.Users.Where(u => u.Id == o.OrderedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                o.OrderDate,
+                Status = o.Status.ToString(),
+                o.IsUrgent,
+                Priority = o.Priority.ToString(),
+                o.ClinicalIndication,
+                o.SpecialInstructions,
+                o.OrderItems,
+                o.Results,
+                o.ResultNotes,
+                o.AbnormalFlags,
+                o.CompletedAt
+            })
+            .FirstOrDefaultAsync();
+
+        if (raw == null)
+            return NotFound(Result.Failure("Order not found"));
+
+        var (modality, bodyPart) = ExtractModalityBodyPart(raw.OrderItems);
+
+        var order = new
+        {
+            raw.Id,
+            raw.OrderNumber,
+            raw.PatientName,
+            raw.PatientId,
+            raw.OrderedById,
+            raw.OrderedBy,
+            raw.OrderDate,
+            raw.Status,
+            raw.IsUrgent,
+            raw.Priority,
+            raw.ClinicalIndication,
+            raw.SpecialInstructions,
+            Modality = modality,
+            BodyPart = bodyPart,
+            OrderItems = ParseOrderItems(raw.OrderItems),
+            raw.Results,
+            raw.ResultNotes,
+            raw.AbnormalFlags,
+            raw.CompletedAt
+        };
+
+        return Ok(Result<object>.Success(order));
     }
 
     [HttpPut("orders/{id:guid}")]
@@ -253,11 +349,71 @@ public class RadiologyController : ControllerBase
         order.Status = MedicalOrderStatus.Completed;
         order.Results = request.Results;
         order.ResultNotes = request.ResultNotes;
-        order.AbnormalFlags = request.AbnormalFlags;
+        order.AbnormalFlags = request.AbnormalFindings.HasValue
+            ? (request.AbnormalFindings.Value ? "Abnormal" : "Normal")
+            : request.AbnormalFlags;
         order.CompletedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return Ok(Result.Success("Report completed"));
+    }
+
+    [HttpGet("orders/{id:guid}/print")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.RadiologyView)]
+    public async Task<IActionResult> GetOrderForPrint(Guid id)
+    {
+        var raw = await _context.MedicalOrders
+            .Where(o => o.Id == id && o.OrderType == MedicalOrderType.Radiology && !o.IsDeleted)
+            .Select(o => new
+            {
+                o.Id,
+                o.OrderNumber,
+                PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
+                PatientAge = o.Patient != null ? o.Patient.DateOfBirth : (DateTime?)null,
+                PatientGender = o.Patient != null ? o.Patient.Gender : null,
+                Mrn = o.Patient != null ? o.Patient.MRN : null,
+                o.PatientId,
+                OrderedBy = _context.Users.Where(u => u.Id == o.OrderedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                DoctorSpecialization = _context.Users.Where(u => u.Id == o.OrderedById).Select(u => u.Specialization).FirstOrDefault(),
+                o.OrderDate,
+                o.ClinicalIndication,
+                o.SpecialInstructions,
+                o.OrderItems,
+                o.Results,
+                o.ResultNotes,
+                o.AbnormalFlags,
+                o.CompletedAt
+            })
+            .FirstOrDefaultAsync();
+
+        if (raw == null)
+            return NotFound(Result.Failure("Report not found"));
+
+        var (modality, bodyPart) = ExtractModalityBodyPart(raw.OrderItems);
+
+        var report = new
+        {
+            raw.Id,
+            raw.OrderNumber,
+            raw.PatientName,
+            raw.PatientAge,
+            raw.PatientGender,
+            raw.Mrn,
+            raw.PatientId,
+            raw.OrderedBy,
+            raw.DoctorSpecialization,
+            raw.OrderDate,
+            raw.ClinicalIndication,
+            raw.SpecialInstructions,
+            Modality = modality,
+            BodyPart = bodyPart,
+            raw.Results,
+            raw.ResultNotes,
+            raw.AbnormalFlags,
+            raw.CompletedAt
+        };
+
+        return Ok(Result<object>.Success(report));
     }
 
     [HttpDelete("orders/{id:guid}")]
@@ -273,13 +429,53 @@ public class RadiologyController : ControllerBase
         return Ok(Result.Success("Radiology order deleted successfully"));
     }
 
+    private static object? ParseOrderItems(string? orderItemsJson)
+    {
+        if (string.IsNullOrWhiteSpace(orderItemsJson))
+            return null;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(orderItemsJson);
+            return doc.RootElement.Clone();
+        }
+        catch
+        {
+            return orderItemsJson;
+        }
+    }
+
+    private static (string? modality, string? bodyPart) ExtractModalityBodyPart(string? orderItemsJson)
+    {
+        if (string.IsNullOrWhiteSpace(orderItemsJson))
+            return (null, null);
+
+        try
+        {
+            using var doc = JsonDocument.Parse(orderItemsJson);
+            var root = doc.RootElement;
+            string? modality = null;
+            string? bodyPart = null;
+            if (root.TryGetProperty("Modality", out var m)) modality = m.GetString();
+            if (root.TryGetProperty("BodyPart", out var b)) bodyPart = b.GetString();
+            return (modality, bodyPart);
+        }
+        catch
+        {
+            return (null, null);
+        }
+    }
+
     public class CreateRadiologyOrderRequest
     {
         public Guid PatientId { get; set; }
+        public Guid? DoctorId { get; set; }
         public Guid? OrderedById { get; set; }
         public Guid? VisitId { get; set; }
         public Guid? AdmissionId { get; set; }
-        public int? Priority { get; set; }
+        public string? Modality { get; set; }
+        public string? BodyPart { get; set; }
+        public string? Priority { get; set; }
         public bool IsUrgent { get; set; }
         public string? OrderItems { get; set; }
         public string? ClinicalIndication { get; set; }
@@ -299,6 +495,7 @@ public class RadiologyController : ControllerBase
     {
         public string? Results { get; set; }
         public string? ResultNotes { get; set; }
+        public bool? AbnormalFindings { get; set; }
         public string? AbnormalFlags { get; set; }
     }
 }

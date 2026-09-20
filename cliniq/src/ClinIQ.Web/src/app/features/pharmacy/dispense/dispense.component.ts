@@ -148,11 +148,11 @@ import { TenantService } from '../../../core/services/tenant.service';
     }
 
     .section-card {
-      background: #fff;
+      background: var(--bg-card, #fff);
       padding: 1rem 1.25rem;
       border-radius: 10px;
       margin-bottom: 0.85rem;
-      border: 1px solid #e8eaf6;
+      border: 1px solid var(--border-color, #e0e0e0);
       box-shadow: 0 1px 2px rgba(63, 81, 181, 0.06);
     }
 
@@ -183,7 +183,7 @@ import { TenantService } from '../../../core/services/tenant.service';
       color: #2e7d32;
     }
     .rx-status.pending {
-      background: #fff3e0;
+      background: var(--status-warning-bg, #fff3e0);
       color: #e65100;
     }
 
@@ -199,7 +199,7 @@ import { TenantService } from '../../../core/services/tenant.service';
       gap: 2px;
     }
     .info-label { font-size: 0.72rem; color: #7986cb; text-transform: uppercase; letter-spacing: 0.3px; }
-    .info-value { font-size: 0.88rem; font-weight: 500; color: #333; }
+    .info-value { font-size: 0.88rem; font-weight: 500; color: var(--text-primary, #333); }
 
     .med-table { width: 100%; }
 
@@ -256,7 +256,7 @@ import { TenantService } from '../../../core/services/tenant.service';
 export class DispenseComponent implements OnInit {
   prescription: any;
   dispensing = false;
-  currencySymbol = '$';
+  currencySymbol = '';
   columns = ['medication', 'dosage', 'frequency', 'quantity', 'unitPrice', 'lineTotal'];
 
   constructor(

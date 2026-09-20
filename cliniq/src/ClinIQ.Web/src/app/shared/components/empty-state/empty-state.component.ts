@@ -34,13 +34,13 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 
     h3 {
       margin: 0 0 0.5rem;
-      color: #333;
+      color: var(--text-primary, #333);
       font-weight: 500;
     }
 
     p {
       margin: 0 0 1.5rem;
-      color: #666;
+      color: var(--text-muted, #666);
       max-width: 400px;
     }
   `]

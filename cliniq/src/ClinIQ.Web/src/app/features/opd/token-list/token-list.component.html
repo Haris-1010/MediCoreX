@@ -1,0 +1,108 @@
+<app-main-layout>
+  <app-page-header title="Token List" [breadcrumbs]="[{ label: 'OPD', route: '/opd' }, { label: 'Tokens' }]">
+    <button mat-raised-button color="primary" routerLink="/opd/token"><mat-icon>add_circle</mat-icon> New Token</button>
+  </app-page-header>
+
+  <div class="token-list-container">
+    <div *ngIf="loading" class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p class="loading-text">Loading tokens...</p>
+    </div>
+
+    <div *ngIf="!loading && errorMessage()" class="error-container">
+      <mat-icon class="error-icon">error_outline</mat-icon>
+      <p>{{ errorMessage() }}</p>
+      <button mat-raised-button color="primary" (click)="loadTokens()">Retry</button>
+    </div>
+
+    <div *ngIf="!loading && tokens().length === 0 && !errorMessage()" class="empty-container">
+      <mat-icon class="empty-icon">confirmation_number</mat-icon>
+      <p>No tokens found for today.</p>
+      <p class="empty-sub">Tokens will appear here as they are generated.</p>
+    </div>
+
+    <div *ngIf="!loading && tokens().length > 0">
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="tokens()">
+          <ng-container matColumnDef="tokenNumber">
+            <th mat-header-cell *matHeaderCellDef>Token #</th>
+            <td mat-cell *matCellDef="let token" class="token-number-cell">{{ token.tokenNumber }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="patientName">
+            <th mat-header-cell *matHeaderCellDef>Patient</th>
+            <td mat-cell *matCellDef="let token">{{ token.patientName }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="mrn">
+            <th mat-header-cell *matHeaderCellDef>MRN</th>
+            <td mat-cell *matCellDef="let token">{{ token.mrn || '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="doctorName">
+            <th mat-header-cell *matHeaderCellDef>Doctor</th>
+            <td mat-cell *matCellDef="let token">{{ token.doctorName }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let token">
+              <span class="status-badge" [ngClass]="getStatusClass(token.status)">{{ token.status }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="joinedAt">
+            <th mat-header-cell *matHeaderCellDef>Joined At</th>
+            <td mat-cell *matCellDef="let token">
+              <span *ngIf="token.joinedAt">{{ token.joinedAt | date:'short' }}</span>
+              <span *ngIf="!token.joinedAt">—</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let token">
+              <button mat-icon-button matTooltip="Print" (click)="printToken(token)">
+                <mat-icon>print</mat-icon>
+              </button>
+              <button mat-icon-button matTooltip="Call" (click)="callPatient(token)">
+                <mat-icon>phone</mat-icon>
+              </button>
+              <button mat-icon-button matTooltip="Complete" (click)="completeConsultation(token)">
+                <mat-icon>check_circle</mat-icon>
+              </button>
+              <button mat-icon-button matTooltip="Edit" (click)="editToken(token)" *ngIf="!isCompleted(token)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" matTooltip="Remove" (click)="deleteToken(token)" *ngIf="!isCompleted(token)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+
+      <div class="summary-section">
+        <div class="summary-item">
+          <span class="summary-label">Total Tokens:</span>
+          <span class="summary-value">{{ tokens().length }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label waiting">Waiting:</span>
+          <span class="summary-value">{{ getWaitingCount() }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label consultation">In Consultation:</span>
+          <span class="summary-value">{{ getInConsultationCount() }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label completed">Completed:</span>
+          <span class="summary-value">{{ getCompletedCount() }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</app-main-layout>

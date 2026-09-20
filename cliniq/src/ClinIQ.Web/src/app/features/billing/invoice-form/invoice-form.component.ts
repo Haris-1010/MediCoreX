@@ -376,12 +376,12 @@ import { ClinicalService } from '../../services/models/service.model';
     }
 
     .section-card {
-      background: #fff;
+      background: var(--bg-card, #fff);
       padding: 1rem 1.25rem;
       border-radius: 10px;
       margin-bottom: 0.85rem;
-      border: 1px solid #e8eaf6;
-      box-shadow: 0 1px 2px rgba(63, 81, 181, 0.06);
+      border: 1px solid var(--border-color, #e8eaf6);
+      box-shadow: var(--shadow-sm, 0 1px 2px rgba(63, 81, 181, 0.06));
     }
 
     .section-header {
@@ -471,9 +471,9 @@ import { ClinicalService } from '../../services/models/service.model';
       align-items: flex-start;
       margin-bottom: 0.4rem;
       padding: 0.5rem 0.6rem;
-      background: #fafbff;
+      background: var(--bg-muted, #f5f5f5);
       border-radius: 8px;
-      border: 1px solid #e8eaf6;
+      border: 1px solid var(--border-color, #e8eaf6);
     }
     .item-row mat-form-field { flex: 1; }
     .desc-field { flex: 2 !important; }
@@ -507,10 +507,10 @@ import { ClinicalService } from '../../services/models/service.model';
     .search-results {
       position: absolute;
       z-index: 100;
-      background: white;
-      border: 1px solid #c5cae9;
+      background: var(--bg-card, #fff);
+      border: 1px solid var(--border-color, #c5cae9);
       border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.12));
       max-height: 260px;
       overflow-y: auto;
       width: calc(100% - 2rem);
@@ -596,9 +596,9 @@ import { ClinicalService } from '../../services/models/service.model';
 
     .totals-col {
       padding: 0.85rem 1rem;
-      background: #f5f6ff;
+      background: var(--bg-muted, #f5f5f5);
       border-radius: 8px;
-      border: 1px solid #e8eaf6;
+      border: 1px solid var(--border-color, #e8eaf6);
     }
 
     .total-line {
@@ -607,7 +607,7 @@ import { ClinicalService } from '../../services/models/service.model';
       align-items: center;
       padding: 0.35rem 0;
       font-size: 0.88rem;
-      color: #333;
+      color: var(--text-primary, #333);
     }
     .tax-line {
       display: flex;
@@ -633,14 +633,14 @@ import { ClinicalService } from '../../services/models/service.model';
 
     .payment-card {
       border: 1.5px solid #c5cae9;
-      background: #fafbff;
+      background: var(--bg-muted, #f5f5f5);
     }
     .payment-summary {
       margin-top: 0.75rem;
       padding: 0.75rem 1rem;
-      background: #fff;
+      background: var(--bg-card, #fff);
       border-radius: 8px;
-      border: 1px solid #e8eaf6;
+      border: 1px solid var(--border-color, #e8eaf6);
     }
     .summary-row {
       display: flex;
@@ -691,7 +691,7 @@ import { ClinicalService } from '../../services/models/service.model';
     .flex-grow { flex: 1; }
 
     /* Autocomplete dropdown styling */
-    :host ::ng-deep .mat-mdc-autocomplete-panel { max-height: 300px !important; border-radius: 8px !important; border: 1px solid #c5cae9 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel { max-height: 300px !important; border-radius: 8px !important;       border: 1px solid var(--border-color, #c5cae9) !important;       box-shadow: var(--shadow-md, 0 4px 16px rgba(0,0,0,0.12)) !important; }
     :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option { padding: 10px 16px !important; line-height: 1.4 !important; }
     :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option:hover { background-color: #e8eaf6 !important; }
     :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option.mat-mdc-option-active { background-color: #c5cae9 !important; }
@@ -721,7 +721,7 @@ export class InvoiceFormComponent implements OnInit, OnDestroy {
   grandTotal = 0;
   paidAmount = 0;
   invoiceId: string | null = null;
-  currencySymbol = '$';
+  currencySymbol = '';
   private destroy$ = new Subject<void>();
 
   constructor(

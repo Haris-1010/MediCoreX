@@ -37,19 +37,19 @@ import { ApiService } from '../../../core/services/api.service';
     </app-main-layout>
   `,
   styles: [`.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-    .stat-card { display: flex; align-items: center; gap: 1rem; background: white; padding: 1.5rem; border-radius: 8px; }
-    .stat-card mat-icon { font-size: 40px; width: 40px; height: 40px; color: #3f51b5; }
-    .stat-card.warn mat-icon { color: #f44336; } .stat-card h3 { margin: 0; font-size: 1.5rem; } .stat-card p { margin: 0; color: #666; }
+    .stat-card { display: flex; align-items: center; gap: 1rem; background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
+    .stat-card mat-icon { font-size: 40px; width: 40px; height: 40px; color: var(--accent-primary, #3f51b5); }
+    .stat-card.warn mat-icon { color: #f44336; } .stat-card h3 { margin: 0; font-size: 1.5rem; } .stat-card p { margin: 0; color: var(--text-secondary, #666); }
     .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; }
-    .card { background: white; padding: 1.5rem; border-radius: 8px; } .card h3 { margin: 0 0 1rem; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; } .card h3 { margin: 0 0 1rem; }
     .invoice-list { display: flex; flex-direction: column; gap: 0.5rem; }
-    .invoice-item { display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: #f5f5f5; border-radius: 8px; cursor: pointer; }
+    .invoice-item { display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--bg-input, #f5f5f5); border-radius: 8px; cursor: pointer; }
     .invoice-item:hover { background: #e8eaf6; }
-    .invoice-item .info { flex: 1; } .invoice-item .info strong { display: block; } .invoice-item .info span { font-size: 0.875rem; color: #666; }
+    .invoice-item .info { flex: 1; } .invoice-item .info strong { display: block; } .invoice-item .info span { font-size: 0.875rem; color: var(--text-secondary, #666); }
     .invoice-item .amount { font-weight: 600; }
     .payment-breakdown { display: flex; flex-direction: column; gap: 0.75rem; }
-    .method { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #f5f5f5; border-radius: 4px; }
-    .method .percent { color: #666; font-size: 0.875rem; }`]
+    .method { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--bg-input, #f5f5f5); border-radius: 4px; }
+    .method .percent { color: var(--text-secondary, #666); font-size: 0.875rem; }`]
 })
 export class BillingDashboardComponent implements OnInit {
   stats = { todayRevenue: 0, pendingAmount: 0, totalReceivables: 0, todayInvoices: 0, overdueAmount: 0, invoiceCount: 0 };

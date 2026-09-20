@@ -33,19 +33,19 @@ import { ApiService } from '../../../../core/services/api.service';
   `,
   styles: [`
     .visit-history { padding: 1rem 0; }
-    .empty { text-align: center; padding: 2rem; color: #666; }
-    .empty mat-icon { font-size: 48px; width: 48px; height: 48px; color: #ccc; }
+    .empty { text-align: center; padding: 2rem; color: var(--text-secondary, #666); }
+    .empty mat-icon { font-size: 48px; width: 48px; height: 48px; color: var(--text-muted, #ccc); }
     .visit-list { display: flex; flex-direction: column; gap: 1rem; }
-    .visit-item { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f5f5f5; border-radius: 8px; }
+    .visit-item { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--bg-input, #f5f5f5); border-radius: 8px; }
     .visit-date { text-align: center; min-width: 60px; }
-    .visit-date .day { display: block; font-size: 1.5rem; font-weight: 700; color: #3f51b5; }
-    .visit-date .month { display: block; font-size: 0.75rem; color: #666; }
+    .visit-date .day { display: block; font-size: 1.5rem; font-weight: 700; color: var(--accent-primary, #3f51b5); }
+    .visit-date .month { display: block; font-size: 0.75rem; color: var(--text-secondary, #666); }
     .visit-content { flex: 1; }
     .visit-header { display: flex; align-items: center; gap: 0.5rem; }
     .visit-type { background: #e8eaf6; color: #3f51b5; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
-    .doctor { margin: 0.25rem 0; font-size: 0.875rem; color: #666; }
-    .complaint { margin: 0.25rem 0; font-size: 0.875rem; color: #555; }
-    .diagnosis { margin: 0.25rem 0; font-size: 0.875rem; color: #333; }
+    .doctor { margin: 0.25rem 0; font-size: 0.875rem; color: var(--text-secondary, #666); }
+    .complaint { margin: 0.25rem 0; font-size: 0.875rem; color: var(--text-secondary, #555); }
+    .diagnosis { margin: 0.25rem 0; font-size: 0.875rem; color: var(--text-primary, #333); }
   `]
 })
 export class VisitHistoryComponent implements OnInit {

@@ -412,11 +412,11 @@ import { TenantService } from '../../../core/services/tenant.service';
   `,
   styles: [`
     .card {
-      background: white;
+      background: var(--bg-card, #fff);
       padding: 1.25rem;
       border-radius: 10px;
-      border: 1px solid #e8eaf6;
-      box-shadow: 0 1px 2px rgba(63, 81, 181, 0.06);
+      border: 1px solid var(--border-color, #e8eaf6);
+      box-shadow: var(--shadow-sm, 0 1px 2px rgba(63, 81, 181, 0.06));
     }
 
     .filters {
@@ -453,11 +453,11 @@ import { TenantService } from '../../../core/services/tenant.service';
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #e8eaf6;
+      background: var(--bg-badge, #e8eaf6);
     }
 
     .section-icon mat-icon {
-      color: #3f51b5;
+      color: var(--accent-primary, #3f51b5);
       font-size: 18px;
       width: 18px;
       height: 18px;
@@ -467,12 +467,12 @@ import { TenantService } from '../../../core/services/tenant.service';
       margin: 0;
       font-size: 1rem;
       font-weight: 600;
-      color: #1a237e;
+      color: var(--text-primary, #1a237e);
     }
 
     .section-sub {
       font-size: 0.78rem;
-      color: #7986cb;
+      color: var(--text-muted, #7986cb);
       display: block;
     }
 
@@ -481,8 +481,8 @@ import { TenantService } from '../../../core/services/tenant.service';
     /* ===== Items Section ===== */
     .items-section {
       margin-bottom: 1rem;
-      background: #fafbff;
-      border: 1px solid #e8eaf6;
+      background: var(--bg-hover, #f5f5f5);
+      border: 1px solid var(--border-color, #e8eaf6);
       border-radius: 10px;
       padding: 1rem 1.1rem;
     }
@@ -502,7 +502,7 @@ import { TenantService } from '../../../core/services/tenant.service';
       max-height: 300px !important;
       box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
       border-radius: 8px !important;
-      border: 1px solid #e8eaf6 !important;
+      border: 1px solid var(--border-color, #e8eaf6) !important;
       z-index: 1000 !important;
     }
     ::ng-deep .mat-mdc-option {
@@ -519,10 +519,10 @@ import { TenantService } from '../../../core/services/tenant.service';
       padding: 0.4rem 0 0.6rem;
       font-weight: 600;
       font-size: 0.72rem;
-      color: #7986cb;
+      color: var(--text-muted, #7986cb);
       text-transform: uppercase;
       letter-spacing: 0.4px;
-      border-bottom: 1px solid #e0e4f5;
+      border-bottom: 1px solid var(--border-color, #e0e4f5);
       margin-bottom: 0.5rem;
     }
 
@@ -531,7 +531,7 @@ import { TenantService } from '../../../core/services/tenant.service';
       gap: 0.5rem;
       align-items: center;
       padding: 0.35rem 0;
-      border-bottom: 1px solid #f0f2fa;
+      border-bottom: 1px solid var(--border-light, #f0f2fa);
     }
 
     .item-row:last-child {
@@ -548,13 +548,13 @@ import { TenantService } from '../../../core/services/tenant.service';
       flex: 0 0 110px;
       text-align: right;
       font-weight: 600;
-      color: #1a237e;
+      color: var(--accent-primary, #1a237e);
     }
     .col-action { width: 40px; flex-shrink: 0; }
 
     .item-name {
       font-weight: 500;
-      color: #1a237e;
+      color: var(--text-primary, #1a237e);
       font-size: 0.9rem;
       white-space: nowrap;
       overflow: hidden;
@@ -564,7 +564,7 @@ import { TenantService } from '../../../core/services/tenant.service';
     .empty-items {
       text-align: center;
       padding: 2rem 1rem;
-      color: #9fa8da;
+      color: var(--text-muted, #9fa8da);
     }
 
     .empty-items mat-icon {
@@ -587,8 +587,8 @@ import { TenantService } from '../../../core/services/tenant.service';
       font-size: 1.15rem;
       margin: 1rem 0 0.5rem;
       padding-top: 0.85rem;
-      border-top: 2px solid #3f51b5;
-      color: #1a237e;
+      border-top: 2px solid var(--accent-primary, #3f51b5);
+      color: var(--text-primary, #1a237e);
     }
 
     .form-actions {
@@ -605,29 +605,29 @@ import { TenantService } from '../../../core/services/tenant.service';
       gap: 0.75rem 2rem;
       margin-bottom: 1.5rem;
       padding: 1rem;
-      background: #f5f6ff;
+      background: var(--bg-hover, #f5f5f5);
       border-radius: 8px;
     }
 
     .info-item { display: flex; flex-direction: column; gap: 2px; }
     .info-label {
       font-size: 0.72rem;
-      color: #7986cb;
+      color: var(--text-muted, #7986cb);
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
     .info-value {
       font-size: 0.9rem;
       font-weight: 500;
-      color: #333;
+      color: var(--text-primary, #333);
     }
 
     .detail-table { margin-bottom: 1rem; }
 
     /* ===== Receive Dialog ===== */
     .receive-card {
-      border: 1.5px solid #c5cae9;
-      background: #fafbff;
+      border: 1.5px solid var(--border-color, #c5cae9);
+      background: var(--bg-hover, #f5f5f5);
     }
 
     .receive-header {
@@ -636,7 +636,7 @@ import { TenantService } from '../../../core/services/tenant.service';
       align-items: center;
       margin-bottom: 1.25rem;
       padding-bottom: 1rem;
-      border-bottom: 2px solid #e8eaf6;
+      border-bottom: 2px solid var(--border-color, #e8eaf6);
     }
 
     .receive-header-left {
@@ -663,8 +663,8 @@ import { TenantService } from '../../../core/services/tenant.service';
     }
 
     .receive-badge {
-      background: #e8f5e9;
-      color: #2e7d32;
+      background: var(--badge-success-bg, #e8f5e9);
+      color: var(--badge-success-text, #2e7d32);
       padding: 4px 12px;
       border-radius: 12px;
       font-size: 0.78rem;
@@ -674,8 +674,8 @@ import { TenantService } from '../../../core/services/tenant.service';
     .receive-items { margin-bottom: 1rem; }
 
     .receive-item-card {
-      background: white;
-      border: 1px solid #e0e0e0;
+      background: var(--bg-card, #fff);
+      border: 1px solid var(--border-color, #e0e0e0);
       border-left: 4px solid #3f51b5;
       border-radius: 8px;
       padding: 1.25rem 1.5rem;
@@ -706,8 +706,8 @@ import { TenantService } from '../../../core/services/tenant.service';
     }
 
     .item-number {
-      background: #e8eaf6;
-      color: #3f51b5;
+      background: var(--bg-badge, #e8eaf6);
+      color: var(--accent-primary, #3f51b5);
       width: 24px;
       height: 24px;
       border-radius: 6px;
@@ -720,7 +720,7 @@ import { TenantService } from '../../../core/services/tenant.service';
 
     .item-name {
       font-weight: 600;
-      color: #1a237e;
+      color: var(--text-primary, #1a237e);
       font-size: 0.9rem;
     }
 
@@ -733,8 +733,8 @@ import { TenantService } from '../../../core/services/tenant.service';
       font-weight: 600;
     }
 
-    .chip-ordered { background: #e8eaf6; color: #3f51b5; }
-    .chip-received { background: #fff3e0; color: #e65100; }
+    .chip-ordered { background: var(--bg-badge, #e8eaf6); color: var(--accent-primary, #3f51b5); }
+    .chip-received { background: var(--badge-warning-bg, #fff3e0); color: var(--badge-warning-text, #e65100); }
 
     .item-card-fields {
       display: flex;
@@ -755,7 +755,7 @@ import { TenantService } from '../../../core/services/tenant.service';
       gap: 4px;
       font-size: 0.72rem;
       font-weight: 600;
-      color: #7986cb;
+      color: var(--text-muted, #7986cb);
       text-transform: uppercase;
       letter-spacing: 0.3px;
       margin-bottom: 4px;
@@ -789,22 +789,22 @@ import { TenantService } from '../../../core/services/tenant.service';
     .item-card-footer {
       margin-top: 0.5rem;
       padding-top: 0.5rem;
-      border-top: 1px dashed #e0e0e0;
+      border-top: 1px dashed var(--border-color, #e0e0e0);
       text-align: right;
     }
 
     .line-total {
       font-size: 0.82rem;
-      color: #555;
+      color: var(--text-secondary, #555);
     }
 
     .line-total strong {
-      color: #2e7d32;
+      color: var(--success, #2e7d32);
     }
 
     .receive-summary {
-      background: white;
-      border: 1px solid #e0e0e0;
+      background: var(--bg-card, #fff);
+      border: 1px solid var(--border-color, #e0e0e0);
       border-radius: 8px;
       padding: 1.25rem 1.5rem;
       margin-bottom: 1rem;
@@ -815,22 +815,22 @@ import { TenantService } from '../../../core/services/tenant.service';
       justify-content: space-between;
       padding: 0.35rem 0;
       font-size: 0.85rem;
-      color: #666;
+      color: var(--text-muted, #666);
     }
 
     .summary-row strong {
-      color: #1a237e;
+      color: var(--text-primary, #1a237e);
     }
 
     .summary-row.total {
-      border-top: 2px solid #3f51b5;
+      border-top: 2px solid var(--accent-primary, #3f51b5);
       margin-top: 0.5rem;
       padding-top: 0.75rem;
       font-size: 1rem;
     }
 
     .summary-row.total strong {
-      color: #2e7d32;
+      color: var(--success, #2e7d32);
       font-size: 1.1rem;
     }
 
@@ -874,7 +874,7 @@ import { TenantService } from '../../../core/services/tenant.service';
     }
 
     .clickable-value:hover {
-      color: #1a237e;
+      color: var(--accent-primary, #1a237e);
     }
 
     .inline-edit-icon {
@@ -922,7 +922,7 @@ export class PurchaseOrdersComponent implements OnInit {
   editingBatchItem: any = null;
   editingBatchValue: string = '';
 
-  currencySymbol = '$';
+  currencySymbol = '';
 
   constructor(
     private api: ApiService,

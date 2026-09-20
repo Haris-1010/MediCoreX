@@ -42,15 +42,15 @@ import { AppointmentDetailDialogComponent } from './appointment-detail-dialog/ap
   `,
   styles: [`
     .patient-appointment-history { padding: 1rem 0; }
-    .empty { text-align: center; padding: 2rem; color: #666; }
-    .empty mat-icon { font-size: 48px; width: 48px; height: 48px; color: #ccc; }
+    .empty { text-align: center; padding: 2rem; color: var(--text-secondary, #666); }
+    .empty mat-icon { font-size: 48px; width: 48px; height: 48px; color: var(--text-muted, #ccc); }
     .appointment-list { display: flex; flex-direction: column; gap: 1rem; }
     .appointment-item { 
       display: flex; 
       align-items: center; 
       gap: 1rem; 
       padding: 1rem; 
-      background: #f5f5f5; 
+      background: var(--bg-input, #f5f5f5); 
       border-radius: 8px; 
       cursor: pointer;
       transition: background-color 0.2s;
@@ -59,19 +59,19 @@ import { AppointmentDetailDialogComponent } from './appointment-detail-dialog/ap
       background: #e8eaf6;
     }
     .appointment-date { text-align: center; min-width: 60px; }
-    .appointment-date .day { display: block; font-size: 1.5rem; font-weight: 700; color: #3f51b5; }
-    .appointment-date .month { display: block; font-size: 0.75rem; color: #666; }
+    .appointment-date .day { display: block; font-size: 1.5rem; font-weight: 700; color: var(--accent-primary, #3f51b5); }
+    .appointment-date .month { display: block; font-size: 0.75rem; color: var(--text-secondary, #666); }
     .appointment-content { flex: 1; min-width: 0; }
     .appointment-header { display: flex; align-items: center; gap: 0.5rem; }
     .appointment-header h4 { margin: 0; }
-    .doctor { margin: 0.25rem 0; font-size: 0.875rem; color: #666; }
-    .time { margin: 0.25rem 0; font-size: 0.875rem; color: #666; }
-    .reason { margin: 0.25rem 0; font-size: 0.875rem; color: #333; }
+    .doctor { margin: 0.25rem 0; font-size: 0.875rem; color: var(--text-secondary, #666); }
+    .time { margin: 0.25rem 0; font-size: 0.875rem; color: var(--text-secondary, #666); }
+    .reason { margin: 0.25rem 0; font-size: 0.875rem; color: var(--text-primary, #333); }
     .appointment-actions {
       display: flex;
       gap: 0.25rem;
       padding-left: 1rem;
-      border-left: 1px solid #ddd;
+      border-left: 1px solid var(--border-color, #ddd);
     }
     .appointment-actions button {
       color: #666;

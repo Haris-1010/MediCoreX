@@ -18,23 +18,23 @@ interface PlatformAdmin {
   templateUrl: './platform-admins.component.html',
   styles: [`
     .admins-shell { display: grid; grid-template-columns: minmax(320px, 460px) 1fr; gap: 28px; align-items: start; }
-    .panel { background: white; border: 1px solid #dce5e5; border-radius: 12px; padding: 24px; }
-    h3 { margin: 0 0 4px; color: #172033; }
-    .subtitle { color: #64748b; font-size: 13px; margin: 0 0 16px; }
+    .panel { background: var(--bg-card, white); border: 1px solid var(--border-color, #dce5e5); border-radius: 12px; padding: 24px; }
+    h3 { margin: 0 0 4px; color: var(--text-primary, #172033); }
+    .subtitle { color: var(--text-muted, #64748b); font-size: 13px; margin: 0 0 16px; }
     form { display: grid; gap: 2px 16px; grid-template-columns: 1fr 1fr; }
     .full { grid-column: 1 / -1; }
     button[type=submit] { margin-top: 8px; justify-self: end; }
-    .list-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid #edf1f1; }
+    .list-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border-color, #edf1f1); }
     .list-row:last-child { border-bottom: none; }
     .avatar { width: 40px; height: 40px; border-radius: 50%; background: #102b35; color: #f0b35b; display: grid; place-items: center; font-weight: 700; flex-shrink: 0; }
     .row-info { flex: 1; min-width: 0; }
     .row-info strong { display: block; font-size: 14px; }
-    .row-info small { color: #64748b; }
+    .row-info small { color: var(--text-muted, #64748b); }
     .status-chip { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-    .status-chip.active { background: #e5f6ec; color: #18794e; }
-    .status-chip.inactive { background: #fdecea; color: #b42318; }
+    .status-chip.active { background: var(--badge-success-bg, #e5f6ec); color: var(--badge-success-text, #18794e); }
+    .status-chip.inactive { background: var(--badge-danger-bg, #fdecea); color: var(--badge-danger-text, #b42318); }
     .loading { display: grid; place-items: center; padding: 40px; }
-    .empty { text-align: center; color: #64748b; padding: 24px; }
+    .empty { text-align: center; color: var(--text-muted, #64748b); padding: 24px; }
     @media (max-width: 800px) { .admins-shell { grid-template-columns: 1fr; } }
   `]
 })

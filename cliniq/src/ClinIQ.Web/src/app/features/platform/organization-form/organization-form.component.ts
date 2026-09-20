@@ -15,10 +15,10 @@ import { PLATFORM_FEATURES } from '../platform.constants';
     mat-card { border-radius: 12px; }
     .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 20px; margin-top: 8px; }
     .full { grid-column: 1 / -1; }
-    .section-title { margin-top: 28px; padding-top: 22px; border-top: 1px solid #edf1f1; display: flex; align-items: baseline; gap: 12px; }
-    .section-title mat-icon { color: #102b35; }
-    .section-title h3 { margin: 0; font-size: 16px; color: #172033; }
-    .section-title p { margin: 0; color: #64748b; font-size: 13px; }
+    .section-title { margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--border-color, #edf1f1); display: flex; align-items: baseline; gap: 12px; }
+    .section-title mat-icon { color: var(--text-primary, #102b35); }
+    .section-title h3 { margin: 0; font-size: 16px; color: var(--text-primary, #172033); }
+    .section-title p { margin: 0; color: var(--text-muted, #64748b); font-size: 13px; }
 
     .give-all-bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 14px 18px; margin: 18px 0 4px; background: #374151; border-radius: 10px; }
     .give-all-bar .give-all-text { display: flex; flex-direction: column; gap: 2px; }
@@ -32,19 +32,19 @@ import { PLATFORM_FEATURES } from '../platform.constants';
     .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
 
     .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0 4px; }
-    .feature-card { display: flex; align-items: center; gap: 12px; border: 1px solid #dce5e5; border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: border-color .15s, background .15s; }
-    .feature-card:hover { border-color: #b7c9c9; }
-    .feature-card.selected { border-color: #102b35; background: #f3f7f7; }
-    .feature-card .ficon { color: #f0b35b; }
+    .feature-card { display: flex; align-items: center; gap: 12px; border: 1px solid var(--border-color, #dce5e5); border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: border-color .15s, background .15s; }
+    .feature-card:hover { border-color: var(--accent-primary, #b7c9c9); }
+    .feature-card.selected { border-color: var(--text-primary, #102b35); background: var(--bg-hover, #f3f7f7); }
+    .feature-card .ficon { color: var(--warning, #f0b35b); }
     .feature-card .ftext { display: flex; flex-direction: column; line-height: 1.3; }
-    .feature-card .ftext strong { font-size: 13px; color: #172033; }
-    .feature-card .ftext small { color: #64748b; font-size: 11px; }
-    .feature-card .checkmark { margin-left: auto; color: #18794e; }
+    .feature-card .ftext strong { font-size: 13px; color: var(--text-primary, #172033); }
+    .feature-card .ftext small { color: var(--text-muted, #64748b); font-size: 11px; }
+    .feature-card .checkmark { margin-left: auto; color: var(--success, #18794e); }
 
     .actions-bar { display: flex; justify-content: flex-end; gap: 12px; margin-top: 26px; }
-    .credential-panel { margin-top: 20px; border: 1px solid #e2a93b; background: #fffaf0; border-radius: 10px; padding: 20px; }
-    .credential-panel h3 { margin: 0 0 8px; color: #b54708; }
-    .credential-panel .cred { font-family: 'Consolas', monospace; background: #fdecd6; border-radius: 6px; padding: 8px 12px; display: inline-block; margin: 4px 8px 4px 0; }
+    .credential-panel { margin-top: 20px; border: 1px solid var(--warning, #e2a93b); background: var(--badge-warning-bg, #fff3e0); border-radius: 10px; padding: 20px; }
+    .credential-panel h3 { margin: 0 0 8px; color: var(--badge-warning-text, #b54708); }
+    .credential-panel .cred { font-family: 'Consolas', monospace; background: var(--bg-hover, #fdecd6); border-radius: 6px; padding: 8px 12px; display: inline-block; margin: 4px 8px 4px 0; }
 
     @media (max-width: 800px) {
       .grid, .features-grid { grid-template-columns: 1fr; }
@@ -210,7 +210,7 @@ export class OrganizationFormComponent implements OnInit {
       city: null,
       country: null,
       timezone: 'UTC',
-      currency: 'USD',
+      currency: 'PKR',
       logoUrl: null,
       enabledFeatures: this.selectedFeatures,
       limits: null,

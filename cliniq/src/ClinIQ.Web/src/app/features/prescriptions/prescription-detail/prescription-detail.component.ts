@@ -272,9 +272,9 @@ interface PrescriptionItem {
     }
 
     .card {
-      background: white;
+      background: var(--bg-card, #fff);
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.1));
       padding: 1.5rem;
     }
 
@@ -309,7 +309,7 @@ interface PrescriptionItem {
     .meta {
       display: flex;
       gap: 1rem;
-      color: #666;
+      color: var(--text-muted, #666);
       font-size: 0.875rem;
       margin-bottom: 0.5rem;
     }
@@ -340,7 +340,7 @@ interface PrescriptionItem {
     }
 
     .status-badge.pending {
-      background: #fff3e0;
+      background: var(--status-warning-bg, #fff3e0);
       color: #e65100;
     }
 
@@ -350,7 +350,7 @@ interface PrescriptionItem {
 
     .info-section h4 {
       margin: 0 0 1rem;
-      color: #333;
+      color: var(--text-primary, #333);
       font-weight: 600;
     }
 
@@ -366,13 +366,13 @@ interface PrescriptionItem {
     }
 
     .info-item mat-icon {
-      color: #666;
+      color: var(--text-muted, #666);
     }
 
     .info-item label {
       display: block;
       font-size: 0.75rem;
-      color: #666;
+      color: var(--text-muted, #666);
     }
 
     .info-item span {
@@ -380,7 +380,7 @@ interface PrescriptionItem {
     }
 
     .diagnosis-text {
-      color: #333;
+      color: var(--text-primary, #333);
       line-height: 1.5;
     }
 
@@ -404,7 +404,7 @@ interface PrescriptionItem {
 
     .instruction-section p {
       margin: 0;
-      color: #333;
+      color: var(--text-primary, #333);
       line-height: 1.5;
     }
 
@@ -423,7 +423,7 @@ interface PrescriptionItem {
     }
 
     .generic-name {
-      color: #666;
+      color: var(--text-muted, #666);
       font-size: 0.85rem;
     }
 
@@ -483,7 +483,7 @@ interface PrescriptionItem {
     }
 
     .footer-item label {
-      color: #666;
+      color: var(--text-muted, #666);
     }
 
     .delete-action {

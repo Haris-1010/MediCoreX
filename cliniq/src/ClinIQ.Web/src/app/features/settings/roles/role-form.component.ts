@@ -74,27 +74,27 @@ import { ApiService } from '../../../core/services/api.service';
     </app-main-layout>
   `,
   styles: [`
-    .page-card { background: #fff; border: 1px solid rgba(0, 0, 0, 0.06); border-radius: 12px; padding: 1.5rem; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04); }
+    .page-card { background: var(--bg-card, #fff); border: 1px solid var(--border-color, rgba(0, 0, 0, 0.06)); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow-md, 0 8px 24px rgba(15, 23, 42, 0.04)); }
     .page-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
-    .page-header h2 { margin: 0; color: #1f2937; }
-    .page-header p { margin: 0.4rem 0 0; color: #6b7280; }
-    .form-container { background: white; padding: 24px; border-radius: 8px; }
+    .page-header h2 { margin: 0; color: var(--text-primary, #1f2937); }
+    .page-header p { margin: 0.4rem 0 0; color: var(--text-muted, #6b7280); }
+    .form-container { background: var(--bg-card, white); padding: 24px; border-radius: 8px; }
     .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #333; }
-    .form-control { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
-    .form-control:focus { border-color: #2196f3; outline: none; }
-    .full-access-card { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 1.25rem; margin-bottom: 1rem; color: #fff; background: #374151; border-radius: 6px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text-primary, #333); }
+    .form-control { width: 100%; padding: 10px; border: 1px solid var(--border-color, #d1d5db); border-radius: 8px; font-size: 14px; box-sizing: border-box; background: var(--bg-input, white); color: var(--text-primary, #333); }
+    .form-control:focus { border-color: var(--accent-primary, #2196f3); outline: none; }
+    .full-access-card { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 1.25rem; margin-bottom: 1rem; color: #fff; background: var(--bg-badge, #374151); border-radius: 6px; }
     .full-access-card div { display: flex; flex-direction: column; gap: 4px; }
     .full-access-card span { font-size: 12px; color: #e5e7eb; }
     .permissions-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-    .perm-group { overflow: hidden; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; }
-    .perm-header { display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; color: #fff; background: #374151; }
+    .perm-group { overflow: hidden; background: var(--bg-card, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 6px; }
+    .perm-header { display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; color: #fff; background: var(--bg-badge, #374151); }
     .perm-group h4 { margin: 0; font-size: 15px; color: #fff; }
-    .permission-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.65rem 1rem; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 13px; }
+    .permission-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border-color, #f1f5f9); cursor: pointer; font-size: 13px; }
     .permission-row:last-child { border-bottom: 0; }
-    .permission-row:hover { background: #f8fafc; }
-    .permission-row span { display: flex; flex-direction: column; gap: 2px; color: #111827; }
-    .permission-row small { color: #94a3b8; font-size: 10px; }
+    .permission-row:hover { background: var(--bg-hover, #f8fafc); }
+    .permission-row span { display: flex; flex-direction: column; gap: 2px; color: var(--text-primary, #111827); }
+    .permission-row small { color: var(--text-muted, #94a3b8); font-size: 10px; }
     .switch { position: relative; display: inline-block; flex: 0 0 auto; width: 43px; height: 24px; }
     .small-switch { width: 40px; height: 22px; }
     .switch input { width: 0; height: 0; opacity: 0; }
@@ -102,15 +102,15 @@ import { ApiService } from '../../../core/services/api.service';
     .slider::before { content: ''; position: absolute; width: 20px; height: 20px; left: 2px; top: 2px; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: .2s; }
     .switch input:checked + .slider { background: #8bc34a; }
     .switch input:checked + .slider::before { transform: translateX(19px); }
-    .permissions-state { padding: 12px; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 12px; }
-    .permissions-state.error { color: #b91c1c; background: #fef2f2; border-color: #fecaca; }
-    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #eee; }
+    .permissions-state { padding: 12px; color: var(--text-muted, #64748b); background: var(--bg-hover, #f8fafc); border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; margin-bottom: 12px; }
+    .permissions-state.error { color: var(--danger, #b91c1c); background: var(--badge-danger-bg, #fef2f2); border-color: var(--badge-danger-text, #fecaca); }
+    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color, #eee); }
     .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
-    .btn-primary { background: #2196f3; color: white; }
-    .btn-primary:hover { background: #1976d2; }
-    .btn-primary:disabled { background: #ccc; }
-    .btn-outline { background: white; border: 1px solid #ddd; color: #333; }
-    .btn-outline:hover { background: #f5f5f5; }
+    .btn-primary { background: var(--accent-primary, #2196f3); color: white; }
+    .btn-primary:hover { background: var(--accent-primary, #1976d2); }
+    .btn-primary:disabled { background: var(--text-muted, #ccc); }
+    .btn-outline { background: var(--bg-card, white); border: 1px solid var(--border-color, #ddd); color: var(--text-primary, #333); }
+    .btn-outline:hover { background: var(--bg-hover, #f5f5f5); }
     @media (max-width: 800px) { .permissions-grid { grid-template-columns: 1fr; } }
   `]
 })

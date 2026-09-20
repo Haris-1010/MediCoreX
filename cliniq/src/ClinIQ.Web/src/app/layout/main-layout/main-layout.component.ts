@@ -31,8 +31,8 @@ import { LayoutService } from '../../core/services/layout.service';
       left: 0;
       bottom: 0;
       width: 260px;
-      background: #ffffff;
-      border-right: 1px solid #e0e0e0;
+      background: var(--bg-card, #ffffff);
+      border-right: 1px solid var(--border-color, #e0e0e0);
       transition: width 0.2s ease;
       overflow: visible;
       z-index: 900;
@@ -57,7 +57,7 @@ import { LayoutService } from '../../core/services/layout.service';
     .main-content {
       flex: 1;
       padding: 1.5rem;
-      background: #f5f5f5;
+      background: var(--bg-primary, #f5f5f5);
       margin-top: 64px;
     }
 

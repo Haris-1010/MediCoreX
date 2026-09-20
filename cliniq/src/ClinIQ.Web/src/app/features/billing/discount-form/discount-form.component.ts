@@ -62,11 +62,11 @@ import { NotificationService } from '../../../core/services/notification.service
     </app-main-layout>
   `,
   styles: [`
-    .card { background: white; padding: 1.5rem; border-radius: 8px; max-width: 600px; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; max-width: 600px; }
     .full-width { width: 100%; }
     .type-value-row { display: flex; gap: 1rem; }
     .type-value-row mat-form-field { flex: 1; }
-    .preview { padding: 1rem; background: #f5f5f5; border-radius: 8px; margin: 1rem 0; font-size: 0.9rem; }
+    .preview { padding: 1rem; background: var(--bg-hover, #f5f5f5); border-radius: 8px; margin: 1rem 0; font-size: 0.9rem; }
     .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; }
   `]
 })

@@ -29,7 +29,7 @@ export interface PrintDialogData {
         <app-nursing-print [data]="data.data" [branding]="data.branding"></app-nursing-print>
       </ng-container>
     </div>
-    <div class="dialog-actions no-print" style="position: sticky; bottom: 0; background: white; padding: 16px; border-top: 1px solid #e0e0e0; display: flex; justify-content: flex-end; gap: 8px;">
+    <div class="dialog-actions no-print" style="position: sticky; bottom: 0; background: var(--bg-card, #fff); padding: 16px; border-top: 1px solid var(--border-color, #e0e0e0); display: flex; justify-content: flex-end; gap: 8px;">
       <button mat-stroked-button (click)="onCancel()"><mat-icon>close</mat-icon> Cancel</button>
       <button mat-raised-button color="primary" (click)="onPrint()"><mat-icon>print</mat-icon> Print</button>
     </div>

@@ -34,6 +34,16 @@ import { AuthService } from '../../../core/services/auth.service';
             <mat-icon>shield_person</mat-icon>
             Platform Admins
           </a>
+          <a routerLink="/platform/roles"
+             routerLinkActive="active">
+            <mat-icon>admin_panel_settings</mat-icon>
+            Roles
+          </a>
+          <a routerLink="/platform/user-permissions"
+             routerLinkActive="active">
+            <mat-icon>lock</mat-icon>
+            User Permissions
+          </a>
         </nav>
 
         <div class="sidebar-foot">
@@ -59,8 +69,8 @@ import { AuthService } from '../../../core/services/auth.service';
     </div>
   `,
   styles: [`
-    .platform-shell { display: flex; min-height: 100vh; background: #f4f7f7; color: #172033; }
-    .platform-sidebar { width: 260px; background: #102b35; color: white; display: flex; flex-direction: column; flex-shrink: 0; }
+    .platform-shell { display: flex; min-height: 100vh; background: var(--bg-primary, #f4f7f7); color: var(--text-primary, #172033); }
+    .platform-sidebar { width: 260px; background: var(--bg-sidebar, #102b35); color: white; display: flex; flex-direction: column; flex-shrink: 0; }
     .brand { display: flex; align-items: center; gap: 12px; padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,.1); }
     .brand mat-icon { color: #f0b35b; font-size: 30px; width: 30px; height: 30px; }
     .brand strong { display: block; font-size: 16px; }
@@ -73,7 +83,7 @@ import { AuthService } from '../../../core/services/auth.service';
     .current-user { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,.7); font-size: 13px; }
     .sidebar-foot button { color: white; border-color: rgba(255,255,255,.3); }
     .platform-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-    .topbar { background: #102b35; color: white; padding: 22px 5vw; }
+    .topbar { background: var(--bg-sidebar, #102b35); color: white; padding: 22px 5vw; }
     .topbar h1 { margin: 0; font-size: 24px; }
     .content { width: min(1180px, 94vw); margin: 28px auto; }
     @media (max-width: 760px) {
@@ -99,6 +109,8 @@ export class PlatformLayoutComponent implements OnInit {
       if (url.includes('organizations/new')) this.pageTitle = 'New Organization';
       else if (url.includes('organizations/')) this.pageTitle = 'Organization Details';
       else if (url.includes('admins')) this.pageTitle = 'Platform Admins';
+      else if (url.includes('roles')) this.pageTitle = 'Role Management';
+      else if (url.includes('user-permissions')) this.pageTitle = 'User Permissions';
       else this.pageTitle = 'Organizations';
     });
   }

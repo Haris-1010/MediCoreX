@@ -63,7 +63,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     </app-main-layout>
   `,
   styles: [`
-    .card { background: white; padding: 1.5rem; border-radius: 8px; margin-top: 1rem; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; margin-top: 1rem; }
     .create-form { margin-bottom: 1rem; }
     .create-form h3 { margin: 0 0 1rem; }
     .form-row { display: flex; gap: 1rem; flex-wrap: wrap; }
@@ -71,18 +71,18 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .full-width { width: 100%; }
     .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 0.5rem; }
     .loading-container { display: flex; justify-content: center; padding: 3rem; }
-    .empty-state { text-align: center; padding: 3rem; color: #666; }
+    .empty-state { text-align: center; padding: 3rem; color: var(--text-muted, #666); }
     .empty-icon { font-size: 48px; width: 48px; height: 48px; color: #ccc; }
     .building-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
-    .building-card { background: #fafafa; border: 1px solid #eee; border-radius: 10px; padding: 1.25rem; }
+    .building-card { background: var(--bg-hover, #f5f5f5); border: 1px solid var(--border-color, #e0e0e0); border-radius: 10px; padding: 1.25rem; }
     .building-header { display: flex; align-items: center; gap: 0.75rem; }
     .building-avatar { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #0d47a1, #1565c0); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; }
     .building-info { flex: 1; }
     .building-info h3 { margin: 0; font-size: 1rem; }
-    .building-info span { font-size: 0.75rem; color: #999; }
-    .desc { font-size: 0.85rem; color: #666; margin: 0.75rem 0; }
+    .building-info span { font-size: 0.75rem; color: var(--text-muted, #999); }
+    .desc { font-size: 0.85rem; color: var(--text-muted, #666); margin: 0.75rem 0; }
     .building-stats { display: flex; gap: 1.5rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #eee; }
-    .building-stats span { display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; color: #666; }
+    .building-stats span { display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; color: var(--text-muted, #666); }
     .building-stats mat-icon { font-size: 16px; width: 16px; height: 16px; }
   `]
 })

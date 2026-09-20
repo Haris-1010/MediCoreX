@@ -24,7 +24,7 @@ import { Component, Input } from '@angular/core';
     }
 
     .badge-warning {
-      background: #fff3e0;
+      background: var(--status-warning-bg, #fff3e0);
       color: #ef6c00;
     }
 
@@ -39,8 +39,8 @@ import { Component, Input } from '@angular/core';
     }
 
     .badge-secondary {
-      background: #f5f5f5;
-      color: #666;
+      background: var(--bg-hover, #f5f5f5);
+      color: var(--text-muted, #666);
     }
 
     .badge-primary {

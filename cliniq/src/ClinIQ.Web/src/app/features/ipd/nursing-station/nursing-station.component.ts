@@ -367,28 +367,28 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     </ng-template>
   `,
   styles: [`
-    .selector-bar { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; background: white; padding: 1rem 1.5rem; border-radius: 8px; }
+    .selector-bar { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; background: var(--bg-card, #fff); padding: 1rem 1.5rem; border-radius: 8px; }
     .selector-bar mat-form-field { flex: 0 0 250px; }
     .patient-chip { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #e8eaf6; border-radius: 999px; font-size: 0.875rem; }
     .patient-chip mat-icon { font-size: 18px; width: 18px; height: 18px; color: #3f51b5; }
 
     .ward-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
-    .patient-card { background: white; border-radius: 8px; padding: 1.25rem; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
-    .patient-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); transform: translateY(-2px); border-color: #3f51b5; }
+    .patient-card { background: var(--bg-card, #fff); border-radius: 8px; padding: 1.25rem; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
+    .patient-card:hover { box-shadow: var(--shadow-lg, 0 4px 16px rgba(0,0,0,0.12)); transform: translateY(-2px); border-color: #3f51b5; }
     .pc-header { display: flex; gap: 1rem; align-items: center; margin-bottom: 0.75rem; }
     .pc-avatar { width: 48px; height: 48px; border-radius: 50%; background: #3f51b5; color: white; display: grid; place-items: center; font-weight: 700; }
-    .pc-info strong { display: block; } .pc-info span { font-size: 0.8rem; color: #666; }
+    .pc-info strong { display: block; }     .pc-info span { font-size: 0.8rem; color: var(--text-muted, #666); }
     .pc-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: #888; }
     .pc-meta span { display: flex; align-items: center; gap: 0.25rem; }
     .pc-meta mat-icon { font-size: 14px; width: 14px; height: 14px; }
 
-    .empty-state { text-align: center; padding: 4rem 2rem; color: #aaa; }
+    .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-muted, #aaa); }
     .empty-state mat-icon { font-size: 64px; width: 64px; height: 64px; margin-bottom: 1rem; }
-    .empty-state h3 { margin: 0 0 0.5rem; color: #666; }
+    .empty-state h3 { margin: 0 0 0.5rem; color: var(--text-muted, #666); }
     .empty-state.small { padding: 2rem; }
     .empty-state.small mat-icon { font-size: 48px; width: 48px; height: 48px; }
 
-    .nursing-tabs { background: white; border-radius: 8px; }
+    .nursing-tabs { background: var(--bg-card, #fff); border-radius: 8px; }
     .nursing-tabs ::ng-deep .mat-mdc-tab mat-icon { margin-right: 0.5rem; }
     .tab-content { padding: 1.5rem; }
     .tab-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
@@ -397,14 +397,14 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .vitals-cards { display: flex; flex-direction: column; gap: 1rem; }
     .vital-card { background: #f8f9fa; border-radius: 8px; padding: 1rem 1.25rem; border-left: 4px solid #3f51b5; }
     .vc-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-    .vc-time { font-size: 0.8rem; color: #666; font-weight: 500; }
+    .vc-time { font-size: 0.8rem; color: var(--text-muted, #666); font-weight: 500; }
     .vc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; }
     .vc-item { display: flex; flex-direction: column; }
-    .vc-label { font-size: 0.7rem; text-transform: uppercase; color: #888; letter-spacing: 0.05em; }
-    .vc-value { font-size: 1.1rem; font-weight: 700; color: #333; }
-    .vc-value small { font-size: 0.75rem; font-weight: 400; color: #888; }
+    .vc-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted, #888); letter-spacing: 0.05em; }
+    .vc-value { font-size: 1.1rem; font-weight: 700; color: var(--text-primary, #333); }
+    .vc-value small { font-size: 0.75rem; font-weight: 400; color: var(--text-muted, #888); }
     .vc-item.abnormal .vc-value { color: #e53935; }
-    .vc-notes { margin-top: 0.5rem; font-size: 0.85rem; color: #666; display: flex; align-items: center; gap: 0.25rem; }
+    .vc-notes { margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted, #666); display: flex; align-items: center; gap: 0.25rem; }
     .vc-notes mat-icon { font-size: 14px; width: 14px; height: 14px; }
 
     .med-list { display: flex; flex-direction: column; gap: 0.75rem; }
@@ -412,10 +412,10 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .med-card.dispensed { border-left-color: #4caf50; opacity: 0.7; }
     .med-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
     .med-name { font-size: 1rem; font-weight: 600; }
-    .med-details { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem; color: #666; }
+    .med-details { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--text-muted, #666); }
     .med-details span { display: flex; align-items: center; gap: 0.25rem; }
     .med-details mat-icon, .med-instructions mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .med-instructions { margin-top: 0.5rem; font-size: 0.85rem; color: #888; display: flex; align-items: center; gap: 0.25rem; }
+    .med-instructions { margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted, #888); display: flex; align-items: center; gap: 0.25rem; }
     .med-timing { display: flex; gap: 0.4rem; margin-top: 0.4rem; }
     .timing-chip { background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 500; }
 
@@ -423,11 +423,11 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .note-card { background: #f8f9fa; border-radius: 8px; padding: 1rem 1.25rem; border-left: 4px solid #9c27b0; }
     .note-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
     .note-shift { background: #9c27b0; color: white; padding: 2px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
-    .note-date { font-size: 0.8rem; color: #888; flex: 1; }
+    .note-date { font-size: 0.8rem; color: var(--text-muted, #888); flex: 1; }
     .note-body { margin-bottom: 0.5rem; }
     .note-row { margin-bottom: 0.5rem; }
-    .note-row label { font-size: 0.75rem; text-transform: uppercase; color: #888; display: block; margin-bottom: 0.15rem; }
-    .note-row span { font-size: 0.9rem; color: #333; }
+    .note-row label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted, #888); display: block; margin-bottom: 0.15rem; }
+    .note-row span { font-size: 0.9rem; color: var(--text-primary, #333); }
     .note-obs { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.8rem; color: #666; }
     .note-obs span { display: flex; align-items: center; gap: 0.25rem; }
     .note-obs mat-icon { font-size: 14px; width: 14px; height: 14px; }

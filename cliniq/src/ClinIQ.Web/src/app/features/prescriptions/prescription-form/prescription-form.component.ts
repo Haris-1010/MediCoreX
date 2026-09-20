@@ -162,13 +162,13 @@ import { PrescriptionItemDialogComponent } from '../item-dialog/prescription-ite
     .full-width { width: 100%; grid-column: 1 / -1; }
 
     .medicines-section {
-      margin-bottom: 1.5rem; border: 1px solid #e0e0e0; border-radius: 8px; padding: 1rem;
+      margin-bottom: 1.5rem; border: 1px solid var(--border-color, #e0e0e0); border-radius: 8px; padding: 1rem;
     }
     .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
     .section-header h3 { margin: 0; color: #1a237e; }
 
     .medicine-card {
-      border: 1px solid #e8e8e8; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; background: #fafafa;
+      border: 1px solid var(--border-color, #e0e0e0); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; background: var(--bg-hover, #f5f5f5);
     }
     .medicine-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
     .medicine-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
@@ -177,20 +177,20 @@ import { PrescriptionItemDialogComponent } from '../item-dialog/prescription-ite
 
     .med-option { display: flex; flex-direction: column; }
     .med-option strong { font-size: 0.9rem; }
-    .med-meta { font-size: 0.75rem; color: #666; margin-top: 2px; }
+    .med-meta { font-size: 0.75rem; color: var(--text-muted, #666); margin-top: 2px; }
 
     .timing-checkboxes { display: flex; align-items: center; gap: 0.75rem; grid-column: 1 / -1; }
-    .timing-checkboxes mat-label { font-size: 0.85rem; color: #666; }
+    .timing-checkboxes mat-label { font-size: 0.85rem; color: var(--text-muted, #666); }
 
     .empty-medicines { text-align: center; padding: 2rem; color: #999; }
-    .form-actions { display: flex; justify-content: flex-end; gap: 1rem; padding-top: 1rem; border-top: 1px solid #e0e0e0; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color, #e0e0e0); }
 
     @media (max-width: 768px) {
       .form-grid { grid-template-columns: 1fr; }
       .col-4, .col-6 { grid-column: span 1; }
     }
 
-    :host ::ng-deep .mat-mdc-autocomplete-panel { max-height: 300px !important; border-radius: 8px !important; border: 1px solid #c5cae9 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel { max-height: 300px !important; border-radius: 8px !important; border: 1px solid var(--border-color, #c5cae9) !important; box-shadow: var(--shadow-md, 0 4px 16px rgba(0,0,0,0.12)) !important; }
     :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option { padding: 10px 16px !important; line-height: 1.4 !important; }
     :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option:hover { background-color: #e8eaf6 !important; }
   `]
