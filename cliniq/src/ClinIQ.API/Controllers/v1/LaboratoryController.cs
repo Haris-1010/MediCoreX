@@ -1,8 +1,9 @@
 using System.Text.Json;
+using ClinIQ.API.Authorization;
+using ClinIQ.Domain.Entities.Clinical;
 using ClinIQ.Domain.Enums;
 using ClinIQ.Infrastructure.Data;
 using ClinIQ.Shared.Models;
-using ClinIQ.API.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,13 +22,160 @@ public class LaboratoryController : ControllerBase
         _context = context;
     }
 
-    [HttpGet("orders")]
+    [HttpGet("services")]
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryView)]
+    public async Task<IActionResult> GetLabServices()
+    {
+        var services = await _context.Services
+            .Where(s => s.Type == ServiceType.Laboratory && s.IsActive && !s.IsDeleted)
+            .OrderBy(s => s.DisplayOrder)
+            .ThenBy(s => s.Name)
+            .Select(s => new
+            {
+                s.Id,
+                s.Name,
+                s.Code,
+                s.Price,
+                s.Description,
+                s.DepartmentId,
+                s.DurationMinutes,
+                HasParameters = _context.LabTestParameters.Any(p => p.ServiceId == s.Id && p.IsActive)
+            })
+            .ToListAsync();
+
+        return Ok(Result<object>.Success(services));
+    }
+
+    #region Test Parameters
+
+    [HttpGet("services/{serviceId:guid}/parameters")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryView)]
+    public async Task<IActionResult> GetTestParameters(Guid serviceId)
+    {
+        var parameters = await _context.LabTestParameters
+            .Where(p => p.ServiceId == serviceId && p.IsActive)
+            .OrderBy(p => p.DisplayOrder)
+            .ThenBy(p => p.Name)
+            .Select(p => new
+            {
+                p.Id,
+                p.ServiceId,
+                p.Name,
+                p.Code,
+                p.DisplayOrder,
+                p.Unit,
+                p.DataType,
+                p.NormalRange,
+                p.MinValue,
+                p.MaxValue,
+                p.MaleRange,
+                p.FemaleRange,
+                p.ChildRange,
+                p.CriticalLow,
+                p.CriticalHigh,
+                p.Description,
+                p.Options,
+                p.IsActive
+            })
+            .ToListAsync();
+
+        return Ok(Result<object>.Success(parameters));
+    }
+
+    [HttpPost("services/{serviceId:guid}/parameters")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryEdit)]
+    public async Task<IActionResult> CreateTestParameter(Guid serviceId, [FromBody] CreateTestParameterRequest request)
+    {
+        var service = await _context.Services.FirstOrDefaultAsync(s => s.Id == serviceId && s.Type == ServiceType.Laboratory && !s.IsDeleted);
+        if (service == null)
+            return NotFound(Result.Failure("Laboratory service not found"));
+
+        var maxOrder = await _context.LabTestParameters
+            .Where(p => p.ServiceId == serviceId && p.IsActive)
+            .MaxAsync(p => (int?)p.DisplayOrder) ?? 0;
+
+        var parameter = new Domain.Entities.Clinical.LabTestParameter
+        {
+            ServiceId = serviceId,
+            Name = request.Name,
+            Code = request.Code,
+            DisplayOrder = request.DisplayOrder > 0 ? request.DisplayOrder : maxOrder + 1,
+            Unit = request.Unit,
+            DataType = Enum.TryParse<TestParameterDataType>(request.DataType, true, out var dt) ? dt : TestParameterDataType.Numeric,
+            NormalRange = request.NormalRange,
+            MinValue = request.MinValue,
+            MaxValue = request.MaxValue,
+            MaleRange = request.MaleRange,
+            FemaleRange = request.FemaleRange,
+            ChildRange = request.ChildRange,
+            CriticalLow = request.CriticalLow,
+            CriticalHigh = request.CriticalHigh,
+            Description = request.Description,
+            Options = request.Options,
+            IsActive = true
+        };
+
+        _context.LabTestParameters.Add(parameter);
+        await _context.SaveChangesAsync();
+
+        return Ok(Result<object>.Success(new { parameter.Id }, "Parameter created"));
+    }
+
+    [HttpPut("parameters/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryEdit)]
+    public async Task<IActionResult> UpdateTestParameter(Guid id, [FromBody] CreateTestParameterRequest request)
+    {
+        var parameter = await _context.LabTestParameters.FirstOrDefaultAsync(p => p.Id == id);
+        if (parameter == null)
+            return NotFound(Result.Failure("Parameter not found"));
+
+        parameter.Name = request.Name;
+        parameter.Code = request.Code;
+        parameter.DisplayOrder = request.DisplayOrder;
+        parameter.Unit = request.Unit;
+        parameter.DataType = Enum.TryParse<TestParameterDataType>(request.DataType, true, out var dt) ? dt : TestParameterDataType.Numeric;
+        parameter.NormalRange = request.NormalRange;
+        parameter.MinValue = request.MinValue;
+        parameter.MaxValue = request.MaxValue;
+        parameter.MaleRange = request.MaleRange;
+        parameter.FemaleRange = request.FemaleRange;
+        parameter.ChildRange = request.ChildRange;
+        parameter.CriticalLow = request.CriticalLow;
+        parameter.CriticalHigh = request.CriticalHigh;
+        parameter.Description = request.Description;
+        parameter.Options = request.Options;
+
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Parameter updated"));
+    }
+
+    [HttpDelete("parameters/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryEdit)]
+    public async Task<IActionResult> DeleteTestParameter(Guid id)
+    {
+        var parameter = await _context.LabTestParameters.FirstOrDefaultAsync(p => p.Id == id);
+        if (parameter == null)
+            return NotFound(Result.Failure("Parameter not found"));
+
+        parameter.IsActive = false;
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Parameter deactivated"));
+    }
+
+    #endregion Test Parameters
+
+    #region Orders
+
+    [HttpGet("orders")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryOrdersView)]
     public async Task<IActionResult> GetOrders(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? searchTerm = null,
-        [FromQuery] string? status = null)
+        [FromQuery] string? status = null,
+        [FromQuery] string? priority = null,
+        [FromQuery] DateTime? dateFrom = null,
+        [FromQuery] DateTime? dateTo = null)
     {
         var query = _context.MedicalOrders
             .Where(o => o.OrderType == MedicalOrderType.Lab && !o.IsDeleted);
@@ -37,11 +185,17 @@ public class LaboratoryController : ControllerBase
             var term = searchTerm.ToLower();
             query = query.Where(o =>
                 o.OrderNumber.ToLower().Contains(term) ||
-                (o.Patient != null && (o.Patient.FirstName + " " + o.Patient.LastName).ToLower().Contains(term)));
+                (o.Patient != null && (o.Patient.FirstName + " " + o.Patient.LastName).ToLower().Contains(term)) ||
+                (o.Patient != null && o.Patient.MRN != null && o.Patient.MRN.ToLower().Contains(term)));
         }
 
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<MedicalOrderStatus>(status, true, out var s))
             query = query.Where(o => o.Status == s);
+
+        if (dateFrom.HasValue)
+            query = query.Where(o => o.OrderDate >= dateFrom.Value);
+        if (dateTo.HasValue)
+            query = query.Where(o => o.OrderDate <= dateTo.Value.AddDays(1));
 
         var totalCount = await query.CountAsync();
         var orders = await query
@@ -53,6 +207,7 @@ public class LaboratoryController : ControllerBase
                 o.Id,
                 o.OrderNumber,
                 PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
+                Mrn = o.Patient != null ? o.Patient.MRN : null,
                 o.PatientId,
                 o.OrderedById,
                 OrderedBy = _context.Users.Where(u => u.Id == o.OrderedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
@@ -61,9 +216,7 @@ public class LaboratoryController : ControllerBase
                 o.IsUrgent,
                 Priority = o.IsUrgent ? "Urgent" : "Routine",
                 o.ClinicalIndication,
-                Tests = ParseOrderItems(o.OrderItems),
-                TestCount = ParseOrderItems(o.OrderItems).Count,
-                o.Results,
+                TestCount = _context.LabOrderItems.Count(i => i.MedicalOrderId == o.Id),
                 o.CompletedAt
             })
             .ToListAsync();
@@ -72,7 +225,7 @@ public class LaboratoryController : ControllerBase
     }
 
     [HttpPost("orders")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryCreate)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryOrdersCreate)]
     public async Task<IActionResult> CreateOrder([FromBody] CreateLabOrderRequest request)
     {
         if (request.PatientId == Guid.Empty)
@@ -95,17 +248,42 @@ public class LaboratoryController : ControllerBase
             OrderType = MedicalOrderType.Lab,
             Status = MedicalOrderStatus.Ordered,
             OrderDate = DateTime.UtcNow,
-            Priority = request.Priority,
-            IsUrgent = request.IsUrgent,
-            OrderItems = request.Tests != null
-                ? JsonSerializer.Serialize(request.Tests)
-                : request.OrderItems,
+            IsUrgent = request.Priority?.ToLower() == "urgent" || request.Priority?.ToLower() == "stat",
             ClinicalIndication = request.ClinicalIndication,
             SpecialInstructions = request.SpecialInstructions,
             Notes = request.Notes
         };
 
         _context.MedicalOrders.Add(order);
+        await _context.SaveChangesAsync();
+
+        // Create order items from service selections
+        if (request.Items != null && request.Items.Count > 0)
+        {
+            foreach (var item in request.Items)
+            {
+                var service = await _context.Services.FirstOrDefaultAsync(s => s.Id == item.ServiceId && s.Type == ServiceType.Laboratory && s.IsActive && !s.IsDeleted);
+                if (service == null) continue;
+
+                var labItem = new Domain.Entities.Clinical.LabOrderItem
+                {
+                    MedicalOrderId = order.Id,
+                    ServiceId = service.Id,
+                    ServiceName = service.Name,
+                    ServiceCode = service.Code,
+                    UnitPrice = service.Price,
+                    Quantity = item.Quantity > 0 ? item.Quantity : 1,
+                    Discount = item.Discount,
+                    NetAmount = (service.Price * (item.Quantity > 0 ? item.Quantity : 1)) - item.Discount,
+                    SampleType = item.SampleType,
+                    Status = LabOrderItemStatus.SamplePending,
+                    Notes = item.Notes
+                };
+
+                _context.LabOrderItems.Add(labItem);
+            }
+        }
+
         await _context.SaveChangesAsync();
 
         return Ok(Result<object>.Success(new
@@ -116,7 +294,7 @@ public class LaboratoryController : ControllerBase
     }
 
     [HttpGet("orders/{id:guid}")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryView)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryOrdersView)]
     public async Task<IActionResult> GetOrder(Guid id)
     {
         var order = await _context.MedicalOrders
@@ -127,6 +305,9 @@ public class LaboratoryController : ControllerBase
                 o.OrderNumber,
                 PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
                 Mrn = o.Patient != null ? o.Patient.MRN : null,
+                PatientAge = o.Patient != null ? o.Patient.DateOfBirth : (DateTime?)null,
+                PatientGender = o.Patient != null ? o.Patient.Gender : null,
+                PatientPhone = o.Patient != null ? o.Patient.Phone : null,
                 o.PatientId,
                 o.OrderedById,
                 OrderedBy = _context.Users.Where(u => u.Id == o.OrderedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
@@ -136,24 +317,179 @@ public class LaboratoryController : ControllerBase
                 Priority = o.IsUrgent ? "Urgent" : "Routine",
                 o.ClinicalIndication,
                 o.SpecialInstructions,
-                Tests = ParseOrderItems(o.OrderItems),
-                Results = ParseResults(o.Results),
-                o.ResultNotes,
-                o.AbnormalFlags,
                 o.Notes,
                 o.CompletedAt,
-                o.IsBilled
+                o.IsBilled,
+                Items = _context.LabOrderItems
+                    .Where(i => i.MedicalOrderId == o.Id)
+                    .Select(i => new
+                    {
+                        i.Id,
+                        i.ServiceId,
+                        i.ServiceName,
+                        i.ServiceCode,
+                        i.UnitPrice,
+                        i.Quantity,
+                        i.Discount,
+                        i.NetAmount,
+                        i.SampleType,
+                        Status = i.Status.ToString(),
+                        i.SampleId,
+                        i.Container,
+                        i.SampleCollectedAt,
+                        SampleCollectedBy = _context.Users.Where(u => u.Id == i.SampleCollectedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                        i.ResultEnteredAt,
+                        ResultEnteredBy = _context.Users.Where(u => u.Id == i.ResultEnteredById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                        i.VerifiedAt,
+                        VerifiedBy = _context.Users.Where(u => u.Id == i.VerifiedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                        i.Notes,
+                        Parameters = _context.LabResultParameters
+                            .Where(r => r.LabOrderItemId == i.Id)
+                            .OrderBy(r => r.DisplayOrder)
+                            .Select(r => new
+                            {
+                                r.Id,
+                                r.ParameterId,
+                                r.ParameterName,
+                                r.ParameterCode,
+                                r.ResultValue,
+                                r.Unit,
+                                r.NormalRange,
+                                Flag = r.Flag.ToString(),
+                                DataType = r.DataType.ToString(),
+                                r.IsAbnormal,
+                                r.DisplayOrder
+                            })
+                            .ToList()
+                    })
+                    .ToList()
             })
             .FirstOrDefaultAsync();
 
         if (order == null)
             return NotFound(Result.Failure("Order not found"));
 
+        // Auto-populate LabResultParameters from LabTestParameters when empty
+        var itemIds = order.Items.Select(i => i.Id).ToList();
+        var existingParamCounts = await _context.LabResultParameters
+            .Where(r => itemIds.Contains(r.LabOrderItemId))
+            .GroupBy(r => r.LabOrderItemId)
+            .Select(g => new { OrderItemId = g.Key, Count = g.Count() })
+            .ToListAsync();
+        var existingParamMap = existingParamCounts.ToDictionary(x => x.OrderItemId, x => x.Count);
+
+        var serviceIds = order.Items.Select(i => i.ServiceId).ToList();
+        var testParams = await _context.LabTestParameters
+            .Where(p => serviceIds.Contains(p.ServiceId) && p.IsActive && !p.IsDeleted)
+            .OrderBy(p => p.DisplayOrder)
+            .ToListAsync();
+
+        var paramsByService = testParams.GroupBy(p => p.ServiceId).ToDictionary(g => g.Key, g => g.ToList());
+
+        bool hasChanges = false;
+        foreach (var item in order.Items)
+        {
+            if (existingParamMap.TryGetValue(item.Id, out var count) && count > 0)
+                continue;
+
+            if (!paramsByService.TryGetValue(item.ServiceId, out var templateParams))
+                continue;
+
+            foreach (var tp in templateParams)
+            {
+                _context.LabResultParameters.Add(new Domain.Entities.Clinical.LabResultParameter
+                {
+                    LabOrderItemId = item.Id,
+                    ParameterId = tp.Id,
+                    ParameterName = tp.Name,
+                    ParameterCode = tp.Code,
+                    Unit = tp.Unit,
+                    DataType = tp.DataType,
+                    NormalRange = tp.NormalRange,
+                    DisplayOrder = tp.DisplayOrder
+                });
+            }
+            hasChanges = true;
+        }
+
+        if (hasChanges)
+            await _context.SaveChangesAsync();
+
+        // Re-fetch order to include newly created parameters
+        order = await _context.MedicalOrders
+            .Where(o => o.Id == id && o.OrderType == MedicalOrderType.Lab && !o.IsDeleted)
+            .Select(o => new
+            {
+                o.Id,
+                o.OrderNumber,
+                PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
+                Mrn = o.Patient != null ? o.Patient.MRN : null,
+                PatientAge = o.Patient != null ? o.Patient.DateOfBirth : (DateTime?)null,
+                PatientGender = o.Patient != null ? o.Patient.Gender : null,
+                PatientPhone = o.Patient != null ? o.Patient.Phone : null,
+                o.PatientId,
+                o.OrderedById,
+                OrderedBy = _context.Users.Where(u => u.Id == o.OrderedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                o.OrderDate,
+                Status = o.Status.ToString(),
+                o.IsUrgent,
+                Priority = o.IsUrgent ? "Urgent" : "Routine",
+                o.ClinicalIndication,
+                o.SpecialInstructions,
+                o.Notes,
+                o.CompletedAt,
+                o.IsBilled,
+                Items = _context.LabOrderItems
+                    .Where(i => i.MedicalOrderId == o.Id)
+                    .Select(i => new
+                    {
+                        i.Id,
+                        i.ServiceId,
+                        i.ServiceName,
+                        i.ServiceCode,
+                        i.UnitPrice,
+                        i.Quantity,
+                        i.Discount,
+                        i.NetAmount,
+                        i.SampleType,
+                        Status = i.Status.ToString(),
+                        i.SampleId,
+                        i.Container,
+                        i.SampleCollectedAt,
+                        SampleCollectedBy = _context.Users.Where(u => u.Id == i.SampleCollectedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                        i.ResultEnteredAt,
+                        ResultEnteredBy = _context.Users.Where(u => u.Id == i.ResultEnteredById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                        i.VerifiedAt,
+                        VerifiedBy = _context.Users.Where(u => u.Id == i.VerifiedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                        i.Notes,
+                        Parameters = _context.LabResultParameters
+                            .Where(r => r.LabOrderItemId == i.Id)
+                            .OrderBy(r => r.DisplayOrder)
+                            .Select(r => new
+                            {
+                                r.Id,
+                                r.ParameterId,
+                                r.ParameterName,
+                                r.ParameterCode,
+                                r.ResultValue,
+                                r.Unit,
+                                r.NormalRange,
+                                Flag = r.Flag.ToString(),
+                                DataType = r.DataType.ToString(),
+                                r.IsAbnormal,
+                                r.DisplayOrder
+                            })
+                            .ToList()
+                    })
+                    .ToList()
+            })
+            .FirstOrDefaultAsync();
+        if (order == null)
+            return NotFound(Result.Failure("Order not found"));
+
         return Ok(Result<object>.Success(order));
     }
 
-    [HttpPut("orders/{id:guid}")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryEdit)]
     public async Task<IActionResult> UpdateOrder(Guid id, [FromBody] UpdateLabOrderRequest request)
     {
         var order = await _context.MedicalOrders.FirstOrDefaultAsync(o => o.Id == id && o.OrderType == MedicalOrderType.Lab && !o.IsDeleted);
@@ -165,122 +501,13 @@ public class LaboratoryController : ControllerBase
         if (request.ClinicalIndication != null) order.ClinicalIndication = request.ClinicalIndication;
         if (request.SpecialInstructions != null) order.SpecialInstructions = request.SpecialInstructions;
         if (request.Notes != null) order.Notes = request.Notes;
-        if (request.Comments != null) order.ResultNotes = request.Comments;
-        if (request.Tests != null) order.Results = JsonSerializer.Serialize(request.Tests);
 
         await _context.SaveChangesAsync();
         return Ok(Result.Success("Order updated"));
     }
 
-    [HttpPost("orders/{id:guid}/complete")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryManageResults)]
-    public async Task<IActionResult> CompleteOrder(Guid id, [FromBody] CompleteLabOrderRequest request)
-    {
-        var order = await _context.MedicalOrders.FirstOrDefaultAsync(o => o.Id == id && o.OrderType == MedicalOrderType.Lab && !o.IsDeleted);
-        if (order == null)
-            return NotFound(Result.Failure("Order not found"));
-
-        order.Status = MedicalOrderStatus.Completed;
-        order.Results = request.Tests != null
-            ? JsonSerializer.Serialize(request.Tests)
-            : request.Results;
-        order.ResultNotes = request.Comments ?? request.ResultNotes;
-        order.AbnormalFlags = request.AbnormalFlags;
-        order.CompletedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-        return Ok(Result.Success("Order completed"));
-    }
-
-    [HttpGet("results")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryView)]
-    public async Task<IActionResult> GetResults([FromQuery] Guid? patientId = null)
-    {
-        var query = _context.MedicalOrders
-            .Where(o => o.OrderType == MedicalOrderType.Lab && o.Status == MedicalOrderStatus.Completed && !o.IsDeleted);
-
-        if (patientId.HasValue)
-            query = query.Where(o => o.PatientId == patientId.Value);
-
-        var results = await query
-            .OrderByDescending(o => o.CompletedAt)
-            .Take(50)
-            .Select(o => new
-            {
-                o.Id,
-                o.OrderNumber,
-                PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
-                o.PatientId,
-                o.OrderDate,
-                o.CompletedAt,
-                Results = ParseResults(o.Results),
-                o.ResultNotes,
-                o.AbnormalFlags,
-                Tests = ParseOrderItems(o.OrderItems)
-            })
-            .ToListAsync();
-
-        return Ok(Result<object>.Success(results));
-    }
-
-    [HttpGet("stats")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryView)]
-    public async Task<IActionResult> GetStats()
-    {
-        var today = DateTime.UtcNow.Date;
-        var pendingOrders = await _context.MedicalOrders.CountAsync(o =>
-            o.OrderType == MedicalOrderType.Lab &&
-            (o.Status == MedicalOrderStatus.Ordered || o.Status == MedicalOrderStatus.InProgress) &&
-            !o.IsDeleted);
-        var completedToday = await _context.MedicalOrders.CountAsync(o =>
-            o.OrderType == MedicalOrderType.Lab &&
-            o.Status == MedicalOrderStatus.Completed &&
-            o.CompletedAt >= today && !o.IsDeleted);
-        var totalResults = await _context.MedicalOrders.CountAsync(o =>
-            o.OrderType == MedicalOrderType.Lab &&
-            o.Status == MedicalOrderStatus.Completed &&
-            !o.IsDeleted);
-
-        return Ok(Result<object>.Success(new
-        {
-            pendingOrders,
-            completedToday,
-            totalResults
-        }));
-    }
-
-    [HttpGet("pending")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryView)]
-    public async Task<IActionResult> GetPendingOrders()
-    {
-        var orders = await _context.MedicalOrders
-            .Where(o => o.OrderType == MedicalOrderType.Lab &&
-                (o.Status == MedicalOrderStatus.Ordered || o.Status == MedicalOrderStatus.InProgress) &&
-                !o.IsDeleted)
-            .OrderByDescending(o => o.OrderDate)
-            .Take(50)
-            .Select(o => new
-            {
-                o.Id,
-                o.OrderNumber,
-                PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
-                o.PatientId,
-                OrderedBy = _context.Users.Where(u => u.Id == o.OrderedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
-                o.OrderDate,
-                Status = o.Status.ToString(),
-                o.IsUrgent,
-                Priority = o.IsUrgent ? "Urgent" : "Routine",
-                Tests = ParseOrderItems(o.OrderItems),
-                TestCount = ParseOrderItems(o.OrderItems).Count,
-                o.ClinicalIndication
-            })
-            .ToListAsync();
-
-        return Ok(Result<object>.Success(orders));
-    }
-
     [HttpDelete("orders/{id:guid}")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryDelete)]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryOrdersDelete)]
     public async Task<IActionResult> DeleteOrder(Guid id)
     {
         var order = await _context.MedicalOrders.FirstOrDefaultAsync(o => o.Id == id && o.OrderType == MedicalOrderType.Lab && !o.IsDeleted);
@@ -292,216 +519,471 @@ public class LaboratoryController : ControllerBase
         return Ok(Result.Success("Lab order deleted successfully"));
     }
 
-    private static List<string> ParseOrderItems(string? orderItemsJson)
-    {
-        if (string.IsNullOrWhiteSpace(orderItemsJson))
-            return new List<string>();
+    #endregion Orders
 
-        try
-        {
-            return JsonSerializer.Deserialize<List<string>>(orderItemsJson) ?? new List<string>();
-        }
-        catch
-        {
-            return new List<string> { orderItemsJson };
-        }
+    #region Sample Collection
+
+    [HttpGet("sample-collection")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratorySample)]
+    public async Task<IActionResult> GetSampleCollectionOrders()
+    {
+        var orders = await _context.MedicalOrders
+            .Where(o => o.OrderType == MedicalOrderType.Lab &&
+                (o.Status == MedicalOrderStatus.Ordered || o.Status == MedicalOrderStatus.SamplePending) &&
+                !o.IsDeleted)
+            .OrderByDescending(o => o.OrderDate)
+            .Select(o => new
+            {
+                o.Id,
+                o.OrderNumber,
+                PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
+                Mrn = o.Patient != null ? o.Patient.MRN : null,
+                o.PatientId,
+                OrderedBy = _context.Users.Where(u => u.Id == o.OrderedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                o.OrderDate,
+                Status = o.Status.ToString(),
+                o.IsUrgent,
+                Priority = o.IsUrgent ? "Urgent" : "Routine",
+                Items = _context.LabOrderItems
+                    .Where(i => i.MedicalOrderId == o.Id && i.Status == LabOrderItemStatus.SamplePending)
+                    .Select(i => new
+                    {
+                        i.Id,
+                        i.ServiceName,
+                        i.SampleType,
+                        i.ServiceCode
+                    })
+                    .ToList(),
+                ItemCount = _context.LabOrderItems.Count(i => i.MedicalOrderId == o.Id && i.Status == LabOrderItemStatus.SamplePending)
+            })
+            .ToListAsync();
+
+        return Ok(Result<object>.Success(orders));
     }
 
-    private static object? ParseResults(string? resultsJson)
+    [HttpPost("orders/{id:guid}/collect-sample")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratorySample)]
+    public async Task<IActionResult> CollectSample(Guid id, [FromBody] CollectSampleRequest request)
     {
-        if (string.IsNullOrWhiteSpace(resultsJson))
-            return null;
+        var order = await _context.MedicalOrders.FirstOrDefaultAsync(o => o.Id == id && o.OrderType == MedicalOrderType.Lab && !o.IsDeleted);
+        if (order == null)
+            return NotFound(Result.Failure("Order not found"));
 
-        try
+        if (request.OrderItemIds == null || request.OrderItemIds.Count == 0)
+            return BadRequest(Result.Failure("No items selected for sample collection"));
+
+        foreach (var itemId in request.OrderItemIds)
         {
-            return JsonSerializer.Deserialize<object>(resultsJson);
+            var item = await _context.LabOrderItems.FirstOrDefaultAsync(i => i.Id == itemId && i.MedicalOrderId == id);
+            if (item == null) continue;
+
+            var sampleId = request.SampleId ?? GenerateSampleId();
+            item.Status = LabOrderItemStatus.SampleCollected;
+            item.SampleId = sampleId;
+            item.SampleType = request.SampleType ?? item.SampleType;
+            item.Container = request.Container;
+            item.SampleCollectedAt = request.CollectionTime ?? DateTime.UtcNow;
+            item.SampleCollectedById = request.CollectedById;
+            item.Notes = request.Notes;
         }
-        catch
+
+        // Update order status
+        var allItems = await _context.LabOrderItems.Where(i => i.MedicalOrderId == id).ToListAsync();
+        if (allItems.All(i => i.Status == LabOrderItemStatus.SampleCollected || i.Status == LabOrderItemStatus.Cancelled))
+            order.Status = MedicalOrderStatus.SampleCollected;
+        else
+            order.Status = MedicalOrderStatus.SamplePending;
+
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Sample collected successfully"));
+    }
+
+    [HttpPost("orders/{id:guid}/reject-sample")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratorySample)]
+    public async Task<IActionResult> RejectSample(Guid id, [FromBody] RejectSampleRequest request)
+    {
+        var order = await _context.MedicalOrders.FirstOrDefaultAsync(o => o.Id == id && o.OrderType == MedicalOrderType.Lab && !o.IsDeleted);
+        if (order == null)
+            return NotFound(Result.Failure("Order not found"));
+
+        foreach (var itemId in request.OrderItemIds)
         {
-            return resultsJson;
+            var item = await _context.LabOrderItems.FirstOrDefaultAsync(i => i.Id == itemId && i.MedicalOrderId == id);
+            if (item == null) continue;
+
+            item.Status = LabOrderItemStatus.Rejected;
+            item.Notes = request.Reason;
         }
+
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Sample rejected"));
     }
 
-    public class CreateLabOrderRequest
+    private string GenerateSampleId()
     {
-        public Guid PatientId { get; set; }
-        public Guid? DoctorId { get; set; }
-        public Guid? OrderedById { get; set; }
-        public Guid? VisitId { get; set; }
-        public Guid? AdmissionId { get; set; }
-        public int? Priority { get; set; }
-        public bool IsUrgent { get; set; }
-        public string? OrderItems { get; set; }
-        public List<object>? Tests { get; set; }
-        public string? ClinicalIndication { get; set; }
-        public string? SpecialInstructions { get; set; }
-        public string? Notes { get; set; }
+        return $"SMP-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper()}";
     }
 
-    public class UpdateLabOrderRequest
+    #endregion Sample Collection
+
+    #region Result Entry
+
+    [HttpGet("result-entry")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryResultsEdit)]
+    public async Task<IActionResult> GetResultEntryOrders()
     {
-        public string? Status { get; set; }
-        public string? ClinicalIndication { get; set; }
-        public string? SpecialInstructions { get; set; }
-        public string? Notes { get; set; }
-        public string? Comments { get; set; }
-        public List<object>? Tests { get; set; }
+        var orders = await _context.MedicalOrders
+            .Where(o => o.OrderType == MedicalOrderType.Lab &&
+                (o.Status == MedicalOrderStatus.SampleCollected || o.Status == MedicalOrderStatus.Processing) &&
+                !o.IsDeleted)
+            .OrderByDescending(o => o.OrderDate)
+            .Select(o => new
+            {
+                o.Id,
+                o.OrderNumber,
+                PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
+                Mrn = o.Patient != null ? o.Patient.MRN : null,
+                o.PatientId,
+                OrderedBy = _context.Users.Where(u => u.Id == o.OrderedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                o.OrderDate,
+                Status = o.Status.ToString(),
+                o.IsUrgent,
+                Priority = o.IsUrgent ? "Urgent" : "Routine",
+                Items = _context.LabOrderItems
+                    .Where(i => i.MedicalOrderId == o.Id && (i.Status == LabOrderItemStatus.SampleCollected || i.Status == LabOrderItemStatus.Processing))
+                    .Select(i => new
+                    {
+                        i.Id,
+                        i.ServiceName,
+                        i.SampleType,
+                        i.SampleId,
+                        i.ServiceCode
+                    })
+                    .ToList(),
+                ItemCount = _context.LabOrderItems.Count(i => i.MedicalOrderId == o.Id && (i.Status == LabOrderItemStatus.SampleCollected || i.Status == LabOrderItemStatus.Processing))
+            })
+            .ToListAsync();
+
+        return Ok(Result<object>.Success(orders));
     }
 
-    [HttpGet("test-catalog")]
-    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryView)]
-    public IActionResult GetTestCatalog()
+    [HttpPost("orders/{id:guid}/save-results")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryResultsEdit)]
+    public async Task<IActionResult> SaveResults(Guid id, [FromBody] SaveResultsRequest request)
     {
-        var catalog = new[]
+        var order = await _context.MedicalOrders.FirstOrDefaultAsync(o => o.Id == id && o.OrderType == MedicalOrderType.Lab && !o.IsDeleted);
+        if (order == null)
+            return NotFound(Result.Failure("Order not found"));
+
+        if (request.Items == null || request.Items.Count == 0)
+            return BadRequest(Result.Failure("No results provided"));
+
+        foreach (var itemResult in request.Items)
         {
-            new { name = "Complete Blood Count (CBC)", code = "CBC", price = 500m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "WBC", unit = "x10³/µL", normalRange = "4.0-11.0" },
-                    new { name = "RBC", unit = "x10⁶/µL", normalRange = "4.5-5.5" },
-                    new { name = "Hemoglobin", unit = "g/dL", normalRange = "12.0-16.0" },
-                    new { name = "Hematocrit", unit = "%", normalRange = "36.0-46.0" },
-                    new { name = "MCV", unit = "fL", normalRange = "80.0-100.0" },
-                    new { name = "MCH", unit = "pg", normalRange = "27.0-31.0" },
-                    new { name = "MCHC", unit = "g/dL", normalRange = "32.0-36.0" },
-                    new { name = "Platelet Count", unit = "x10³/µL", normalRange = "150.0-400.0" },
-                    new { name = "RDW", unit = "%", normalRange = "11.5-14.5" },
-                    new { name = "Neutrophils", unit = "%", normalRange = "40.0-70.0" },
-                    new { name = "Lymphocytes", unit = "%", normalRange = "20.0-40.0" },
-                    new { name = "Monocytes", unit = "%", normalRange = "2.0-8.0" },
-                    new { name = "Eosinophils", unit = "%", normalRange = "1.0-4.0" },
-                    new { name = "Basophils", unit = "%", normalRange = "0.0-1.0" }
-                }
-            },
-            new { name = "Lipid Panel", code = "LIPID", price = 800m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "Total Cholesterol", unit = "mg/dL", normalRange = "<200" },
-                    new { name = "Triglycerides", unit = "mg/dL", normalRange = "<150" },
-                    new { name = "HDL Cholesterol", unit = "mg/dL", normalRange = ">40" },
-                    new { name = "LDL Cholesterol", unit = "mg/dL", normalRange = "<100" },
-                    new { name = "VLDL", unit = "mg/dL", normalRange = "5-40" }
-                }
-            },
-            new { name = "Blood Sugar (Fasting)", code = "BSF", price = 200m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "Fasting Blood Sugar", unit = "mg/dL", normalRange = "70-100" }
-                }
-            },
-            new { name = "Blood Sugar (Random)", code = "BSR", price = 200m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "Random Blood Sugar", unit = "mg/dL", normalRange = "70-140" }
-                }
-            },
-            new { name = "HbA1c (Glycated Hemoglobin)", code = "HBA1C", price = 1200m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "HbA1c", unit = "%", normalRange = "4.0-5.6" }
-                }
-            },
-            new { name = "Liver Function Test (LFT)", code = "LFT", price = 1500m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "SGOT (AST)", unit = "U/L", normalRange = "5-40" },
-                    new { name = "SGPT (ALT)", unit = "U/L", normalRange = "7-56" },
-                    new { name = "Alkaline Phosphatase", unit = "U/L", normalRange = "44-147" },
-                    new { name = "Total Bilirubin", unit = "mg/dL", normalRange = "0.1-1.2" },
-                    new { name = "Direct Bilirubin", unit = "mg/dL", normalRange = "0.0-0.3" },
-                    new { name = "Total Protein", unit = "g/dL", normalRange = "6.0-8.3" },
-                    new { name = "Albumin", unit = "g/dL", normalRange = "3.5-5.0" }
-                }
-            },
-            new { name = "Kidney Function Test (KFT)", code = "KFT", price = 1200m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "Urea", unit = "mg/dL", normalRange = "7-20" },
-                    new { name = "Creatinine", unit = "mg/dL", normalRange = "0.6-1.2" },
-                    new { name = "Uric Acid", unit = "mg/dL", normalRange = "2.5-7.0" },
-                    new { name = "BUN", unit = "mg/dL", normalRange = "7-20" }
-                }
-            },
-            new { name = "Urinalysis (Routine)", code = "URA", price = 300m, sampleType = "Urine",
-                parameters = new[] {
-                    new { name = "Color", unit = "", normalRange = "Yellow" },
-                    new { name = "Appearance", unit = "", normalRange = "Clear" },
-                    new { name = "Specific Gravity", unit = "", normalRange = "1.005-1.030" },
-                    new { name = "pH", unit = "", normalRange = "4.5-8.0" },
-                    new { name = "Glucose", unit = "", normalRange = "Negative" },
-                    new { name = "Protein", unit = "", normalRange = "Negative" },
-                    new { name = "Ketones", unit = "", normalRange = "Negative" },
-                    new { name = "Blood", unit = "", normalRange = "Negative" },
-                    new { name = "WBC", unit = "/HPF", normalRange = "0-5" },
-                    new { name = "RBC", unit = "/HPF", normalRange = "0-2" }
-                }
-            },
-            new { name = "Thyroid Function Test (TFT)", code = "TFT", price = 2000m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "TSH", unit = "µIU/mL", normalRange = "0.4-4.0" },
-                    new { name = "Free T4", unit = "ng/dL", normalRange = "0.8-1.8" },
-                    new { name = "Free T3", unit = "pg/mL", normalRange = "2.3-4.2" }
-                }
-            },
-            new { name = "Coagulation Profile", code = "COAG", price = 1000m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "PT", unit = "seconds", normalRange = "11-13.5" },
-                    new { name = "INR", unit = "", normalRange = "0.8-1.2" },
-                    new { name = "aPTT", unit = "seconds", normalRange = "25-35" },
-                    new { name = "Fibrinogen", unit = "mg/dL", normalRange = "200-400" }
-                }
-            },
-            new { name = "Iron Studies", code = "IRON", price = 1500m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "Serum Iron", unit = "µg/dL", normalRange = "60-170" },
-                    new { name = "Ferritin", unit = "ng/mL", normalRange = "12-150" },
-                    new { name = "TIBC", unit = "µg/dL", normalRange = "250-370" },
-                    new { name = "Transferrin Saturation", unit = "%", normalRange = "20-50" }
-                }
-            },
-            new { name = "ESR", code = "ESR", price = 200m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "ESR", unit = "mm/hr", normalRange = "0-20" }
-                }
-            },
-            new { name = "CRP (C-Reactive Protein)", code = "CRP", price = 600m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "CRP", unit = "mg/L", normalRange = "<10" }
-                }
-            },
-            new { name = "Vitamin D", code = "VITD", price = 2500m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "25-OH Vitamin D", unit = "ng/mL", normalRange = "30-100" }
-                }
-            },
-            new { name = "Vitamin B12", code = "B12", price = 1500m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "Vitamin B12", unit = "pg/mL", normalRange = "200-900" }
-                }
-            },
-            new { name = "Hepatitis B Profile", code = "HEPB", price = 2000m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "HBsAg", unit = "", normalRange = "Non-Reactive" },
-                    new { name = "Anti-HBs", unit = "mIU/mL", normalRange = "<10" },
-                    new { name = "HBeAg", unit = "", normalRange = "Non-Reactive" },
-                    new { name = "Anti-HBe", unit = "", normalRange = "Non-Reactive" },
-                    new { name = "Anti-HBc IgM", unit = "", normalRange = "Non-Reactive" }
-                }
-            },
-            new { name = "HIV Screening", code = "HIV", price = 500m, sampleType = "Blood",
-                parameters = new[] {
-                    new { name = "HIV 1/2 Ag/Ab", unit = "", normalRange = "Non-Reactive" }
-                }
-            },
-            new { name = "Stool Routine", code = "STOOL", price = 300m, sampleType = "Stool",
-                parameters = new[] {
-                    new { name = "Color", unit = "", normalRange = "Brown" },
-                    new { name = "Consistency", unit = "", normalRange = "Soft" },
-                    new { name = "Occult Blood", unit = "", normalRange = "Negative" },
-                    new { name = "Ova & Parasites", unit = "", normalRange = "Not Seen" },
-                    new { name = "WBC", unit = "/HPF", normalRange = "0-5" }
+            var item = await _context.LabOrderItems.FirstOrDefaultAsync(i => i.Id == itemResult.OrderItemId && i.MedicalOrderId == id);
+            if (item == null) continue;
+
+            var existingResults = await _context.LabResultParameters.Where(r => r.LabOrderItemId == item.Id).ToListAsync();
+            _context.LabResultParameters.RemoveRange(existingResults);
+
+            if (itemResult.Parameters != null)
+            {
+                foreach (var param in itemResult.Parameters)
+                {
+                    var resultParam = new Domain.Entities.Clinical.LabResultParameter
+                    {
+                        LabOrderItemId = item.Id,
+                        ParameterId = param.ParameterId,
+                        ParameterName = param.ParameterName,
+                        ParameterCode = param.ParameterCode,
+                        ResultValue = param.ResultValue,
+                        Unit = param.Unit,
+                        NormalRange = param.NormalRange,
+                        DataType = Enum.TryParse<TestParameterDataType>(param.DataType, true, out var dt) ? dt : TestParameterDataType.Numeric,
+                        DisplayOrder = param.DisplayOrder,
+                        EnteredById = request.EnteredById,
+                        EnteredAt = DateTime.UtcNow
+                    };
+
+                    resultParam.Flag = CalculateFlag(param.ResultValue, param.NormalRange, resultParam.DataType);
+                    resultParam.IsAbnormal = resultParam.Flag != TestResultFlag.Normal && resultParam.Flag != TestResultFlag.None;
+
+                    _context.LabResultParameters.Add(resultParam);
                 }
             }
-        };
 
-        return Ok(Result<object>.Success(catalog));
+            item.Status = LabOrderItemStatus.ResultEntered;
+            item.ResultEnteredAt = DateTime.UtcNow;
+            item.ResultEnteredById = request.EnteredById;
+        }
+
+        order.Status = MedicalOrderStatus.ResultEntered;
+        order.CompletedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Results saved successfully"));
     }
 
-    [HttpGet("orders/{id:guid}/print")]
+    private TestResultFlag CalculateFlag(string? value, string? normalRange, TestParameterDataType dataType)
+    {
+        if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(normalRange) || dataType != TestParameterDataType.Numeric)
+            return TestResultFlag.None;
+
+        if (!decimal.TryParse(value, out var numVal))
+            return TestResultFlag.None;
+
+        var range = normalRange.Replace("<", "").Replace(">", "").Replace(" ", "");
+        var parts = range.Split('-');
+        if (parts.Length == 2 && decimal.TryParse(parts[0], out var min) && decimal.TryParse(parts[1], out var max))
+        {
+            if (numVal < min) return TestResultFlag.Low;
+            if (numVal > max) return TestResultFlag.High;
+            return TestResultFlag.Normal;
+        }
+
+        return TestResultFlag.None;
+    }
+
+    #endregion Result Entry
+
+    #region Verification
+
+    [HttpGet("verification")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryVerify)]
+    public async Task<IActionResult> GetVerificationOrders()
+    {
+        var orders = await _context.MedicalOrders
+            .Where(o => o.OrderType == MedicalOrderType.Lab &&
+                (o.Status == MedicalOrderStatus.ResultEntered) &&
+                !o.IsDeleted)
+            .OrderByDescending(o => o.OrderDate)
+            .Select(o => new
+            {
+                o.Id,
+                o.OrderNumber,
+                PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
+                Mrn = o.Patient != null ? o.Patient.MRN : null,
+                o.PatientId,
+                OrderedBy = _context.Users.Where(u => u.Id == o.OrderedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                o.OrderDate,
+                Status = o.Status.ToString(),
+                o.IsUrgent,
+                Priority = o.IsUrgent ? "Urgent" : "Routine",
+                ResultEnteredBy = _context.LabOrderItems
+                    .Where(i => i.MedicalOrderId == o.Id && i.ResultEnteredById != null)
+                    .Select(i => _context.Users.Where(u => u.Id == i.ResultEnteredById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault())
+                    .FirstOrDefault(),
+                ResultEnteredAt = _context.LabOrderItems
+                    .Where(i => i.MedicalOrderId == o.Id && i.ResultEnteredAt != null)
+                    .Max(i => i.ResultEnteredAt),
+                Items = _context.LabOrderItems
+                    .Where(i => i.MedicalOrderId == o.Id && i.Status == LabOrderItemStatus.ResultEntered)
+                    .Select(i => new
+                    {
+                        i.Id,
+                        i.ServiceName,
+                        i.ServiceCode
+                    })
+                    .ToList()
+            })
+            .ToListAsync();
+
+        return Ok(Result<object>.Success(orders));
+    }
+
+    [HttpPost("orders/{id:guid}/verify")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryVerify)]
+    public async Task<IActionResult> VerifyOrder(Guid id, [FromBody] VerifyOrderRequest request)
+    {
+        var order = await _context.MedicalOrders.FirstOrDefaultAsync(o => o.Id == id && o.OrderType == MedicalOrderType.Lab && !o.IsDeleted);
+        if (order == null)
+            return NotFound(Result.Failure("Order not found"));
+
+        if (request.Verified)
+        {
+            // Verify all result-entered items
+            var items = await _context.LabOrderItems.Where(i => i.MedicalOrderId == id && i.Status == LabOrderItemStatus.ResultEntered).ToListAsync();
+            foreach (var item in items)
+            {
+                item.Status = LabOrderItemStatus.Verified;
+                item.VerifiedAt = DateTime.UtcNow;
+                item.VerifiedById = request.VerifiedById;
+
+                // Update result parameters verification
+                var results = await _context.LabResultParameters.Where(r => r.LabOrderItemId == item.Id).ToListAsync();
+                foreach (var r in results)
+                {
+                    r.VerifiedById = request.VerifiedById;
+                    r.VerifiedAt = DateTime.UtcNow;
+                }
+            }
+
+            order.Status = MedicalOrderStatus.Verified;
+        }
+        else
+        {
+            // Return for correction
+            var items = await _context.LabOrderItems.Where(i => i.MedicalOrderId == id && i.Status == LabOrderItemStatus.ResultEntered).ToListAsync();
+            foreach (var item in items)
+            {
+                item.Status = LabOrderItemStatus.SampleCollected;
+                item.ResultEnteredAt = null;
+                item.ResultEnteredById = null;
+            }
+
+            order.Status = MedicalOrderStatus.Processing;
+            if (!string.IsNullOrEmpty(request.ReturnReason))
+            {
+                order.Notes = (order.Notes ?? "") + $"\n[Returned] {request.ReturnReason}";
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success(request.Verified ? "Order verified" : "Order returned for correction"));
+    }
+
+    #endregion Verification
+
+    #region Reports
+
+    [HttpGet("reports")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryReports)]
+    public async Task<IActionResult> GetReports(
+        [FromQuery] Guid? patientId = null,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? searchTerm = null)
+    {
+        var query = _context.MedicalOrders
+            .Where(o => o.OrderType == MedicalOrderType.Lab &&
+                (o.Status == MedicalOrderStatus.Verified || o.Status == MedicalOrderStatus.Completed) &&
+                !o.IsDeleted);
+
+        if (patientId.HasValue)
+            query = query.Where(o => o.PatientId == patientId.Value);
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.ToLower();
+            query = query.Where(o =>
+                o.OrderNumber.ToLower().Contains(term) ||
+                (o.Patient != null && (o.Patient.FirstName + " " + o.Patient.LastName).ToLower().Contains(term)));
+        }
+
+        var totalCount = await query.CountAsync();
+        var reports = await query
+            .OrderByDescending(o => o.CompletedAt ?? o.OrderDate)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(o => new
+            {
+                o.Id,
+                o.OrderNumber,
+                PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
+                Mrn = o.Patient != null ? o.Patient.MRN : null,
+                o.PatientId,
+                OrderedBy = _context.Users.Where(u => u.Id == o.OrderedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                o.OrderDate,
+                o.CompletedAt,
+                Status = o.Status.ToString(),
+                Items = _context.LabOrderItems
+                    .Where(i => i.MedicalOrderId == o.Id)
+                    .Select(i => new
+                    {
+                        i.ServiceName,
+                        i.ServiceCode,
+                        HasAbnormal = _context.LabResultParameters.Any(r => r.LabOrderItemId == i.Id && r.IsAbnormal)
+                    })
+                    .ToList()
+            })
+            .ToListAsync();
+
+        return Ok(Result<object>.Success(new { items = reports, totalCount, pageNumber, pageSize }));
+    }
+
+    [HttpGet("reports/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryReports)]
+    public async Task<IActionResult> GetReport(Guid id)
+    {
+        // Reuse GetOrder logic
+        return await GetOrder(id);
+    }
+
+    #endregion Reports
+
+    #region Stats
+
+    [HttpGet("stats")]
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryView)]
+    public async Task<IActionResult> GetStats()
+    {
+        var today = DateTime.UtcNow.Date;
+        var todaysOrders = await _context.MedicalOrders.CountAsync(o =>
+            o.OrderType == MedicalOrderType.Lab && o.OrderDate.Date == today && !o.IsDeleted);
+        var pendingSamples = await _context.MedicalOrders.CountAsync(o =>
+            o.OrderType == MedicalOrderType.Lab &&
+            (o.Status == MedicalOrderStatus.Ordered || o.Status == MedicalOrderStatus.SamplePending) &&
+            !o.IsDeleted);
+        var collectedSamples = await _context.MedicalOrders.CountAsync(o =>
+            o.OrderType == MedicalOrderType.Lab &&
+            (o.Status == MedicalOrderStatus.SampleCollected || o.Status == MedicalOrderStatus.Processing) &&
+            !o.IsDeleted);
+        var processing = await _context.MedicalOrders.CountAsync(o =>
+            o.OrderType == MedicalOrderType.Lab && o.Status == MedicalOrderStatus.Processing && !o.IsDeleted);
+        var pendingResults = await _context.MedicalOrders.CountAsync(o =>
+            o.OrderType == MedicalOrderType.Lab && o.Status == MedicalOrderStatus.SampleCollected && !o.IsDeleted);
+        var pendingVerification = await _context.MedicalOrders.CountAsync(o =>
+            o.OrderType == MedicalOrderType.Lab && o.Status == MedicalOrderStatus.ResultEntered && !o.IsDeleted);
+        var completedToday = await _context.MedicalOrders.CountAsync(o =>
+            o.OrderType == MedicalOrderType.Lab &&
+            (o.Status == MedicalOrderStatus.Verified || o.Status == MedicalOrderStatus.Completed) &&
+            o.CompletedAt >= today && !o.IsDeleted);
+        var cancelledToday = await _context.MedicalOrders.CountAsync(o =>
+            o.OrderType == MedicalOrderType.Lab && o.Status == MedicalOrderStatus.Cancelled &&
+            o.OrderDate.Date == today && !o.IsDeleted);
+
+        return Ok(Result<object>.Success(new
+        {
+            todaysOrders,
+            pendingSamples,
+            collectedSamples,
+            processing,
+            pendingResults,
+            pendingVerification,
+            completedToday,
+            cancelledToday
+        }));
+    }
+
+    [HttpGet("recent-orders")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryView)]
+    public async Task<IActionResult> GetRecentOrders()
+    {
+        var orders = await _context.MedicalOrders
+            .Where(o => o.OrderType == MedicalOrderType.Lab && !o.IsDeleted)
+            .OrderByDescending(o => o.OrderDate)
+            .Take(10)
+            .Select(o => new
+            {
+                o.Id,
+                o.OrderNumber,
+                PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
+                o.OrderDate,
+                Status = o.Status.ToString(),
+                o.IsUrgent,
+                TestCount = _context.LabOrderItems.Count(i => i.MedicalOrderId == o.Id)
+            })
+            .ToListAsync();
+
+        return Ok(Result<object>.Success(orders));
+    }
+
+    #endregion Stats
+
+    #region Print
+
+    [HttpGet("orders/{id:guid}/print")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryPrint)]
     public async Task<IActionResult> GetOrderForPrint(Guid id)
     {
         var order = await _context.MedicalOrders
@@ -521,12 +1003,46 @@ public class LaboratoryController : ControllerBase
                 Status = o.Status.ToString(),
                 o.ClinicalIndication,
                 o.SpecialInstructions,
-                Tests = ParseOrderItems(o.OrderItems),
-                Results = ParseResults(o.Results),
-                o.ResultNotes,
-                o.AbnormalFlags,
+                o.Notes,
+                Items = _context.LabOrderItems
+                    .Where(i => i.MedicalOrderId == o.Id)
+                    .Select(i => new
+                    {
+                        i.Id,
+                        i.ServiceName,
+                        i.ServiceCode,
+                        i.SampleType,
+                        i.UnitPrice,
+                        i.NetAmount,
+                        Status = i.Status.ToString(),
+                        i.SampleId,
+                        Parameters = _context.LabResultParameters
+                            .Where(r => r.LabOrderItemId == i.Id)
+                            .OrderBy(r => r.DisplayOrder)
+                            .Select(r => new
+                            {
+                                r.ParameterName,
+                                r.ResultValue,
+                                r.Unit,
+                                r.NormalRange,
+                                Flag = r.Flag.ToString(),
+                                r.IsAbnormal
+                            })
+                            .ToList()
+                    })
+                    .ToList(),
                 o.CompletedAt,
-                o.Notes
+                VerifiedBy = _context.LabOrderItems
+                    .Where(i => i.MedicalOrderId == o.Id && i.VerifiedById != null)
+                    .Select(i => _context.Users.Where(u => u.Id == i.VerifiedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault())
+                    .FirstOrDefault(),
+                VerifiedAt = _context.LabOrderItems
+                    .Where(i => i.MedicalOrderId == o.Id && i.VerifiedAt != null)
+                    .Max(i => i.VerifiedAt),
+                EnteredBy = _context.LabOrderItems
+                    .Where(i => i.MedicalOrderId == o.Id && i.ResultEnteredById != null)
+                    .Select(i => _context.Users.Where(u => u.Id == i.ResultEnteredById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault())
+                    .FirstOrDefault()
             })
             .FirstOrDefaultAsync();
 
@@ -536,12 +1052,170 @@ public class LaboratoryController : ControllerBase
         return Ok(Result<object>.Success(order));
     }
 
-    public class CompleteLabOrderRequest
+    [HttpGet("orders/{id:guid}/sample-label")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryPrint)]
+    public async Task<IActionResult> GetSampleLabel(Guid id)
     {
-        public string? Results { get; set; }
-        public List<object>? Tests { get; set; }
-        public string? Comments { get; set; }
-        public string? ResultNotes { get; set; }
-        public string? AbnormalFlags { get; set; }
+        var items = await _context.LabOrderItems
+            .Where(i => i.MedicalOrderId == id && i.Status == LabOrderItemStatus.SampleCollected)
+            .Select(i => new
+            {
+                i.Id,
+                i.SampleId,
+                i.SampleType,
+                i.Container,
+                i.SampleCollectedAt,
+                SampleCollectedBy = _context.Users.Where(u => u.Id == i.SampleCollectedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                i.ServiceName,
+                OrderNumber = i.MedicalOrder.OrderNumber,
+                PatientName = i.MedicalOrder.Patient != null ? i.MedicalOrder.Patient.FirstName + " " + i.MedicalOrder.Patient.LastName : null,
+                Mrn = i.MedicalOrder.Patient != null ? i.MedicalOrder.Patient.MRN : null
+            })
+            .ToListAsync();
+
+        if (items.Count == 0)
+            return NotFound(Result.Failure("No collected samples found"));
+
+        return Ok(Result<object>.Success(items));
+    }
+
+    [HttpGet("orders/{id:guid}/receipt")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryPrint)]
+    public async Task<IActionResult> GetOrderReceipt(Guid id)
+    {
+        var order = await _context.MedicalOrders
+            .Where(o => o.Id == id && o.OrderType == MedicalOrderType.Lab && !o.IsDeleted)
+            .Select(o => new
+            {
+                o.Id,
+                o.OrderNumber,
+                PatientName = o.Patient != null ? o.Patient.FirstName + " " + o.Patient.LastName : null,
+                Mrn = o.Patient != null ? o.Patient.MRN : null,
+                o.PatientId,
+                OrderedBy = _context.Users.Where(u => u.Id == o.OrderedById).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                o.OrderDate,
+                Priority = o.IsUrgent ? "Urgent" : "Routine",
+                o.ClinicalIndication,
+                o.SpecialInstructions,
+                Items = _context.LabOrderItems
+                    .Where(i => i.MedicalOrderId == o.Id)
+                    .Select(i => new
+                    {
+                        i.ServiceName,
+                        i.ServiceCode,
+                        i.UnitPrice,
+                        i.Quantity,
+                        i.Discount,
+                        i.NetAmount
+                    })
+                    .ToList(),
+                TotalAmount = _context.LabOrderItems.Where(i => i.MedicalOrderId == o.Id).Sum(i => i.NetAmount)
+            })
+            .FirstOrDefaultAsync();
+
+        if (order == null)
+            return NotFound(Result.Failure("Order not found"));
+
+        return Ok(Result<object>.Success(order));
+    }
+
+    #endregion Print
+
+    public class CreateLabOrderRequest
+    {
+        public Guid PatientId { get; set; }
+        public Guid? DoctorId { get; set; }
+        public Guid? OrderedById { get; set; }
+        public Guid? VisitId { get; set; }
+        public Guid? AdmissionId { get; set; }
+        public string? Priority { get; set; }
+        public string? ClinicalIndication { get; set; }
+        public string? SpecialInstructions { get; set; }
+        public string? Notes { get; set; }
+        public List<LabOrderItemRequest>? Items { get; set; }
+    }
+
+    public class LabOrderItemRequest
+    {
+        public Guid ServiceId { get; set; }
+        public int Quantity { get; set; } = 1;
+        public decimal Discount { get; set; }
+        public string? SampleType { get; set; }
+        public string? Notes { get; set; }
+    }
+
+    public class UpdateLabOrderRequest
+    {
+        public string? Status { get; set; }
+        public string? ClinicalIndication { get; set; }
+        public string? SpecialInstructions { get; set; }
+        public string? Notes { get; set; }
+    }
+
+    public class CollectSampleRequest
+    {
+        public List<Guid>? OrderItemIds { get; set; }
+        public string? SampleId { get; set; }
+        public string? SampleType { get; set; }
+        public string? Container { get; set; }
+        public DateTime? CollectionTime { get; set; }
+        public Guid? CollectedById { get; set; }
+        public string? Notes { get; set; }
+    }
+
+    public class RejectSampleRequest
+    {
+        public List<Guid> OrderItemIds { get; set; } = new();
+        public string? Reason { get; set; }
+    }
+
+    public class SaveResultsRequest
+    {
+        public Guid? EnteredById { get; set; }
+        public List<ItemResultRequest>? Items { get; set; }
+    }
+
+    public class ItemResultRequest
+    {
+        public Guid OrderItemId { get; set; }
+        public List<ParameterResultRequest>? Parameters { get; set; }
+    }
+
+    public class ParameterResultRequest
+    {
+        public Guid? ParameterId { get; set; }
+        public string ParameterName { get; set; } = string.Empty;
+        public string? ParameterCode { get; set; }
+        public string? ResultValue { get; set; }
+        public string? Unit { get; set; }
+        public string? NormalRange { get; set; }
+        public string? DataType { get; set; }
+        public int DisplayOrder { get; set; }
+    }
+
+    public class VerifyOrderRequest
+    {
+        public bool Verified { get; set; }
+        public Guid? VerifiedById { get; set; }
+        public string? ReturnReason { get; set; }
+    }
+
+    public class CreateTestParameterRequest
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Code { get; set; }
+        public int DisplayOrder { get; set; }
+        public string? Unit { get; set; }
+        public string? DataType { get; set; }
+        public string? NormalRange { get; set; }
+        public decimal? MinValue { get; set; }
+        public decimal? MaxValue { get; set; }
+        public string? MaleRange { get; set; }
+        public string? FemaleRange { get; set; }
+        public string? ChildRange { get; set; }
+        public decimal? CriticalLow { get; set; }
+        public decimal? CriticalHigh { get; set; }
+        public string? Description { get; set; }
+        public string? Options { get; set; }
     }
 }

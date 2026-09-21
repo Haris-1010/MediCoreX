@@ -63,12 +63,16 @@ import { PrintBrandHeaderComponent } from '../../../shared/components/print-bran
         </div>
       </div>
 
-      <!-- Test Results Table -->
-      <div class="results-section" *ngIf="testResults.length > 0">
+      <!-- Test Results -->
+      <div class="results-section" *ngIf="order.items && order.items.length > 0">
         <h2>Test Results</h2>
-        <div class="test-block" *ngFor="let test of testResults">
-          <h3 class="test-name">{{ test.testName }}</h3>
-          <table class="results-table" *ngIf="test.parameters && test.parameters.length > 0">
+        <div class="test-block" *ngFor="let item of order.items">
+          <h3 class="test-name">{{ item.serviceName }}</h3>
+          <div class="sample-info" *ngIf="item.sampleId || item.sampleType">
+            <span *ngIf="item.sampleType">Sample: {{ item.sampleType }}</span>
+            <span *ngIf="item.sampleId"> | Sample ID: {{ item.sampleId }}</span>
+          </div>
+          <table class="results-table" *ngIf="item.parameters && item.parameters.length > 0">
             <thead>
               <tr>
                 <th>Parameter</th>
@@ -79,52 +83,56 @@ import { PrintBrandHeaderComponent } from '../../../shared/components/print-bran
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let param of test.parameters">
-                <td>{{ param.name }}</td>
-                <td [class.abnormal]="isAbnormal(param)"><strong>{{ param.value || '-' }}</strong></td>
+              <tr *ngFor="let param of item.parameters">
+                <td>{{ param.parameterName }}</td>
+                <td [class.abnormal]="param.isAbnormal"><strong>{{ param.resultValue || '-' }}</strong></td>
                 <td>{{ param.unit }}</td>
                 <td>{{ param.normalRange }}</td>
-                <td><span *ngIf="isAbnormal(param)" class="flag abnormal">H/L</span></td>
+                <td><span *ngIf="param.flag && param.flag !== 'Normal' && param.flag !== 'None'" class="flag abnormal">{{ param.flag }}</span></td>
               </tr>
             </tbody>
           </table>
-          <div class="simple-result" *ngIf="!test.parameters || test.parameters.length === 0">
-            <p><strong>Result:</strong> {{ test.simpleResult || 'Pending' }}</p>
+          <div class="simple-result" *ngIf="!item.parameters || item.parameters.length === 0">
+            <p><strong>Result:</strong> {{ item.simpleResult || 'Pending' }}</p>
           </div>
         </div>
       </div>
 
-      <!-- No Results Message -->
-      <div class="no-results" *ngIf="testResults.length === 0">
+      <div class="no-results" *ngIf="!order.items || order.items.length === 0">
         <p>Results are pending or not yet entered.</p>
       </div>
 
-      <div class="notes" *ngIf="order.resultNotes || order.specialInstructions">
+      <div class="notes" *ngIf="order.specialInstructions || order.notes">
         <div *ngIf="order.specialInstructions">
           <h4>Special Instructions</h4>
           <p>{{ order.specialInstructions }}</p>
         </div>
-        <div *ngIf="order.resultNotes">
+        <div *ngIf="order.notes">
           <h4>Comments</h4>
-          <p>{{ order.resultNotes }}</p>
+          <p>{{ order.notes }}</p>
         </div>
-      </div>
-
-      <div class="abnormal-summary" *ngIf="order.abnormalFlags">
-        <h4>Abnormal Flags</h4>
-        <p class="abnormal-text">{{ order.abnormalFlags }}</p>
       </div>
 
       <div class="signature-section">
         <div class="signature-block">
           <div class="signature-line"></div>
-          <p>Lab Technician</p>
+          <p>{{ order.enteredBy || 'Lab Technician' }}</p>
+          <p class="sig-label">Result Entered By</p>
+        </div>
+        <div class="signature-block" *ngIf="order.verifiedBy">
+          <div class="signature-line"></div>
+          <p>{{ order.verifiedBy }}</p>
+          <p class="sig-label">Verified By</p>
         </div>
         <div class="signature-block" *ngIf="order.orderedBy">
           <div class="signature-line"></div>
           <p>Dr. {{ order.orderedBy }}</p>
           <p class="sig-label">Ordering Physician</p>
         </div>
+      </div>
+
+      <div class="footer-note">
+        <p>This is a computer-generated laboratory report.</p>
       </div>
 
       <div class="print-actions no-print">
@@ -152,7 +160,8 @@ import { PrintBrandHeaderComponent } from '../../../shared/components/print-bran
     .results-section { margin-bottom: 1.5rem; }
     .results-section h2 { color: #1a237e; font-size: 1.1rem; margin: 0 0 1rem; border-bottom: 2px solid #1a237e; padding-bottom: 0.5rem; }
     .test-block { margin-bottom: 1.5rem; }
-    .test-name { color: var(--accent-primary, #3f51b5); font-size: 0.95rem; margin: 0 0 0.5rem; }
+    .test-name { color: var(--accent-primary, #3f51b5); font-size: 0.95rem; margin: 0 0 0.25rem; }
+    .sample-info { font-size: 0.75rem; color: var(--text-secondary, #666); margin-bottom: 0.5rem; }
     .results-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     .results-table th { background: #1a237e; color: white; padding: 6px 10px; text-align: left; font-size: 0.8rem; }
     .results-table td { padding: 6px 10px; border-bottom: 1px solid #eee; }
@@ -164,14 +173,13 @@ import { PrintBrandHeaderComponent } from '../../../shared/components/print-bran
     .notes { margin-bottom: 1.5rem; }
     .notes h4 { margin: 0 0 0.25rem; color: #1a237e; font-size: 0.9rem; }
     .notes p { margin: 0 0 0.75rem; font-size: 0.85rem; }
-    .abnormal-summary { background: #fff3e0; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #ff9800; }
-    .abnormal-summary h4 { margin: 0 0 0.25rem; color: #e65100; font-size: 0.9rem; }
-    .abnormal-text { margin: 0; font-size: 0.85rem; color: #bf360c; }
     .signature-section { display: flex; justify-content: space-between; margin-top: 3rem; }
     .signature-block { text-align: center; }
     .signature-line { width: 200px; border-top: 1px solid #333; margin-bottom: 0.25rem; }
     .signature-block p { margin: 0; font-size: 0.85rem; font-weight: 500; }
     .sig-label { font-size: 0.75rem; color: var(--text-secondary, #666); font-weight: normal !important; }
+    .footer-note { text-align: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee; }
+    .footer-note p { margin: 0; font-size: 0.8rem; color: var(--text-secondary, #666); font-style: italic; }
     .print-actions { text-align: center; margin-top: 2rem; }
     .loading-container { display: flex; justify-content: center; padding: 4rem; }
     @media print {
@@ -183,7 +191,6 @@ import { PrintBrandHeaderComponent } from '../../../shared/components/print-bran
 })
 export class LabPrintComponent implements OnInit {
   order: any = null;
-  testResults: any[] = [];
   branding: any = null;
 
   constructor(
@@ -196,35 +203,11 @@ export class LabPrintComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.api.get<any>(`v1/laboratory/orders/${id}/print`).subscribe({
-        next: (data) => {
-          this.order = data;
-          this.testResults = this.parseTests(data.tests || data.Tests);
-        },
+        next: (data) => this.order = data,
         error: () => {}
       });
     }
     this.tenantService.loadTenant().subscribe(tenant => this.branding = tenant);
-  }
-
-  private parseTests(raw: any): any[] {
-    if (!raw) return [];
-    if (Array.isArray(raw)) return raw;
-    if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return []; } }
-    return [];
-  }
-
-  isAbnormal(param: any): boolean {
-    if (!param.value || !param.normalRange) return false;
-    const val = parseFloat(param.value);
-    if (isNaN(val)) return false;
-    const range = param.normalRange.replace(/[<>]/g, '');
-    const parts = range.split('-');
-    if (parts.length === 2) {
-      const min = parseFloat(parts[0]);
-      const max = parseFloat(parts[1]);
-      if (!isNaN(min) && !isNaN(max)) return val < min || val > max;
-    }
-    return false;
   }
 
   print() { window.print(); }

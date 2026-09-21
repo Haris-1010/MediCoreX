@@ -59,52 +59,79 @@ import { PrintBrandHeaderComponent } from '../../../shared/components/print-bran
         </div>
       </div>
 
-      <div class="study-info">
-        <div class="study-row" *ngIf="report.modality">
-          <span class="label">Modality:</span>
-          <span class="value">{{ report.modality }}</span>
+      <!-- Investigation Items -->
+      <div class="investigation-section" *ngFor="let item of report.items">
+        <div class="study-info">
+          <h2>{{ item.serviceName }}</h2>
+          <div class="study-row" *ngIf="item.modality"><span class="label">Modality:</span><span class="value">{{ item.modality }}</span></div>
+          <div class="study-row" *ngIf="item.bodyPart"><span class="label">Body Part:</span><span class="value">{{ item.bodyPart }}</span></div>
         </div>
-        <div class="study-row" *ngIf="report.bodyPart">
-          <span class="label">Body Part:</span>
-          <span class="value">{{ report.bodyPart }}</span>
+
+        <div class="section" *ngIf="report.clinicalIndication">
+          <h3>Clinical Indication</h3>
+          <p>{{ report.clinicalIndication }}</p>
         </div>
-        <div class="study-row" *ngIf="report.clinicalIndication">
-          <span class="label">Clinical Indication:</span>
-          <span class="value">{{ report.clinicalIndication }}</span>
+
+        <div class="section" *ngIf="item.technique">
+          <h3>Technique</h3>
+          <p>{{ item.technique }}</p>
         </div>
-        <div class="study-row" *ngIf="report.specialInstructions">
-          <span class="label">Special Instructions:</span>
-          <span class="value">{{ report.specialInstructions }}</span>
+
+        <div class="section">
+          <h3>Findings</h3>
+          <p class="findings-text">{{ item.findings || 'No findings recorded.' }}</p>
+        </div>
+
+        <div class="section" *ngIf="item.impression">
+          <h3>Impression</h3>
+          <p>{{ item.impression }}</p>
+        </div>
+
+        <div class="section" *ngIf="item.recommendations">
+          <h3>Recommendations</h3>
+          <p>{{ item.recommendations }}</p>
+        </div>
+
+        <div class="abnormal-section" *ngIf="item.isAbnormal">
+          <p class="abnormal-text">Abnormal Findings</p>
         </div>
       </div>
 
-      <div class="findings-section">
-        <h2>Findings</h2>
-        <div class="findings-content">
-          <p>{{ report.results || 'No findings recorded.' }}</p>
+      <div class="no-items" *ngIf="!report.items || report.items.length === 0">
+        <div class="section" *ngIf="report.clinicalIndication">
+          <h3>Clinical Indication</h3>
+          <p>{{ report.clinicalIndication }}</p>
         </div>
-      </div>
-
-      <div class="notes-section" *ngIf="report.resultNotes">
-        <h2>Impression / Notes</h2>
-        <p>{{ report.resultNotes }}</p>
-      </div>
-
-      <div class="abnormal-section" *ngIf="report.abnormalFlags">
-        <h4>Abnormal Findings</h4>
-        <p class="abnormal-text">{{ report.abnormalFlags }}</p>
+        <div class="section" *ngIf="report.results">
+          <h3>Findings</h3>
+          <p>{{ report.results }}</p>
+        </div>
+        <div class="section" *ngIf="report.resultNotes">
+          <h3>Impression / Notes</h3>
+          <p>{{ report.resultNotes }}</p>
+        </div>
       </div>
 
       <div class="signature-section">
-        <div class="signature-block">
+        <div class="signature-block" *ngIf="report.reportedBy">
           <div class="signature-line"></div>
-          <p>Reporting Radiologist</p>
+          <p>{{ report.reportedBy }}</p>
+          <p class="sig-label">Reporting Radiologist</p>
+        </div>
+        <div class="signature-block" *ngIf="report.verifiedBy">
+          <div class="signature-line"></div>
+          <p>{{ report.verifiedBy }}</p>
+          <p class="sig-label">Verified By</p>
         </div>
         <div class="signature-block" *ngIf="report.orderedBy">
           <div class="signature-line"></div>
           <p>Dr. {{ report.orderedBy }}</p>
           <p class="sig-label">Ordering Physician</p>
         </div>
+      </div>
+
+      <div class="footer-note">
+        <p>This is a computer-generated radiology report.</p>
       </div>
 
       <div class="print-actions no-print">
@@ -127,22 +154,26 @@ import { PrintBrandHeaderComponent } from '../../../shared/components/print-bran
     .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
     .info-item .label { font-weight: 600; font-size: 0.8rem; color: var(--text-secondary, #666); display: block; }
     .info-item .value { font-size: 0.9rem; }
+    .investigation-section { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #e8eaf6; }
+    .investigation-section:last-of-type { border-bottom: none; }
     .study-info { background: #e8eaf6; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
+    .study-info h2 { margin: 0 0 0.5rem; color: #1a237e; font-size: 1.2rem; }
     .study-row { display: flex; gap: 0.5rem; margin-bottom: 0.25rem; font-size: 0.9rem; }
-    .study-row .label { font-weight: 600; min-width: 140px; }
-    .findings-section { margin-bottom: 1.5rem; }
-    .findings-section h2, .notes-section h2 { color: #1a237e; font-size: 1.1rem; margin: 0 0 1rem; border-bottom: 2px solid #1a237e; padding-bottom: 0.5rem; }
-    .findings-content { font-size: 0.95rem; line-height: 1.6; }
-    .findings-content p { margin: 0; white-space: pre-wrap; }
-    .notes-section p { margin: 0; font-size: 0.95rem; line-height: 1.6; }
-    .abnormal-section { background: #fff3e0; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #ff9800; }
-    .abnormal-section h4 { margin: 0 0 0.25rem; color: #e65100; font-size: 0.9rem; }
-    .abnormal-text { margin: 0; font-size: 0.85rem; color: #bf360c; }
+    .study-row .label { font-weight: 600; min-width: 100px; }
+    .section { margin-bottom: 1.5rem; }
+    .section h3 { color: #1a237e; font-size: 1rem; margin: 0 0 0.5rem; border-bottom: 1px solid #c5cae9; padding-bottom: 0.25rem; }
+    .section p { margin: 0; font-size: 0.95rem; line-height: 1.6; }
+    .findings-text { white-space: pre-wrap; }
+    .abnormal-section { background: #fff3e0; padding: 0.5rem 1rem; border-radius: 4px; border-left: 4px solid #ff9800; margin-top: 0.5rem; }
+    .abnormal-text { margin: 0; font-size: 0.85rem; color: #e65100; font-weight: 600; }
+    .no-items { color: var(--text-secondary, #666); }
     .signature-section { display: flex; justify-content: space-between; margin-top: 3rem; }
     .signature-block { text-align: center; }
     .signature-line { width: 200px; border-top: 1px solid #333; margin-bottom: 0.25rem; }
     .signature-block p { margin: 0; font-size: 0.85rem; font-weight: 500; }
     .sig-label { font-size: 0.75rem; color: var(--text-secondary, #666); font-weight: normal !important; }
+    .footer-note { text-align: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee; }
+    .footer-note p { margin: 0; font-size: 0.8rem; color: var(--text-secondary, #666); font-style: italic; }
     .print-actions { text-align: center; margin-top: 2rem; }
     .loading-container { display: flex; justify-content: center; padding: 4rem; }
     @media print {

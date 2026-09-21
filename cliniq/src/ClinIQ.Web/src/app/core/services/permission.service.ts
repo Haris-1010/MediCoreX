@@ -66,7 +66,8 @@ export class PermissionService {
       'Suppliers.View', 'Suppliers.Manage',
       'PurchaseOrders.View', 'PurchaseOrders.Create', 'PurchaseOrders.Approve', 'PurchaseOrders.Receive',
       'Pharmacy.View', 'Pharmacy.Dispense', 'Pharmacy.Sale',
-      'Laboratory.View', 'Radiology.View',
+      'Laboratory.View', 'Laboratory.Create', 'Laboratory.Orders.View', 'Laboratory.Sample', 'Laboratory.Results.Edit', 'Laboratory.Verify', 'Laboratory.Reports',
+      'Radiology.View', 'Radiology.Create', 'Radiology.Orders.View', 'Radiology.Schedule', 'Radiology.Procedure', 'Radiology.Report', 'Radiology.Verify', 'Radiology.Reports',
       'Doctors.View', 'Staff.View', 'Departments.View', 'Facility.View', 'Wards.View',
       'Reports.View', 'Settings.View', 'Roles.View', 'Users.View',
       'Audit.View', 'Admissions.View', 'Beds.View'

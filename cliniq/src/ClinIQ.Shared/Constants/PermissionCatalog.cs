@@ -146,6 +146,9 @@ public static class PermissionCatalog
         new(Permissions.LaboratoryResultsEdit, "Edit Results", "Laboratory", "Clinical", 100),
         new(Permissions.LaboratoryManageResults, "Manage Results", "Laboratory", "Clinical", 110),
         new(Permissions.LaboratoryPrint, "Print", "Laboratory", "Clinical", 120),
+        new(Permissions.LaboratorySample, "Sample Collection", "Laboratory", "Clinical", 130),
+        new(Permissions.LaboratoryVerify, "Verify Results", "Laboratory", "Clinical", 140),
+        new(Permissions.LaboratoryReports, "View Reports", "Laboratory", "Clinical", 150),
 
         // ---- Radiology ----
         new(Permissions.RadiologyView, "View", "Radiology", "Clinical", 10),
@@ -160,6 +163,10 @@ public static class PermissionCatalog
         new(Permissions.RadiologyResultsEdit, "Edit Results", "Radiology", "Clinical", 100),
         new(Permissions.RadiologyReport, "Enter Reports", "Radiology", "Clinical", 110),
         new(Permissions.RadiologyPrint, "Print", "Radiology", "Clinical", 120),
+        new(Permissions.RadiologySchedule, "Schedule", "Radiology", "Clinical", 130),
+        new(Permissions.RadiologyProcedure, "Perform Procedure", "Radiology", "Clinical", 140),
+        new(Permissions.RadiologyVerify, "Verify Reports", "Radiology", "Clinical", 150),
+        new(Permissions.RadiologyReports, "View Reports", "Radiology", "Clinical", 160),
 
         // ---- Reports ----
         new(Permissions.ReportsView,      "View",      "Reports", "Analytics", 10),

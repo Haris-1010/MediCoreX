@@ -69,21 +69,31 @@ import { AuthService } from '../../../core/services/auth.service';
     </div>
   `,
   styles: [`
-    .platform-shell { display: flex; min-height: 100vh; background: var(--bg-primary, #f4f7f7); color: var(--text-primary, #172033); }
-    .platform-sidebar { width: 260px; background: var(--bg-sidebar, #102b35); color: white; display: flex; flex-direction: column; flex-shrink: 0; }
-    .brand { display: flex; align-items: center; gap: 12px; padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,.1); }
-    .brand mat-icon { color: #f0b35b; font-size: 30px; width: 30px; height: 30px; }
+    :host {
+      --platform-bg-primary: #f5f7fa;
+      --platform-bg-sidebar: #0f2b37;
+      --platform-bg-sidebar-hover: rgba(255,255,255,.08);
+      --platform-accent: #f0b35b;
+      --platform-text-on-sidebar: rgba(255,255,255,.72);
+      --platform-text-on-sidebar-active: #f0b35b;
+      --platform-border-sidebar: rgba(255,255,255,.1);
+      display: block;
+    }
+    .platform-shell { display: flex; min-height: 100vh; background: var(--platform-bg-primary); color: #172033; }
+    .platform-sidebar { width: 260px; background: var(--platform-bg-sidebar); color: white; display: flex; flex-direction: column; flex-shrink: 0; }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 24px 20px; border-bottom: 1px solid var(--platform-border-sidebar); }
+    .brand mat-icon { color: var(--platform-accent); font-size: 30px; width: 30px; height: 30px; }
     .brand strong { display: block; font-size: 16px; }
-    .brand small { color: rgba(255,255,255,.55); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+    .brand small { color: rgba(255,255,255,.45); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
     .side-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; }
-    .side-nav a { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 8px; color: rgba(255,255,255,.72); text-decoration: none; font-size: 14px; font-weight: 500; transition: .15s; }
-    .side-nav a:hover { background: rgba(255,255,255,.08); color: white; }
-    .side-nav a.active { background: rgba(240,179,91,.16); color: #f0b35b; }
-    .sidebar-foot { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,.1); display: flex; flex-direction: column; gap: 12px; }
-    .current-user { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,.7); font-size: 13px; }
+    .side-nav a { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 8px; color: var(--platform-text-on-sidebar); text-decoration: none; font-size: 14px; font-weight: 500; transition: .15s; }
+    .side-nav a:hover { background: var(--platform-bg-sidebar-hover); color: white; }
+    .side-nav a.active { background: rgba(240,179,91,.16); color: var(--platform-text-on-sidebar-active); }
+    .sidebar-foot { padding: 16px 20px; border-top: 1px solid var(--platform-border-sidebar); display: flex; flex-direction: column; gap: 12px; }
+    .current-user { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,.6); font-size: 13px; }
     .sidebar-foot button { color: white; border-color: rgba(255,255,255,.3); }
     .platform-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-    .topbar { background: var(--bg-sidebar, #102b35); color: white; padding: 22px 5vw; }
+    .topbar { background: var(--platform-bg-sidebar); color: white; padding: 22px 5vw; }
     .topbar h1 { margin: 0; font-size: 24px; }
     .content { width: min(1180px, 94vw); margin: 28px auto; }
     @media (max-width: 760px) {

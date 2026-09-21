@@ -101,7 +101,22 @@ export class StatusBadgeComponent {
     'normal': { class: 'badge-info' },
     'high': { class: 'badge-warning' },
     'urgent': { class: 'badge-danger' },
-    'critical': { class: 'badge-danger' }
+    'critical': { class: 'badge-danger' },
+    'stat': { class: 'badge-danger' },
+    'routine': { class: 'badge-info' },
+
+    // Laboratory statuses
+    'samplepending': { class: 'badge-warning', text: 'Sample Pending' },
+    'samplecollected': { class: 'badge-info', text: 'Sample Collected' },
+    'resultentered': { class: 'badge-primary', text: 'Result Entered' },
+    'verified': { class: 'badge-success' },
+
+    // Radiology statuses
+    'patientarrived': { class: 'badge-info', text: 'Patient Arrived' },
+    'procedureinprogress': { class: 'badge-warning', text: 'Procedure In Progress' },
+    'imagingcompleted': { class: 'badge-primary', text: 'Imaging Completed' },
+    'reportpending': { class: 'badge-warning', text: 'Report Pending' },
+    'reportdrafted': { class: 'badge-primary', text: 'Report Drafted' }
   };
 
   get badgeClass(): string {

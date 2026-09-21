@@ -100,6 +100,32 @@
           </div>
         </ng-container>
 
+        <!-- Organization owner info (edit only) -->
+        <ng-container *ngIf="isEdit">
+          <div class="section-title">
+            <mat-icon>admin_panel_settings</mat-icon>
+            <div>
+              <h3>Organization administrator</h3>
+              <p>Master user account for this organization. Use "Reset admin password" below to generate a new temporary password.</p>
+            </div>
+          </div>
+
+          <div class="grid">
+            <mat-form-field appearance="outline">
+              <mat-label>First name</mat-label>
+              <input matInput formControlName="firstName">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Last name</mat-label>
+              <input matInput formControlName="lastName">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Admin email</mat-label>
+              <input matInput type="email" formControlName="masterEmail">
+            </mat-form-field>
+          </div>
+        </ng-container>
+
         <!-- Module selection -->
         <div class="section-title">
           <mat-icon>widgets</mat-icon>

@@ -77,22 +77,16 @@ const routes: Routes = [
     data: { permission: 'Pharmacy.View' }
   },
   {
-    path: 'services',
-    loadChildren: () => import('./features/services/services.module').then(m => m.ServicesModule),
-    canActivate: [AuthGuard, permissionGuard],
-    data: { permission: 'Services.View' }
-  },
-  {
     path: 'laboratory',
     loadChildren: () => import('./features/laboratory/laboratory.module').then(m => m.LaboratoryModule),
     canActivate: [AuthGuard, permissionGuard],
-    data: { permission: 'Laboratory.View' }
+    data: { permission: 'Laboratory.View', module: 'laboratory' }
   },
   {
     path: 'radiology',
     loadChildren: () => import('./features/radiology/radiology.module').then(m => m.RadiologyModule),
     canActivate: [AuthGuard, permissionGuard],
-    data: { permission: 'Radiology.View' }
+    data: { permission: 'Radiology.View', module: 'radiology' }
   },
   {
     path: 'doctors',

@@ -65,6 +65,12 @@ public class ApplicationDbContext : DbContext
     // Doctor schedules / availability
     public DbSet<DoctorSchedule> DoctorSchedules => Set<DoctorSchedule>();
 
+    // Laboratory & Radiology
+    public DbSet<LabTestParameter> LabTestParameters => Set<LabTestParameter>();
+    public DbSet<LabOrderItem> LabOrderItems => Set<LabOrderItem>();
+    public DbSet<LabResultParameter> LabResultParameters => Set<LabResultParameter>();
+    public DbSet<RadiologyOrderItem> RadiologyOrderItems => Set<RadiologyOrderItem>();
+
     // Facility
     public DbSet<Building> Buildings => Set<Building>();
     public DbSet<Floor> Floors => Set<Floor>();
@@ -121,7 +127,8 @@ public class ApplicationDbContext : DbContext
         var timestampTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "BedAllocations", "Beds", "DoctorSchedules", "Invoices", "Patients",
-            "Payments", "TenantEntitlements", "TenantLimits", "Tenants", "UserPermissions"
+            "Payments", "TenantEntitlements", "TenantLimits", "Tenants", "UserPermissions",
+            "LabOrderItems", "LabTestParameters", "LabResultParameters", "RadiologyOrderItems"
         };
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())

@@ -135,6 +135,9 @@ public static class Permissions
     public const string LaboratoryResultsView = "laboratory.results.view";
     public const string LaboratoryResultsEdit = "laboratory.results.edit";
     public const string LaboratoryPrint = "laboratory.print";
+    public const string LaboratorySample = "laboratory.sample";
+    public const string LaboratoryVerify = "laboratory.verify";
+    public const string LaboratoryReports = "laboratory.reports";
 
     // Radiology
     public const string RadiologyView = "radiology.view";
@@ -149,6 +152,10 @@ public static class Permissions
     public const string RadiologyResultsView = "radiology.results.view";
     public const string RadiologyResultsEdit = "radiology.results.edit";
     public const string RadiologyPrint = "radiology.print";
+    public const string RadiologySchedule = "radiology.schedule";
+    public const string RadiologyProcedure = "radiology.procedure";
+    public const string RadiologyVerify = "radiology.verify";
+    public const string RadiologyReports = "radiology.reports";
 
     // Reports
     public const string ReportsView = "reports.view";

@@ -140,33 +140,30 @@ export class ApiService {
 
     if (error instanceof Error && !(error instanceof HttpErrorResponse)) {
       errorMessage = error.message || errorMessage;
-    } else if (error instanceof HttpErrorResponse && error.error instanceof ErrorEvent) {
-      errorMessage = error.error.message;
-    } else if (error instanceof HttpErrorResponse && error.error?.message) {
-      errorMessage = error.error.message;
-    } else if (error instanceof HttpErrorResponse && error.error?.title) {
-      errorMessage = error.error.title;
-    } else if (error instanceof HttpErrorResponse && error.error?.errors?.length) {
-      errorMessage = error.error.errors.join(', ');
-    } else if (error instanceof HttpErrorResponse && typeof error.error === 'string') {
-      errorMessage = error.error;
-    } else {
-      switch (error.status) {
-        case 400:
-          errorMessage = 'Bad request';
-          break;
-        case 401:
-          errorMessage = 'Unauthorized';
-          break;
-        case 403:
-          errorMessage = 'Access denied';
-          break;
-        case 404:
-          errorMessage = 'Resource not found';
-          break;
-        case 500:
-          errorMessage = 'Internal server error';
-          break;
+    } else if (error instanceof HttpErrorResponse) {
+      if (error.error instanceof ErrorEvent) {
+        errorMessage = error.error.message;
+      } else if (error.error?.message) {
+        errorMessage = error.error.message;
+      } else if (error.error?.succeeded === false && error.error?.message) {
+        errorMessage = error.error.message;
+      } else if (error.error?.title) {
+        errorMessage = error.error.title;
+      } else if (error.error?.errors?.length) {
+        errorMessage = error.error.errors.join(', ');
+      } else if (typeof error.error === 'string') {
+        errorMessage = error.error;
+      } else {
+        switch (error.status) {
+          case 0: errorMessage = 'Cannot connect to server. Please check if the backend is running.'; break;
+          case 400: errorMessage = 'Bad request'; break;
+          case 401: errorMessage = 'Please log in again'; break;
+          case 403: errorMessage = 'You do not have permission for this action'; break;
+          case 404: errorMessage = 'Resource not found'; break;
+          case 500: errorMessage = 'Server error. Please try again later.'; break;
+          case 502: errorMessage = 'Backend server is unavailable'; break;
+          case 503: errorMessage = 'Service temporarily unavailable'; break;
+        }
       }
     }
 
