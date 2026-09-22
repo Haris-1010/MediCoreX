@@ -122,8 +122,8 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       display: inline-block; padding: 0.15rem 0.6rem; border-radius: 12px;
       font-size: 0.75rem; font-weight: 600;
     }
-    .status-chip.active { background: #e8f5e9; color: #2e7d32; }
-    .status-chip.inactive { background: #ffebee; color: #c62828; }
+    .status-chip.active { background: var(--status-success-bg, #e8f5e9); color: var(--status-success, #2e7d32); }
+    .status-chip.inactive { background: var(--status-error-bg, #ffebee); color: var(--status-error, #c62828); }
   `]
 })
 export class DepartmentListComponent implements OnInit {

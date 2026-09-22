@@ -129,7 +129,7 @@ public class OPDController : ControllerBase
 
         var patientIds = queue.Where(q => q.PatientId != Guid.Empty).Select(q => q.PatientId).Distinct().ToList();
 
-        var invoiceItemsByPatient = new Dictionary<Guid, List<object>>();
+        var invoiceDataByPatient = new Dictionary<Guid, (List<object> Items, decimal TotalAmount, string PaymentMethod, string InvoiceNumber)>();
 
         if (patientIds.Any())
         {
@@ -137,7 +137,7 @@ public class OPDController : ControllerBase
                 .Where(i => !i.IsDeleted
                     && patientIds.Contains(i.PatientId)
                     && i.InvoiceDate >= today && i.InvoiceDate < tomorrow)
-                .Select(i => new { i.Id, i.PatientId })
+                .Select(i => new { i.Id, i.PatientId, i.TotalAmount, i.InvoiceNumber })
                 .ToListAsync();
 
             var invoiceIds = todayInvoices.Select(i => i.Id).ToList();
@@ -154,30 +154,52 @@ public class OPDController : ControllerBase
                 })
                 .ToListAsync();
 
-            invoiceItemsByPatient = invoiceItems
+            var payments = await _context.Payments
+                .Where(p => p.InvoiceId.HasValue && invoiceIds.Contains(p.InvoiceId.Value))
+                .GroupBy(p => p.InvoiceId!.Value)
+                .Select(g => new { InvoiceId = g.Key, PaymentMethod = g.First().PaymentMethod.ToString() })
+                .ToListAsync();
+
+            var paymentByInvoice = payments.ToDictionary(p => p.InvoiceId, p => p.PaymentMethod);
+
+            var grouped = invoiceItems
                 .Where(ii => patientInvoiceMap.ContainsKey(ii.InvoiceId))
-                .GroupBy(ii => patientInvoiceMap[ii.InvoiceId])
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(x => (object)new { x.ItemName, x.Amount, x.Quantity }).ToList()
+                .GroupBy(ii => patientInvoiceMap[ii.InvoiceId]);
+
+            foreach (var g in grouped)
+            {
+                var inv = todayInvoices.First(i => i.PatientId == g.Key);
+                var firstInvoiceId = g.First().InvoiceId;
+                paymentByInvoice.TryGetValue(firstInvoiceId, out var payMethod);
+                invoiceDataByPatient[g.Key] = (
+                    g.Select(x => (object)new { x.ItemName, x.Amount, x.Quantity }).ToList(),
+                    inv.TotalAmount,
+                    payMethod ?? "Cash",
+                    inv.InvoiceNumber ?? ""
                 );
+            }
         }
 
-        var result = queue.Select(q => new
+        var result = queue.Select(q =>
         {
-            q.Id,
-            q.TokenNumber,
-            q.PatientName,
-            q.PatientMRN,
-            q.DoctorName,
-            q.DoctorId,
-            q.Status,
-            q.JoinedAt,
-            q.CalledAt,
-            q.QueueDate,
-            Services = invoiceItemsByPatient.ContainsKey(q.PatientId)
-                ? invoiceItemsByPatient[q.PatientId]
-                : new List<object>()
+            var hasInvoice = invoiceDataByPatient.TryGetValue(q.PatientId, out var invData);
+            return new
+            {
+                q.Id,
+                q.TokenNumber,
+                q.PatientName,
+                q.PatientMRN,
+                q.DoctorName,
+                q.DoctorId,
+                q.Status,
+                q.JoinedAt,
+                q.CalledAt,
+                q.QueueDate,
+                Services = hasInvoice ? invData.Items : new List<object>(),
+                TotalAmount = hasInvoice ? invData.TotalAmount : 0,
+                PaymentMethod = hasInvoice ? invData.PaymentMethod : "",
+                InvoiceNumber = hasInvoice ? invData.InvoiceNumber : ""
+            };
         }).ToList();
 
         return Ok(Result<object>.Success(result));

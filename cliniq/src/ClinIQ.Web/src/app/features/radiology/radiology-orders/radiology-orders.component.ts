@@ -24,7 +24,9 @@ import { MatDialog } from '@angular/material/dialog';
           <ng-container matColumnDef="orderNumber"><th mat-header-cell *matHeaderCellDef>Order #</th><td mat-cell *matCellDef="let o">{{ o.orderNumber }}</td></ng-container>
           <ng-container matColumnDef="patient"><th mat-header-cell *matHeaderCellDef>Patient</th><td mat-cell *matCellDef="let o">{{ o.patientName }}<br><small>{{ o.mrn }}</small></td></ng-container>
           <ng-container matColumnDef="investigation"><th mat-header-cell *matHeaderCellDef>Investigation</th><td mat-cell *matCellDef="let o">
-            <span *ngFor="let item of o.items; let last = last">{{ item.serviceName }}<span *ngIf="!last">, </span></span>
+            <span *ngIf="o.items?.length > 0"><span *ngFor="let item of o.items; let last = last">{{ item.serviceName }}<span *ngIf="!last">, </span></span></span>
+            <span *ngIf="!o.items?.length && o.clinicalIndication">{{ o.clinicalIndication }}</span>
+            <span *ngIf="!o.items?.length && !o.clinicalIndication" class="text-muted">—</span>
           </td></ng-container>
           <ng-container matColumnDef="date"><th mat-header-cell *matHeaderCellDef>Date</th><td mat-cell *matCellDef="let o">{{ o.orderDate | date:'mediumDate' }}</td></ng-container>
           <ng-container matColumnDef="priority"><th mat-header-cell *matHeaderCellDef>Priority</th><td mat-cell *matCellDef="let o"><app-status-badge [status]="o.priority"></app-status-badge></td></ng-container>
@@ -45,7 +47,8 @@ import { MatDialog } from '@angular/material/dialog';
   `,
   styles: [`.card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; } .filters { display: flex; gap: 1rem; margin-bottom: 1rem; } table { width: 100%; }
     .empty-state { display: flex; flex-direction: column; align-items: center; padding: 2rem; color: var(--text-muted, #999); }
-    .empty-state mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 0.5rem; }`]
+    .empty-state mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 0.5rem; }
+    .text-muted { color: var(--text-muted, #999); font-style: italic; }`]
 })
 export class RadiologyOrdersComponent implements OnInit {
   orders: any[] = [];

@@ -77,16 +77,16 @@ interface QueueItem {
     }
 
     .queue-item.current {
-      background: #e3f2fd;
-      border-left: 3px solid #3f51b5;
+      background: var(--status-info-bg, #e3f2fd);
+      border-left: 3px solid var(--accent-primary, #3f51b5);
     }
 
     .token-number {
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background: #3f51b5;
-      color: white;
+      background: var(--accent-primary, #3f51b5);
+      color: var(--text-inverse, #fff);
       display: flex;
       align-items: center;
       justify-content: center;

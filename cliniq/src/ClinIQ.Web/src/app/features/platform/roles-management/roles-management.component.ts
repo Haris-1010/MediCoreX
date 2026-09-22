@@ -190,35 +190,35 @@ interface PermissionGroup {
 
     .loading { display: grid; place-items: center; padding: 60px; }
     .empty { text-align: center; padding: 60px 20px; color: var(--text-muted, #64748b); background: var(--bg-card, #fff); border: 1px dashed var(--border-color, #e0e0e0); border-radius: 12px; }
-    .empty h3 { margin: 8px 0 4px; color: #172033; }
+    .empty h3 { margin: 8px 0 4px; color: var(--text-primary, #172033); }
     .empty p { margin: 0 0 12px; }
 
     /* Table */
     .roles-table { width: 100%; }
-    .roles-table .mat-mdc-header-cell { color: var(--text-muted, #64748b); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; border-bottom-color: #edf1f1; }
-    .roles-table .mat-mdc-cell { border-bottom-color: #edf1f1; padding: 14px 16px; }
+    .roles-table .mat-mdc-header-cell { color: var(--text-muted, #64748b); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; border-bottom-color: var(--border-color, #edf1f1); }
+    .roles-table .mat-mdc-cell { border-bottom-color: var(--border-color, #edf1f1); padding: 14px 16px; }
 
     .role-name-cell { display: flex; align-items: center; gap: 12px; }
-    .role-avatar { width: 38px; height: 38px; border-radius: 10px; background: #102b35; color: #f0b35b; display: grid; place-items: center; font-weight: 700; font-size: 15px; flex-shrink: 0; }
-    .role-name-cell strong { display: block; font-size: 14px; color: #172033; }
+    .role-avatar { width: 38px; height: 38px; border-radius: 10px; background: var(--text-primary, #102b35); color: var(--accent-primary, #f0b35b); display: grid; place-items: center; font-weight: 700; font-size: 15px; flex-shrink: 0; }
+    .role-name-cell strong { display: block; font-size: 14px; color: var(--text-primary, #172033); }
     .system-badge {
       display: inline-block;
       margin-left: 6px;
       padding: 1px 8px;
       border-radius: 999px;
-      background: #e8edf2;
-      color: #475569;
+      background: var(--bg-secondary, #e8edf2);
+      color: var(--text-secondary, #475569);
       font-size: 11px;
       font-weight: 600;
       vertical-align: middle;
     }
 
     .desc-text { color: var(--text-muted, #64748b); font-size: 13px; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .user-count { font-weight: 600; color: #102b35; }
+    .user-count { font-weight: 600; color: var(--text-primary, #102b35); }
 
     .status-chip { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-    .status-chip.active { background: #e5f6ec; color: #18794e; }
-    .status-chip.inactive { background: #fdecea; color: #b42318; }
+    .status-chip.active { background: var(--status-success-bg, #e5f6ec); color: var(--status-success, #18794e); }
+    .status-chip.inactive { background: var(--status-error-bg, #fdecea); color: var(--status-error, #b42318); }
 
     .row-actions { display: flex; gap: 2px; justify-content: flex-end; }
     .system-row { opacity: .65; }
@@ -241,7 +241,7 @@ interface PermissionGroup {
       padding: 20px 24px 12px;
       border-bottom: 1px solid var(--border-color, #e0e0e0);
     }
-    .panel-header h3 { margin: 0; color: #172033; font-size: 18px; }
+    .panel-header h3 { margin: 0; color: var(--text-primary, #172033); font-size: 18px; }
     .panel-body { flex: 1; overflow-y: auto; padding: 24px; }
     .panel-footer {
       display: flex;
@@ -255,7 +255,7 @@ interface PermissionGroup {
     /* Permissions */
     .permissions-section { margin-top: 8px; }
     .perm-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .perm-header h4 { margin: 0; color: #172033; font-size: 15px; }
+    .perm-header h4 { margin: 0; color: var(--text-primary, #172033); font-size: 15px; }
 
     .perm-group { margin-bottom: 20px; }
     .perm-group-header {
@@ -268,7 +268,7 @@ interface PermissionGroup {
       border-radius: 8px;
       margin-bottom: 8px;
     }
-    .group-label { font-weight: 600; font-size: 13px; color: #102b35; text-transform: capitalize; }
+    .group-label { font-weight: 600; font-size: 13px; color: var(--text-primary, #102b35); text-transform: capitalize; }
     .group-toggle { font-size: 12px !important; }
 
     .perm-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 12px; padding-left: 8px; }

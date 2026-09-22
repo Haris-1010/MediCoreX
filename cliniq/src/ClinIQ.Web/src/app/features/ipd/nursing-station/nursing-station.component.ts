@@ -369,16 +369,16 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
   styles: [`
     .selector-bar { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; background: var(--bg-card, #fff); padding: 1rem 1.5rem; border-radius: 8px; }
     .selector-bar mat-form-field { flex: 0 0 250px; }
-    .patient-chip { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #e8eaf6; border-radius: 999px; font-size: 0.875rem; }
-    .patient-chip mat-icon { font-size: 18px; width: 18px; height: 18px; color: #3f51b5; }
+    .patient-chip { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--bg-badge, #e8eaf6); border-radius: 999px; font-size: 0.875rem; }
+    .patient-chip mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--accent-primary, #3f51b5); }
 
     .ward-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
     .patient-card { background: var(--bg-card, #fff); border-radius: 8px; padding: 1.25rem; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
-    .patient-card:hover { box-shadow: var(--shadow-lg, 0 4px 16px rgba(0,0,0,0.12)); transform: translateY(-2px); border-color: #3f51b5; }
+    .patient-card:hover { box-shadow: var(--shadow-lg, 0 4px 16px rgba(0,0,0,0.12)); transform: translateY(-2px); border-color: var(--accent-primary, #3f51b5); }
     .pc-header { display: flex; gap: 1rem; align-items: center; margin-bottom: 0.75rem; }
-    .pc-avatar { width: 48px; height: 48px; border-radius: 50%; background: #3f51b5; color: white; display: grid; place-items: center; font-weight: 700; }
+    .pc-avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--accent-primary, #3f51b5); color: white; display: grid; place-items: center; font-weight: 700; }
     .pc-info strong { display: block; }     .pc-info span { font-size: 0.8rem; color: var(--text-muted, #666); }
-    .pc-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: #888; }
+    .pc-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--text-muted, #888); }
     .pc-meta span { display: flex; align-items: center; gap: 0.25rem; }
     .pc-meta mat-icon { font-size: 14px; width: 14px; height: 14px; }
 
@@ -395,7 +395,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .tab-header h3 { margin: 0; }
 
     .vitals-cards { display: flex; flex-direction: column; gap: 1rem; }
-    .vital-card { background: #f8f9fa; border-radius: 8px; padding: 1rem 1.25rem; border-left: 4px solid #3f51b5; }
+    .vital-card { background: var(--bg-hover, #f8f9fa); border-radius: 8px; padding: 1rem 1.25rem; border-left: 4px solid var(--accent-primary, #3f51b5); }
     .vc-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
     .vc-time { font-size: 0.8rem; color: var(--text-muted, #666); font-weight: 500; }
     .vc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; }
@@ -403,13 +403,13 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .vc-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted, #888); letter-spacing: 0.05em; }
     .vc-value { font-size: 1.1rem; font-weight: 700; color: var(--text-primary, #333); }
     .vc-value small { font-size: 0.75rem; font-weight: 400; color: var(--text-muted, #888); }
-    .vc-item.abnormal .vc-value { color: #e53935; }
+    .vc-item.abnormal .vc-value { color: var(--status-error, #e53935); }
     .vc-notes { margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted, #666); display: flex; align-items: center; gap: 0.25rem; }
     .vc-notes mat-icon { font-size: 14px; width: 14px; height: 14px; }
 
     .med-list { display: flex; flex-direction: column; gap: 0.75rem; }
-    .med-card { background: #f8f9fa; border-radius: 8px; padding: 1rem 1.25rem; border-left: 4px solid #ff9800; }
-    .med-card.dispensed { border-left-color: #4caf50; opacity: 0.7; }
+    .med-card { background: var(--bg-hover, #f8f9fa); border-radius: 8px; padding: 1rem 1.25rem; border-left: 4px solid var(--status-warning, #ff9800); }
+    .med-card.dispensed { border-left-color: var(--status-success, #4caf50); opacity: 0.7; }
     .med-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
     .med-name { font-size: 1rem; font-weight: 600; }
     .med-details { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--text-muted, #666); }
@@ -417,45 +417,45 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .med-details mat-icon, .med-instructions mat-icon { font-size: 14px; width: 14px; height: 14px; }
     .med-instructions { margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted, #888); display: flex; align-items: center; gap: 0.25rem; }
     .med-timing { display: flex; gap: 0.4rem; margin-top: 0.4rem; }
-    .timing-chip { background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 500; }
+    .timing-chip { background: var(--status-info-bg, #e3f2fd); color: var(--status-info, #1565c0); padding: 2px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 500; }
 
     .notes-list { display: flex; flex-direction: column; gap: 1rem; }
-    .note-card { background: #f8f9fa; border-radius: 8px; padding: 1rem 1.25rem; border-left: 4px solid #9c27b0; }
+    .note-card { background: var(--bg-hover, #f8f9fa); border-radius: 8px; padding: 1rem 1.25rem; border-left: 4px solid var(--accent-purple, #9c27b0); }
     .note-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
-    .note-shift { background: #9c27b0; color: white; padding: 2px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+    .note-shift { background: var(--accent-purple, #9c27b0); color: white; padding: 2px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
     .note-date { font-size: 0.8rem; color: var(--text-muted, #888); flex: 1; }
     .note-body { margin-bottom: 0.5rem; }
     .note-row { margin-bottom: 0.5rem; }
     .note-row label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted, #888); display: block; margin-bottom: 0.15rem; }
     .note-row span { font-size: 0.9rem; color: var(--text-primary, #333); }
-    .note-obs { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.8rem; color: #666; }
+    .note-obs { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.8rem; color: var(--text-secondary, #666); }
     .note-obs span { display: flex; align-items: center; gap: 0.25rem; }
     .note-obs mat-icon { font-size: 14px; width: 14px; height: 14px; }
 
     .io-summary { display: flex; flex-direction: column; gap: 1.5rem; }
     .io-totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
     .io-box { text-align: center; padding: 1rem; border-radius: 8px; }
-    .io-box.intake { background: #e3f2fd; } .io-box.output { background: #fce4ec; } .io-box.balance { background: #e8f5e9; }
-    .io-label { display: block; font-size: 0.75rem; text-transform: uppercase; color: #666; margin-bottom: 0.25rem; }
+    .io-box.intake { background: var(--status-info-bg, #e3f2fd); } .io-box.output { background: var(--status-error-bg, #fce4ec); } .io-box.balance { background: var(--status-success-bg, #e8f5e9); }
+    .io-label { display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary, #666); margin-bottom: 0.25rem; }
     .io-value { font-size: 1.5rem; font-weight: 700; }
-    .io-box.intake .io-value { color: #1565c0; } .io-box.output .io-value { color: #c62828; } .io-box.balance .io-value { color: #2e7d32; }
+    .io-box.intake .io-value { color: var(--status-info, #1565c0); } .io-box.output .io-value { color: var(--status-error, #c62828); } .io-box.balance .io-value { color: var(--status-success, #2e7d32); }
     .io-list { display: flex; flex-direction: column; gap: 0.5rem; }
-    .io-item { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 0.75rem 1rem; border-radius: 8px; }
+    .io-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg-hover, #f8f9fa); padding: 0.75rem 1rem; border-radius: 8px; }
     .io-item-left { display: flex; align-items: center; gap: 1rem; }
     .io-item-info { display: flex; flex-direction: column; }
     .io-item-info strong { font-size: 0.9rem; }
-    .io-item-info span { font-size: 0.8rem; color: #666; }
+    .io-item-info span { font-size: 0.8rem; color: var(--text-secondary, #666); }
     .io-type-chip { padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
-    .io-type-chip.intake { background: #e3f2fd; color: #1565c0; }
-    .io-type-chip.output { background: #fce4ec; color: #c62828; }
+    .io-type-chip.intake { background: var(--status-info-bg, #e3f2fd); color: var(--status-info, #1565c0); }
+    .io-type-chip.output { background: var(--status-error-bg, #fce4ec); color: var(--status-error, #c62828); }
 
-    .dialog-patient { margin: 0 0 1rem; padding: 0.75rem; background: #f5f5f5; border-radius: 4px; }
+    .dialog-patient { margin: 0 0 1rem; padding: 0.75rem; background: var(--bg-hover, #f5f5f5); border-radius: 4px; }
     .form-row { display: flex; gap: 1rem; }
     .form-row mat-form-field { flex: 1; }
     .full-w { width: 100%; }
     .io-radio { display: flex; gap: 1.5rem; margin-bottom: 1rem; }
-    .empty { text-align: center; color: #aaa; padding: 2rem; }
-    .delete-item { color: #e53935 !important; }
+    .empty { text-align: center; color: var(--text-muted, #aaa); padding: 2rem; }
+    .delete-item { color: var(--status-error, #e53935) !important; }
   `]
 })
 export class NursingStationComponent implements OnInit {

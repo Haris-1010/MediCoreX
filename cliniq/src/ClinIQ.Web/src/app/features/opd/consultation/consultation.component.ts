@@ -67,7 +67,7 @@ import { NotificationService } from '../../../core/services/notification.service
   styles: [`.consultation-grid { display: grid; grid-template-columns: 350px 1fr; gap: 1.5rem; }
     .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
     .patient-header { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; }
-    .avatar { width: 60px; height: 60px; border-radius: 50%; background: #3f51b5; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 600; }
+    .avatar { width: 60px; height: 60px; border-radius: 50%; background: var(--accent-primary, #3f51b5); color: var(--text-inverse, #fff); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 600; }
     .patient-header h2 { margin: 0; }     .patient-header p { margin: 0; color: var(--text-secondary, #666); font-size: 0.875rem; }
     .vitals { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; padding: 1rem 0; }
     .vital { text-align: center; }     .vital span { display: block; font-size: 0.75rem; color: var(--text-secondary, #666); } .vital strong { font-size: 1rem; }

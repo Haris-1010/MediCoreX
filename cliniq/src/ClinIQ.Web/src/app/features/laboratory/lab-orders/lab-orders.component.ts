@@ -27,7 +27,8 @@ import { MatDialog } from '@angular/material/dialog';
           <ng-container matColumnDef="patient"><th mat-header-cell *matHeaderCellDef>Patient</th><td mat-cell *matCellDef="let o">{{ o.patientName }}<br><small>MRN: {{ o.mrn }}</small></td></ng-container>
           <ng-container matColumnDef="tests"><th mat-header-cell *matHeaderCellDef>Tests</th><td mat-cell *matCellDef="let o">
             <span *ngIf="o.items?.length > 0"><span *ngFor="let item of o.items; let last = last">{{ item.serviceName }}<span *ngIf="!last">, </span></span></span>
-            <span *ngIf="!o.items?.length">{{ o.testCount }} test(s)</span>
+            <span *ngIf="!o.items?.length && o.clinicalIndication">{{ o.clinicalIndication }}</span>
+            <span *ngIf="!o.items?.length && !o.clinicalIndication">{{ o.testCount }} test(s)</span>
           </td></ng-container>
           <ng-container matColumnDef="date"><th mat-header-cell *matHeaderCellDef>Date</th><td mat-cell *matCellDef="let o">{{ o.orderDate | date:'mediumDate' }}</td></ng-container>
           <ng-container matColumnDef="priority"><th mat-header-cell *matHeaderCellDef>Priority</th><td mat-cell *matCellDef="let o"><app-status-badge [status]="o.priority"></app-status-badge></td></ng-container>

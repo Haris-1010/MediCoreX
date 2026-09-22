@@ -58,7 +58,7 @@ import { ApiService } from '../../../core/services/api.service';
     .calendar-header {
       display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;
     }
-    .calendar-header h3 { margin: 0; min-width: 200px; text-align: center; font-size: 1.1rem; color: #1a237e; }
+    .calendar-header h3 { margin: 0; min-width: 200px; text-align: center; font-size: 1.1rem; color: var(--text-primary, #1a237e); }
 
     .legend {
       margin-left: auto; display: flex; gap: 1rem; font-size: 0.75rem; color: var(--text-muted, #666);
@@ -67,11 +67,11 @@ import { ApiService } from '../../../core/services/api.service';
     .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 
     .calendar-grid {
-      display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e0e0e0; border-radius: 8px; overflow: hidden;
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--border-color, #e0e0e0); border-radius: 8px; overflow: hidden;
     }
 
     .day-header {
-      background: #1a237e; color: white; padding: 0.5rem; text-align: center;
+      background: var(--accent-primary, #1a237e); color: white; padding: 0.5rem; text-align: center;
       font-weight: 600; font-size: 0.8rem; text-transform: uppercase;
     }
 
@@ -81,9 +81,9 @@ import { ApiService } from '../../../core/services/api.service';
     }
     .calendar-day:hover { background: var(--bg-hover, #f5f5f5); }
     .calendar-day.other-month { background: var(--bg-hover, #f5f5f5); }
-    .calendar-day.other-month .day-number { color: #bbb; }
-    .calendar-day.today { background: #e3f2fd; }
-    .calendar-day.today .day-number { color: #1565c0; font-weight: 700; }
+    .calendar-day.other-month .day-number { color: var(--text-muted, #bbb); }
+    .calendar-day.today { background: var(--status-info-bg, #e3f2fd); }
+    .calendar-day.today .day-number { color: var(--status-info, #1565c0); font-weight: 700; }
     .calendar-day.has-appointments { background: var(--bg-muted, #f5f5f5); }
 
     .day-number { font-weight: 500; font-size: 0.85rem; display: block; margin-bottom: 2px; }
@@ -93,19 +93,19 @@ import { ApiService } from '../../../core/services/api.service';
     .apt-chip {
       display: flex; align-items: center; gap: 4px;
       padding: 2px 4px; border-radius: 3px;
-      border-left: 3px solid #2196f3;
+      border-left: 3px solid var(--status-info, #2196f3);
       background: var(--bg-muted, #f5f5f5);
       font-size: 0.65rem;
       line-height: 1.3;
       overflow: hidden;
     }
     .apt-info { display: flex; flex-direction: column; overflow: hidden; }
-    .apt-time { font-weight: 600; color: #3f51b5; }
+    .apt-time { font-weight: 600; color: var(--accent-primary, #3f51b5); }
     .apt-name { color: var(--text-primary, #333); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .apt-doctor { color: #7986cb; font-size: 0.6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .apt-doctor { color: var(--text-muted, #7986cb); font-size: 0.6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     .more-count {
-      font-size: 0.65rem; color: #5c6bc0; font-weight: 600; padding: 1px 4px;
+      font-size: 0.65rem; color: var(--accent-secondary, #5c6bc0); font-weight: 600; padding: 1px 4px;
     }
   `]
 })

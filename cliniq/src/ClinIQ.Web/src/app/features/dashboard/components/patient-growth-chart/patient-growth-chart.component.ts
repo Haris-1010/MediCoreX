@@ -101,19 +101,19 @@ interface RevenueData {
       align-items: baseline;
       gap: 6px;
       padding: 4px 10px;
-      background: #f0f4ff;
+      background: var(--bg-hover, #f0f4ff);
       border-radius: 6px;
     }
 
     .total-label {
       font-size: 11px;
-      color: #64748b;
+      color: var(--text-secondary, #64748b);
     }
 
     .total-value {
       font-size: 14px;
       font-weight: 700;
-      color: #1a237e;
+      color: var(--accent-primary, #1a237e);
     }
 
     .svg-wrapper {
@@ -142,7 +142,7 @@ interface RevenueData {
       text-align: center;
       font-size: 10px;
       font-weight: 500;
-      color: #94a3b8;
+      color: var(--text-muted, #94a3b8);
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -154,7 +154,7 @@ interface RevenueData {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #94a3b8;
+      color: var(--text-muted, #94a3b8);
       font-size: 13px;
     }
 

@@ -47,7 +47,7 @@ import { Component, Input } from '@angular/core';
 
     .chart-bar {
       width: 40px;
-      background: linear-gradient(to top, #3f51b5, #7986cb);
+      background: linear-gradient(to top, var(--accent-primary, #3f51b5), #7986cb);
       border-radius: 4px 4px 0 0;
       position: relative;
       min-height: 10px;
@@ -91,11 +91,11 @@ import { Component, Input } from '@angular/core';
     }
 
     .legend-color.revenue {
-      background: #3f51b5;
+      background: var(--accent-primary, #3f51b5);
     }
 
     .legend-color.expenses {
-      background: #f44336;
+      background: var(--status-error, #f44336);
     }
   `]
 })

@@ -217,7 +217,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       width: 50px;
       height: 50px;
       border-radius: 12px;
-      background: linear-gradient(135deg, #3f51b5, #5c6bc0);
+      background: linear-gradient(135deg, var(--accent-primary, #3f51b5), var(--accent-secondary, #5c6bc0));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -241,10 +241,10 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       font-weight: 500;
     }
     .stat mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .stat.available { background: #e8f5e9; color: #2e7d32; }
-    .stat.occupied { background: #ffebee; color: #c62828; }
-    .stat.reserved { background: #fff3e0; color: #ef6c00; }
-    .stat.maintenance { background: #f5f5f5; color: #616161; }
+    .stat.available { background: var(--status-success-bg, #e8f5e9); color: var(--status-success, #2e7d32); }
+    .stat.occupied { background: var(--status-error-bg, #ffebee); color: var(--status-error, #c62828); }
+    .stat.reserved { background: var(--status-warning-bg, #fff3e0); color: var(--status-warning, #ef6c00); }
+    .stat.maintenance { background: var(--bg-hover, #f5f5f5); color: var(--text-secondary, #616161); }
 
     /* Bed Grid */
     .bed-grid {
@@ -275,14 +275,14 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .bed-card:focus { outline: none; border-color: var(--accent-primary, #3f51b5); }
 
     /* Bed Status Variants */
-    .bed-available { border-color: #4caf50; background: linear-gradient(180deg, var(--status-success-bg, #f1f8e9) 0%, var(--bg-card, #ffffff) 100%); }
-    .bed-available:hover { border-color: #4caf50; }
-    .bed-occupied { border-color: #f44336; background: linear-gradient(180deg, var(--status-error-bg, #fce4ec) 0%, var(--bg-card, #ffffff) 100%); }
-    .bed-occupied:hover { border-color: #f44336; }
-    .bed-reserved { border-color: #ff9800; background: linear-gradient(180deg, var(--status-warning-bg, #fff3e0) 0%, var(--bg-card, #ffffff) 100%); }
-    .bed-reserved:hover { border-color: #ff9800; }
-    .bed-maintenance { border-color: #9e9e9e; background: linear-gradient(180deg, var(--bg-hover, #f5f5f5) 0%, var(--bg-card, #ffffff) 100%); }
-    .bed-maintenance:hover { border-color: #9e9e9e; }
+    .bed-available { border-color: var(--status-success, #4caf50); background: linear-gradient(180deg, var(--status-success-bg, #f1f8e9) 0%, var(--bg-card, #ffffff) 100%); }
+    .bed-available:hover { border-color: var(--status-success, #4caf50); }
+    .bed-occupied { border-color: var(--status-error, #f44336); background: linear-gradient(180deg, var(--status-error-bg, #fce4ec) 0%, var(--bg-card, #ffffff) 100%); }
+    .bed-occupied:hover { border-color: var(--status-error, #f44336); }
+    .bed-reserved { border-color: var(--status-warning, #ff9800); background: linear-gradient(180deg, var(--status-warning-bg, #fff3e0) 0%, var(--bg-card, #ffffff) 100%); }
+    .bed-reserved:hover { border-color: var(--status-warning, #ff9800); }
+    .bed-maintenance { border-color: var(--border-color, #9e9e9e); background: linear-gradient(180deg, var(--bg-hover, #f5f5f5) 0%, var(--bg-card, #ffffff) 100%); }
+    .bed-maintenance:hover { border-color: var(--border-color, #9e9e9e); }
 
     .bed-icon-wrapper {
       position: relative;
@@ -294,13 +294,13 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       font-size: 48px;
       width: 48px;
       height: 48px;
-      color: #9e9e9e;
+      color: var(--border-color, #9e9e9e);
       transition: all 0.2s ease;
     }
-    .bed-available .bed-icon { color: #4caf50; }
-    .bed-occupied .bed-icon { color: #f44336; }
-    .bed-reserved .bed-icon { color: #ff9800; }
-    .bed-maintenance .bed-icon { color: #9e9e9e; }
+    .bed-available .bed-icon { color: var(--status-success, #4caf50); }
+    .bed-occupied .bed-icon { color: var(--status-error, #f44336); }
+    .bed-reserved .bed-icon { color: var(--status-warning, #ff9800); }
+    .bed-maintenance .bed-icon { color: var(--border-color, #9e9e9e); }
     .bed-card:hover .bed-icon {
       transform: scale(1.1);
     }
@@ -315,16 +315,16 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       border: 3px solid white;
       box-shadow: var(--shadow-md, 0 2px 4px rgba(0,0,0,0.1));
     }
-    .bed-available .status-indicator { background: #4caf50; }
-    .bed-occupied .status-indicator { background: #f44336; }
-    .bed-reserved .status-indicator { background: #ff9800; }
-    .bed-maintenance .status-indicator { background: #9e9e9e; }
+    .bed-available .status-indicator { background: var(--status-success, #4caf50); }
+    .bed-occupied .status-indicator { background: var(--status-error, #f44336); }
+    .bed-reserved .status-indicator { background: var(--status-warning, #ff9800); }
+    .bed-maintenance .status-indicator { background: var(--border-color, #9e9e9e); }
 
     .bed-info { margin-bottom: 0.5rem; }
     .bed-number {
       font-size: 1.5rem;
       font-weight: 700;
-      color: #1a237e;
+      color: var(--accent-primary, #1a237e);
       line-height: 1.2;
     }
     .bed-type {
@@ -338,13 +338,13 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       gap: 0.25rem;
       margin-top: 0.375rem;
       padding: 0.125rem 0.5rem;
-      background: #e8eaf6;
-      color: #3f51b5;
+      background: var(--bg-badge, #e8eaf6);
+      color: var(--accent-primary, #3f51b5);
       border-radius: 12px;
       font-size: 0.7rem;
       font-weight: 600;
     }
-    .room-badge::before { content: ''; display: inline-block; width: 6px; height: 6px; background: #3f51b5; border-radius: 50%; }
+    .room-badge::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--accent-primary, #3f51b5); border-radius: 50%; }
 
     .patient-info {
       display: flex;
@@ -362,7 +362,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .patient-info mat-icon { font-size: 16px; width: 16px; height: 16px; color: #3f51b5; }
+    .patient-info mat-icon { font-size: 16px; width: 16px; height: 16px; color: var(--accent-primary, #3f51b5); }
 
     .status-badge {
       position: absolute;
@@ -377,10 +377,10 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       letter-spacing: 0.5px;
       white-space: nowrap;
     }
-    .bed-available .status-badge { background: #e8f5e9; color: #2e7d32; }
-    .bed-occupied .status-badge { background: #ffebee; color: #c62828; }
-    .bed-reserved .status-badge { background: #fff3e0; color: #ef6c00; }
-    .bed-maintenance .status-badge { background: #f5f5f5; color: #616161; }
+    .bed-available .status-badge { background: var(--status-success-bg, #e8f5e9); color: var(--status-success, #2e7d32); }
+    .bed-occupied .status-badge { background: var(--status-error-bg, #ffebee); color: var(--status-error, #c62828); }
+    .bed-reserved .status-badge { background: var(--status-warning-bg, #fff3e0); color: var(--status-warning, #ef6c00); }
+    .bed-maintenance .status-badge { background: var(--bg-hover, #f5f5f5); color: var(--text-secondary, #616161); }
 
     .click-hint {
       position: absolute;
@@ -391,7 +391,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       align-items: center;
       gap: 0.25rem;
       font-size: 0.65rem;
-      color: #999;
+      color: var(--text-muted, #999);
       opacity: 0;
       transition: opacity 0.2s ease;
       pointer-events: none;
@@ -422,10 +422,10 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       height: 12px;
       border-radius: 50%;
     }
-    .legend-item.available .dot { background: #4caf50; }
-    .legend-item.occupied .dot { background: #f44336; }
-    .legend-item.reserved .dot { background: #ff9800; }
-    .legend-item.maintenance .dot { background: #9e9e9e; }
+    .legend-item.available .dot { background: var(--status-success, #4caf50); }
+    .legend-item.occupied .dot { background: var(--status-error, #f44336); }
+    .legend-item.reserved .dot { background: var(--status-warning, #ff9800); }
+    .legend-item.maintenance .dot { background: var(--border-color, #9e9e9e); }
 
     /* Dialog Styles */
     .dialog-title-row {
@@ -442,11 +442,11 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       justify-content: center;
     }
     .bed-icon-small mat-icon { font-size: 20px; width: 20px; height: 20px; color: white; }
-    .bed-available .bed-icon-small { background: linear-gradient(135deg, #4caf50, #66bb6a); }
-    .bed-occupied .bed-icon-small { background: linear-gradient(135deg, #f44336, #ef5350); }
-    .bed-reserved .bed-icon-small { background: linear-gradient(135deg, #ff9800, #ffb74d); }
-    .bed-maintenance .bed-icon-small { background: linear-gradient(135deg, #9e9e9e, #bdbdbd); }
-    .dialog-title-row .bed-number { font-size: 1.25rem; font-weight: 700; color: #1a237e; }
+    .bed-available .bed-icon-small { background: linear-gradient(135deg, var(--status-success, #4caf50), #66bb6a); }
+    .bed-occupied .bed-icon-small { background: linear-gradient(135deg, var(--status-error, #f44336), #ef5350); }
+    .bed-reserved .bed-icon-small { background: linear-gradient(135deg, var(--status-warning, #ff9800), #ffb74d); }
+    .bed-maintenance .bed-icon-small { background: linear-gradient(135deg, var(--border-color, #9e9e9e), #bdbdbd); }
+    .dialog-title-row .bed-number { font-size: 1.25rem; font-weight: 700; color: var(--accent-primary, #1a237e); }
     .dialog-title-row .bed-type { font-size: 0.8rem; color: var(--text-muted, #666); text-transform: capitalize; }
 
     .bed-detail { min-width: 360px; }
@@ -457,26 +457,26 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       gap: 0.5rem;
       margin: 0 0 1rem;
       padding-bottom: 0.5rem;
-      border-bottom: 2px solid #e8eaf6;
-      color: #1a237e;
+      border-bottom: 2px solid var(--bg-badge, #e8eaf6);
+      color: var(--accent-primary, #1a237e);
       font-size: 1rem;
     }
-    .detail-section h4 mat-icon { color: #3f51b5; font-size: 20px; width: 20px; height: 20px; }
+    .detail-section h4 mat-icon { color: var(--accent-primary, #3f51b5); font-size: 20px; width: 20px; height: 20px; }
     .detail-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 0.625rem 0;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--border-color, #f0f0f0);
     }
     .detail-row:last-child { border-bottom: none; }
     .detail-row .label { font-weight: 500; color: var(--text-muted, #666); display: flex; align-items: center; gap: 0.375rem; }
     .detail-row .value { color: var(--text-primary, #333); text-align: right; max-width: 65%; word-break: break-word; }
     .status-icon { font-size: 16px; width: 16px; height: 16px; margin-right: 0.375rem; }
-    .status-available { color: #4caf50; font-weight: 600; }
-    .status-occupied { color: #f44336; font-weight: 600; }
-    .status-reserved { color: #ff9800; font-weight: 600; }
-    .status-maintenance { color: #9e9e9e; font-weight: 600; }
+    .status-available { color: var(--status-success, #4caf50); font-weight: 600; }
+    .status-occupied { color: var(--status-error, #f44336); font-weight: 600; }
+    .status-reserved { color: var(--status-warning, #ff9800); font-weight: 600; }
+    .status-maintenance { color: var(--border-color, #9e9e9e); font-weight: 600; }
 
     .no-patient {
       text-align: center;
@@ -485,7 +485,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       background: var(--bg-hover, #f5f5f5);
       border-radius: 8px;
     }
-    .no-patient mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 0.75rem; color: #4caf50; }
+    .no-patient mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 0.75rem; color: var(--status-success, #4caf50); }
   `]
 })
 export class BedManagementComponent implements OnInit {

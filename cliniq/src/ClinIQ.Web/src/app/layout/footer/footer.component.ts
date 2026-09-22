@@ -19,18 +19,18 @@ import { Component } from '@angular/core';
       align-items: center;
       gap: 0.5rem;
       padding: 1rem;
-      background: white;
-      border-top: 1px solid #e0e0e0;
+      background: var(--bg-secondary, #ffffff);
+      border-top: 1px solid var(--border-color, #e0e0e0);
       font-size: 0.75rem;
-      color: #666;
+      color: var(--text-secondary, #666);
     }
 
     .separator {
-      color: #ccc;
+      color: var(--text-muted, #ccc);
     }
 
     a {
-      color: #3f51b5;
+      color: var(--accent-primary, #3f51b5);
       text-decoration: none;
     }
 

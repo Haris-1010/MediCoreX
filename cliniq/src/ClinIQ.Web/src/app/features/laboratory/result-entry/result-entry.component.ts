@@ -128,17 +128,17 @@ import { AuthService } from '../../../core/services/auth.service';
     .results-grid { display: grid; grid-template-columns: 300px 1fr; gap: 1.5rem; }
     .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; } .card h3 { margin: 0 0 1rem; }
     .info-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color, #eee); } .info-row span { color: var(--text-secondary, #666); }
-    .test-result { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #eee; }
+    .test-result { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color, #eee); }
     .test-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
     .test-header h4 { margin: 0; color: var(--accent-primary, #3f51b5); }
-    .sample-badge { font-size: 0.7rem; background: #e8eaf6; color: #3f51b5; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
-    .sample-badge.info { background: #e3f2fd; color: #1565c0; }
+    .sample-badge { font-size: 0.7rem; background: var(--bg-badge, #e8eaf6); color: var(--accent-primary, #3f51b5); padding: 2px 8px; border-radius: 12px; font-weight: 500; }
+    .sample-badge.info { background: var(--status-info-bg, #e3f2fd); color: var(--status-info, #1565c0); }
     .parameters { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem 1rem; }
     .param { display: flex; flex-direction: column; gap: 2px; }
     .param-field { margin-bottom: -1.5em !important; }
     .param-meta { display: flex; align-items: center; gap: 4px; }
     .range { font-size: 0.7rem; color: var(--text-secondary, #666); }
-    .data-type-badge { font-size: 0.6rem; background: #f0f0f0; color: #888; padding: 1px 6px; border-radius: 8px; text-transform: uppercase; }
+    .data-type-badge { font-size: 0.6rem; background: var(--bg-hover, #f0f0f0); color: var(--text-muted, #888); padding: 1px 6px; border-radius: 8px; text-transform: uppercase; }
     .warning-icon { font-size: 16px; width: 16px; height: 16px; }
     .full-width { width: 100%; }
     .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }

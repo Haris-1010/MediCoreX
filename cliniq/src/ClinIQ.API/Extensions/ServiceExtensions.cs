@@ -84,13 +84,14 @@ public static class ServiceExtensions
 
             c.CustomSchemaIds(type =>
             {
+                var name = type.Name;
                 if (type.IsGenericType)
                 {
-                    var name = type.Name.Split('`')[0];
-                    var args = string.Join("_", type.GetGenericArguments().Select(t => t.Name));
+                    name = name.Split('`')[0];
+                    var args = string.Join("_", type.GetGenericArguments().Select(t => t.Name.Split('`')[0]));
                     return $"{name}_{args}";
                 }
-                return type.FullName ?? type.Name;
+                return name.Split('+').Last();
             });
 
             c.SchemaFilter<ObjectTypeFilter>();

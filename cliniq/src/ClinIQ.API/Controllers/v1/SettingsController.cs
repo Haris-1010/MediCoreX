@@ -106,7 +106,7 @@ public class SettingsController : ControllerBase
 
     [HttpPut("{section}")]
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.SettingsEdit)]
-    public async Task<IActionResult> UpdateSettings(string section, [FromBody] Dictionary<string, System.Text.Json.JsonElement> request)
+    public async Task<IActionResult> UpdateSettings(string section, [FromBody] Dictionary<string, string> request)
     {
         var tenantId = _tenantService.GetCurrentTenantId();
         if (tenantId is null)

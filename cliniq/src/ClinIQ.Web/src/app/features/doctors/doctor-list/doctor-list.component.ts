@@ -38,9 +38,9 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
   styles: [`.card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; } .filters { display: flex; gap: 1rem; margin-bottom: 1rem; }
     .doctor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
     .doctor-card { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--bg-hover, #f5f5f5); border-radius: 8px; cursor: pointer; }
-    .doctor-card:hover { background: #e8eaf6; }
-    .avatar { width: 50px; height: 50px; border-radius: 50%; background: #3f51b5; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; }
-    .info { flex: 1; } .info h4 { margin: 0; } .spec { margin: 0; color: #3f51b5; font-size: 0.875rem; } .dept { margin: 0; color: var(--text-muted, #666); font-size: 0.75rem; }
+    .doctor-card:hover { background: var(--bg-hover, #e8eaf6); }
+    .avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--accent-primary, #3f51b5); color: var(--text-inverse, white); display: flex; align-items: center; justify-content: center; font-weight: 600; }
+    .info { flex: 1; } .info h4 { margin: 0; } .spec { margin: 0; color: var(--accent-primary, #3f51b5); font-size: 0.875rem; } .dept { margin: 0; color: var(--text-muted, #666); font-size: 0.75rem; }
     .meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; }
     .phone { display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: var(--text-muted, #666); } .phone mat-icon { font-size: 14px; width: 14px; height: 14px; }`]
 })

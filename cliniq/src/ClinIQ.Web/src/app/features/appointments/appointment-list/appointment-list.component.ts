@@ -84,7 +84,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       </div>
     </app-main-layout>
   `,
-  styles: [`.filters { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; } table { width: 100%; } .delete-action { color: #f44336; } .restore-action { color: #4caf50; }`]
+  styles: [`.filters { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; } table { width: 100%; } .delete-action { color: var(--status-error, #f44336); } .restore-action { color: var(--status-success, #4caf50); }`]
 })
 export class AppointmentListComponent implements OnInit {
   appointments: any[] = [];

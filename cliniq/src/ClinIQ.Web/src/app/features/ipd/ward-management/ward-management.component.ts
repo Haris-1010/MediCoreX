@@ -249,10 +249,10 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .ward-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
     .ward-card { background: var(--bg-card, #fff); border-radius: 10px; padding: 1.25rem; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
     .ward-card:hover { border-color: var(--accent-primary, #3f51b5); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    .ward-card.selected { border-color: #3f51b5; background: #e8eaf6; }
+    .ward-card.selected { border-color: var(--accent-primary, #3f51b5); background: var(--bg-badge, #e8eaf6); }
 
     .ward-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
-    .ward-icon { width: 48px; height: 48px; border-radius: 12px; background: #e8eaf6; display: flex; align-items: center; justify-content: center; }
+    .ward-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--bg-badge, #e8eaf6); display: flex; align-items: center; justify-content: center; }
     .ward-icon mat-icon { color: var(--accent-primary, #3f51b5); }
     .ward-title { flex: 1; }
     .ward-title h3 { margin: 0; font-size: 1.1rem; }
@@ -262,12 +262,12 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .ward-stats { display: flex; gap: 1rem; margin-bottom: 0.75rem; }
     .stat { text-align: center; flex: 1; }
     .stat .num { display: block; font-size: 1.25rem; font-weight: 700; }
-    .stat .num.avail { color: #4caf50; }
-    .stat .num.occ { color: #f44336; }
+    .stat .num.avail { color: var(--status-success, #4caf50); }
+    .stat .num.occ { color: var(--status-error, #f44336); }
     .stat .label { font-size: 0.7rem; color: var(--text-muted, #888); text-transform: uppercase; }
 
     .ward-bar { height: 6px; background: var(--border-color, #e0e0e0); border-radius: 3px; overflow: hidden; }
-    .bar-fill { height: 100%; background: linear-gradient(90deg, #4caf50, #f44336); border-radius: 3px; }
+    .bar-fill { height: 100%; background: linear-gradient(90deg, var(--status-success, #4caf50), var(--status-error, #f44336)); border-radius: 3px; }
 
     .detail-panel { background: var(--bg-card, #fff); border-radius: 10px; padding: 1.5rem; margin-top: 1rem; }
     .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
@@ -282,13 +282,13 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
 
     .bed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; }
     .bed-tile { padding: 0.75rem; border-radius: 6px; text-align: center; border: 2px solid transparent; }
-    .bed-tile.bed-available { border-color: #4caf50; background: #e8f5e9; }
-    .bed-tile.bed-occupied { border-color: #f44336; background: #ffebee; }
-    .bed-tile.bed-reserved { border-color: #ff9800; background: #fff3e0; }
-    .bed-tile.bed-maintenance { border-color: #9e9e9e; background: #f5f5f5; }
+    .bed-tile.bed-available { border-color: var(--status-success, #4caf50); background: var(--status-success-bg, #e8f5e9); }
+    .bed-tile.bed-occupied { border-color: var(--status-error, #f44336); background: var(--status-error-bg, #ffebee); }
+    .bed-tile.bed-reserved { border-color: var(--status-warning, #ff9800); background: var(--status-warning-bg, #fff3e0); }
+    .bed-tile.bed-maintenance { border-color: var(--border-color, #9e9e9e); background: var(--bg-hover, #f5f5f5); }
     .bed-num { display: block; font-weight: 700; font-size: 1.1rem; }
     .bed-type { display: block; font-size: 0.7rem; color: var(--text-secondary, #666); }
-    .bed-patient { display: flex; align-items: center; justify-content: center; gap: 2px; margin-top: 4px; font-size: 0.7rem; color: #c62828; }
+    .bed-patient { display: flex; align-items: center; justify-content: center; gap: 2px; margin-top: 4px; font-size: 0.7rem; color: var(--status-error, #c62828); }
     .bed-patient mat-icon { font-size: 12px; width: 12px; height: 12px; }
     .no-beds, .no-data { text-align: center; color: var(--text-muted, #aaa); padding: 1rem; font-size: 0.85rem; }
 

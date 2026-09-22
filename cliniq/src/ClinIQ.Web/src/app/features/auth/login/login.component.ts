@@ -54,7 +54,7 @@ import { NotificationService } from '../../../core/services/notification.service
   `,
   styles: [`
     .login-container {
-      background: white;
+      background: var(--bg-card, #fff);
       padding: 2.5rem;
       border-radius: 16px;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
@@ -79,16 +79,16 @@ import { NotificationService } from '../../../core/services/notification.service
       font-size: 32px;
       width: 32px;
       height: 32px;
-      color: #1a237e;
+      color: var(--accent-primary);
     }
     .login-header h2 {
       margin: 0 0 0.5rem;
       font-size: 1.75rem;
       font-weight: 700;
-      color: #1a237e;
+      color: var(--accent-primary);
     }
     .subtitle {
-      color: #64748b;
+      color: var(--text-muted);
       margin: 0;
       font-size: 0.95rem;
     }
@@ -102,7 +102,7 @@ import { NotificationService } from '../../../core/services/notification.service
       margin-bottom: 1.5rem;
     }
     .form-actions a {
-      color: #3f51b5;
+      color: var(--accent-primary);
       text-decoration: none;
       font-size: 0.875rem;
       font-weight: 500;

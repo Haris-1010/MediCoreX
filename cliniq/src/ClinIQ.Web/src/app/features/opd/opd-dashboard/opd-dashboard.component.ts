@@ -105,10 +105,10 @@ import { SignalRService } from '../../../core/services/signalr.service';
       display: flex; align-items: center; justify-content: center;
     }
     .stat-icon mat-icon { font-size: 26px; width: 26px; height: 26px; }
-    .stat-icon.patients { background: #e3f2fd; color: #1976d2; }
-    .stat-icon.waiting { background: #fff3e0; color: #f57c00; }
-    .stat-icon.progress { background: #e8f5e9; color: #388e3c; }
-    .stat-icon.done { background: #f3e5f5; color: #7b1fa2; }
+    .stat-icon.patients { background: var(--status-info-bg, #e3f2fd); color: var(--status-info, #1976d2); }
+    .stat-icon.waiting { background: var(--status-warning-bg, #fff3e0); color: var(--status-warning, #f57c00); }
+    .stat-icon.progress { background: var(--status-success-bg, #e8f5e9); color: var(--status-success, #388e3c); }
+    .stat-icon.done { background: var(--status-info-bg, #f3e5f5); color: var(--accent-primary, #7b1fa2); }
     .stat-card h3 { margin: 0; font-size: 1.75rem; line-height: 1; }
     .stat-card p { margin: 0.25rem 0 0; color: var(--text-muted, #888); font-size: 0.85rem; }
 
@@ -128,7 +128,7 @@ import { SignalRService } from '../../../core/services/signalr.service';
       border-bottom: 1px solid var(--border-color, #f0f0f0);
     }
     .card-header h3 { margin: 0; font-size: 1rem; }
-    .badge { background: #e8eaf6; color: #3f51b5; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+    .badge { background: var(--bg-badge, #e8eaf6); color: var(--accent-primary, #3f51b5); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
 
     .doctor-list, .queue-list { padding: 0.75rem 1rem; max-height: 400px; overflow-y: auto; }
 
@@ -145,8 +145,8 @@ import { SignalRService } from '../../../core/services/signalr.service';
     .avatar {
       width: 42px; height: 42px;
       border-radius: 50%;
-      background: #3f51b5;
-      color: white;
+      background: var(--accent-primary, #3f51b5);
+      color: var(--text-inverse, #fff);
       display: flex; align-items: center; justify-content: center;
       font-weight: 600;
       font-size: 0.85rem;
@@ -156,7 +156,7 @@ import { SignalRService } from '../../../core/services/signalr.service';
     .info p { margin: 0.15rem 0 0; font-size: 0.8rem; color: var(--text-muted, #888); }
 
     .queue-badge { text-align: center; }
-    .queue-badge .count { display: block; font-size: 1.25rem; font-weight: 700; color: #3f51b5; }
+    .queue-badge .count { display: block; font-size: 1.25rem; font-weight: 700; color: var(--accent-primary, #3f51b5); }
     .queue-badge .label { font-size: 0.65rem; color: var(--text-muted, #aaa); }
 
     .queue-item {
@@ -168,19 +168,19 @@ import { SignalRService } from '../../../core/services/signalr.service';
       transition: background 0.15s;
     }
     .queue-item:hover { background: var(--bg-hover, #f5f5f5); }
-    .queue-item.called { background: #fff8e1; border-left: 3px solid #ffc107; }
-    .queue-item.in-progress { background: #e8f5e9; border-left: 3px solid #4caf50; }
+    .queue-item.called { background: var(--status-warning-bg, #fff8e1); border-left: 3px solid var(--status-warning, #ffc107); }
+    .queue-item.in-progress { background: var(--status-success-bg, #e8f5e9); border-left: 3px solid var(--status-success, #4caf50); }
 
     .token-circle {
       width: 40px; height: 40px;
       border-radius: 50%;
-      background: #e8eaf6;
-      color: #3f51b5;
+      background: var(--bg-badge, #e8eaf6);
+      color: var(--accent-primary, #3f51b5);
       display: flex; align-items: center; justify-content: center;
       font-weight: 700;
       font-size: 0.85rem;
     }
-    .token-circle.active { background: #3f51b5; color: white; }
+    .token-circle.active { background: var(--accent-primary, #3f51b5); color: var(--text-inverse, #fff); }
 
     .status-chip {
       padding: 3px 10px;
@@ -190,10 +190,10 @@ import { SignalRService } from '../../../core/services/signalr.service';
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    .status-chip.waiting { background: #fff3e0; color: #e65100; }
-    .status-chip.called { background: #fff8e1; color: #f57f17; }
-    .status-chip.in-consultation { background: #e8f5e9; color: #2e7d32; }
-    .status-chip.recalled { background: #fce4ec; color: #c62828; }
+    .status-chip.waiting { background: var(--status-warning-bg, #fff3e0); color: var(--status-warning, #e65100); }
+    .status-chip.called { background: var(--status-warning-bg, #fff8e1); color: var(--status-warning, #f57f17); }
+    .status-chip.in-consultation { background: var(--status-success-bg, #e8f5e9); color: var(--status-success, #2e7d32); }
+    .status-chip.recalled { background: var(--status-error-bg, #fce4ec); color: var(--status-error, #c62828); }
 
     .empty {
       text-align: center;

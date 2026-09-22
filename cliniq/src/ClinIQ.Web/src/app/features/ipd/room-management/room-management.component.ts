@@ -242,23 +242,23 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .room-card:hover {
       transform: translateY(-4px);
       box-shadow: var(--shadow-lg, 0 12px 32px rgba(63, 81, 181, 0.15));
-      border-color: #3f51b5;
+      border-color: var(--accent-primary, #3f51b5);
     }
 
     /* Room Type Variants */
-    .room-general { border-left: 4px solid #4caf50; }
-    .room-private { border-left: 4px solid #3f51b5; }
-    .room-semiprivate { border-left: 4px solid #ff9800; }
-    .room-icu { border-left: 4px solid #f44336; }
-    .room-isolation { border-left: 4px solid #9c27b0; }
+    .room-general { border-left: 4px solid var(--status-success, #4caf50); }
+    .room-private { border-left: 4px solid var(--accent-primary, #3f51b5); }
+    .room-semiprivate { border-left: 4px solid var(--status-warning, #ff9800); }
+    .room-icu { border-left: 4px solid var(--status-error, #f44336); }
+    .room-isolation { border-left: 4px solid var(--accent-purple, #9c27b0); }
 
     .room-header {
       display: flex;
       align-items: flex-start;
       gap: 1rem;
       padding: 1.25rem;
-      background: linear-gradient(135deg, #fafbff 0%, #ffffff 100%);
-      border-bottom: 1px solid #f0f0f0;
+      background: linear-gradient(135deg, var(--bg-card, #fafbff) 0%, var(--bg-card, #ffffff) 100%);
+      border-bottom: 1px solid var(--border-color, #f0f0f0);
     }
     .room-icon-wrapper {
       width: 56px;
@@ -271,14 +271,14 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.1));
     }
     .room-icon-wrapper mat-icon { font-size: 28px; width: 28px; height: 28px; color: white; }
-    .room-general .room-icon-wrapper { background: linear-gradient(135deg, #4caf50, #66bb6a); }
-    .room-private .room-icon-wrapper { background: linear-gradient(135deg, #3f51b5, #5c6bc0); }
-    .room-semiprivate .room-icon-wrapper { background: linear-gradient(135deg, #ff9800, #ffb74d); }
-    .room-icu .room-icon-wrapper { background: linear-gradient(135deg, #f44336, #ef5350); }
-    .room-isolation .room-icon-wrapper { background: linear-gradient(135deg, #9c27b0, #ba68c8); }
+    .room-general .room-icon-wrapper { background: linear-gradient(135deg, var(--status-success, #4caf50), #66bb6a); }
+    .room-private .room-icon-wrapper { background: linear-gradient(135deg, var(--accent-primary, #3f51b5), var(--accent-secondary, #5c6bc0)); }
+    .room-semiprivate .room-icon-wrapper { background: linear-gradient(135deg, var(--status-warning, #ff9800), #ffb74d); }
+    .room-icu .room-icon-wrapper { background: linear-gradient(135deg, var(--status-error, #f44336), #ef5350); }
+    .room-isolation .room-icon-wrapper { background: linear-gradient(135deg, var(--accent-purple, #9c27b0), #ba68c8); }
 
     .room-info { flex: 1; min-width: 0; }
-    .room-info h3 { margin: 0 0 0.25rem; font-size: 1.125rem; font-weight: 700; color: #1a237e; }
+    .room-info h3 { margin: 0 0 0.25rem; font-size: 1.125rem; font-weight: 700; color: var(--accent-primary, #1a237e); }
     .room-info p { margin: 0; font-size: 0.8rem; color: var(--text-muted, #666); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .room-type-badge {
       padding: 0.25rem 0.75rem;
@@ -289,11 +289,11 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       letter-spacing: 0.5px;
       white-space: nowrap;
     }
-    .room-general .room-type-badge { background: #e8f5e9; color: #2e7d32; }
-    .room-private .room-type-badge { background: #e8eaf6; color: #1a237e; }
-    .room-semiprivate .room-type-badge { background: #fff3e0; color: #ef6c00; }
-    .room-icu .room-type-badge { background: #ffebee; color: #c62828; }
-    .room-isolation .room-type-badge { background: #f3e5f5; color: #7b1fa2; }
+    .room-general .room-type-badge { background: var(--status-success-bg, #e8f5e9); color: var(--status-success, #2e7d32); }
+    .room-private .room-type-badge { background: var(--bg-badge, #e8eaf6); color: var(--accent-primary, #1a237e); }
+    .room-semiprivate .room-type-badge { background: var(--status-warning-bg, #fff3e0); color: var(--status-warning, #ef6c00); }
+    .room-icu .room-type-badge { background: var(--status-error-bg, #ffebee); color: var(--status-error, #c62828); }
+    .room-isolation .room-type-badge { background: var(--accent-purple, #f3e5f5); color: var(--accent-purple, #7b1fa2); }
 
     .room-details { padding: 1rem 1.25rem; flex: 1; }
     .detail-row {
@@ -304,25 +304,25 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       font-size: 0.85rem;
       color: var(--text-primary, #444);
     }
-    .detail-row mat-icon { font-size: 18px; width: 18px; height: 18px; color: #7986cb; flex-shrink: 0; }
-    .free-badge { color: #4caf50; font-weight: 600; font-size: 0.75rem; margin-left: 0.375rem; }
+    .detail-row mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--accent-primary, #7986cb); flex-shrink: 0; }
+    .free-badge { color: var(--status-success, #4caf50); font-weight: 600; font-size: 0.75rem; margin-left: 0.375rem; }
 
     .room-features {
       display: flex;
       flex-wrap: wrap;
       gap: 0.375rem;
       padding: 0.75rem 1.25rem;
-      background: #fafbff;
-      border-top: 1px solid #f0f0f0;
-      border-bottom: 1px solid #f0f0f0;
+      background: var(--bg-card, #fafbff);
+      border-top: 1px solid var(--border-color, #f0f0f0);
+      border-bottom: 1px solid var(--border-color, #f0f0f0);
     }
     .feature-chip {
       display: inline-flex;
       align-items: center;
       gap: 0.375rem;
       padding: 0.25rem 0.625rem;
-      background: #e8eaf6;
-      color: #3f51b5;
+      background: var(--bg-badge, #e8eaf6);
+      color: var(--accent-primary, #3f51b5);
       border-radius: 16px;
       font-size: 0.7rem;
       font-weight: 500;
@@ -345,14 +345,14 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     }
     .action-btn:hover { transform: scale(1.1); }
     .action-btn mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .bed-btn { background: #e8f5e9; color: #2e7d32; }
-    .bed-btn:hover { background: #4caf50; color: white; }
-    .batch-btn { background: #e3f2fd; color: #1565c0; }
-    .batch-btn:hover { background: #3f51b5; color: white; }
-    .edit-btn { background: #fff3e0; color: #ef6c00; }
-    .edit-btn:hover { background: #ff9800; color: white; }
-    .delete-btn { background: #ffebee; color: #c62828; }
-    .delete-btn:hover { background: #f44336; color: white; }
+    .bed-btn { background: var(--status-success-bg, #e8f5e9); color: var(--status-success, #2e7d32); }
+    .bed-btn:hover { background: var(--status-success, #4caf50); color: white; }
+    .batch-btn { background: var(--status-info-bg, #e3f2fd); color: var(--status-info, #1565c0); }
+    .batch-btn:hover { background: var(--accent-primary, #3f51b5); color: white; }
+    .edit-btn { background: var(--status-warning-bg, #fff3e0); color: var(--status-warning, #ef6c00); }
+    .edit-btn:hover { background: var(--status-warning, #ff9800); color: white; }
+    .delete-btn { background: var(--status-error-bg, #ffebee); color: var(--status-error, #c62828); }
+    .delete-btn:hover { background: var(--status-error, #f44336); color: white; }
 
     .empty-state {
       text-align: center;
@@ -365,13 +365,13 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       width: 100px;
       height: 100px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #e8eaf6, #f5f5ff);
+      background: linear-gradient(135deg, var(--bg-badge, #e8eaf6), var(--bg-card, #f5f5ff));
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 0 auto 1.5rem;
     }
-    .empty-icon mat-icon { font-size: 48px; width: 48px; height: 48px; color: #3f51b5; }
+    .empty-icon mat-icon { font-size: 48px; width: 48px; height: 48px; color: var(--accent-primary, #3f51b5); }
     .empty-state h3 { margin: 0 0 0.5rem; color: var(--text-primary, #333); font-size: 1.25rem; }
     .empty-state p { color: var(--text-muted, #888); margin-bottom: 1.5rem; }
 
@@ -382,7 +382,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .flex1 { flex: 1; }
     .check-row { display: flex; gap: 1rem; flex-wrap: wrap; }
     .check-row mat-checkbox { display: flex; align-items: center; gap: 0.375rem; min-height: 36px; }
-    .check-row mat-checkbox mat-icon { font-size: 18px; width: 18px; height: 18px; color: #3f51b5; }
+    .check-row mat-checkbox mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--accent-primary, #3f51b5); }
     
     ::ng-deep .mat-mdc-dialog-content { padding: 20px 24px !important; min-width: 450px; }
     ::ng-deep .mat-mdc-dialog-actions { padding: 8px 24px 20px !important; }

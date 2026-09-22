@@ -146,7 +146,7 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
       font-size: 24px;
       width: 24px;
       height: 24px;
-      color: white;
+      color: var(--text-inverse, white);
     }
 
     .org-logo {
@@ -154,7 +154,7 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
       height: 32px;
       border-radius: 6px;
       object-fit: contain;
-      background: white;
+      background: var(--bg-card, white);
       padding: 2px;
     }
 

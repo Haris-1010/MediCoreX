@@ -51,13 +51,13 @@ import { NotificationService } from '../../../core/services/notification.service
       </div>
     </app-main-layout>
   `,
-  styles: [`.card { background: white; padding: 1.5rem; border-radius: 8px; } h3 { margin: 1.5rem 0 1rem; } h3:first-child { margin-top: 0; }
+  styles: [`.card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; } h3 { margin: 1.5rem 0 1rem; } h3:first-child { margin-top: 0; }
     .form-row { display: flex; gap: 1rem; } .form-row mat-form-field { flex: 1; } .full-width { width: 100%; }
     .priority-selection { margin: 1rem 0; } .priority-selection label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
     .priority-selection mat-radio-button { display: block; margin: 0.5rem 0; }
     .priority { padding: 0.25rem 0.5rem; border-radius: 4px; font-weight: 600; }
-    .priority.critical { background: #ffebee; color: #c62828; } .priority.urgent { background: #fff3e0; color: #e65100; }
-    .priority.moderate { background: #fffde7; color: #f9a825; } .priority.stable { background: #e8f5e9; color: #2e7d32; }
+    .priority.critical { background: var(--status-error-bg, #ffebee); color: var(--status-error, #c62828); } .priority.urgent { background: var(--status-warning-bg, #fff3e0); color: var(--status-warning, #e65100); }
+    .priority.moderate { background: var(--status-info-bg, #fffde7); color: var(--status-info, #f9a825); } .priority.stable { background: var(--status-success-bg, #e8f5e9); color: var(--status-success, #2e7d32); }
     .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }`]
 })
 export class TriageComponent implements OnInit {

@@ -69,15 +69,15 @@ import { NotificationService } from '../../../core/services/notification.service
       </div>
     </app-main-layout>
   `,
-  styles: [`.card { background: white; padding: 1.5rem; border-radius: 8px; } h3 { margin: 1.5rem 0 1rem; } h3:first-child { margin-top: 0; }
+  styles: [`.card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; } h3 { margin: 1.5rem 0 1rem; } h3:first-child { margin-top: 0; }
     .form-row { display: flex; gap: 1rem; } .form-row mat-form-field { flex: 1; } .full-width { width: 100%; }
     .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
     :host ::ng-deep .doctor-option-item { display: flex; flex-direction: column; padding: 4px 0; }
     :host ::ng-deep .doctor-option-item .name { font-weight: 500; }
-    :host ::ng-deep .doctor-option-item .details { font-size: 0.75rem; color: #888; }
-    :host ::ng-deep .mat-mdc-autocomplete-panel { max-height: 300px !important; border-radius: 8px !important; border: 1px solid #c5cae9 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important; }
+    :host ::ng-deep .doctor-option-item .details { font-size: 0.75rem; color: var(--text-muted, #888); }
+    :host ::ng-deep .mat-mdc-autocomplete-panel { max-height: 300px !important; border-radius: 8px !important; border: 1px solid var(--border-color, #c5cae9) !important; box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important; }
     :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option { padding: 10px 16px !important; line-height: 1.4 !important; }
-    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option:hover { background-color: #e8eaf6 !important; }`]
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option:hover { background-color: var(--bg-hover, #e8eaf6) !important; }`]
 })
 export class AdmissionFormComponent implements OnInit {
   form!: FormGroup; saving = false;

@@ -127,17 +127,17 @@ import { TenantService } from '../../../core/services/tenant.service';
     .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
     .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid var(--border-color, #f0f0f0); }
     .card-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; }
-    .header-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: #e8eaf6; color: var(--accent-primary, #3f51b5); font-size: 22px; width: 22px; height: 22px; padding: 9px; }
-    .payment-header-icon { background: #e8f5e9 !important; color: #2e7d32 !important; }
+    .header-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--bg-badge, #e8eaf6); color: var(--accent-primary, #3f51b5); font-size: 22px; width: 22px; height: 22px; padding: 9px; }
+    .payment-header-icon { background: var(--status-success-bg, #e8f5e9) !important; color: var(--status-success, #2e7d32) !important; }
     .card h3 { margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary, #1a1a1a); }
 
     .info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; }
     .info-row .label { color: var(--text-secondary, #666); font-size: 0.9rem; }
     .info-row .value { font-size: 0.9rem; }
     .info-row .total { font-size: 1.1rem; color: var(--text-primary, #1a1a1a); }
-    .info-row .paid { color: #2e7d32; }
-    .info-row .balance { color: #d32f2f; font-size: 1.1rem; }
-    .info-row.highlight { padding: 0.75rem; background: #fff5f5; border-radius: 8px; margin-top: 0.5rem; border: 1px solid #ffcdd2; }
+    .info-row .paid { color: var(--status-success, #2e7d32); }
+    .info-row .balance { color: var(--status-error, #d32f2f); font-size: 1.1rem; }
+    .info-row.highlight { padding: 0.75rem; background: var(--status-error-bg, #fff5f5); border-radius: 8px; margin-top: 0.5rem; border: 1px solid var(--status-error, #ffcdd2); }
 
     .amount-section { margin-top: 0.5rem; }
 
@@ -151,7 +151,7 @@ import { TenantService } from '../../../core/services/tenant.service';
     .payment-preview { padding: 1rem; background: var(--table-header-bg, #fafbfc); border-radius: 8px; border: 1px solid var(--border-color, #f0f0f0); margin-top: 0.5rem; }
     .preview-row { display: flex; justify-content: space-between; padding: 0.35rem 0; font-size: 0.9rem; }
     .preview-row strong { color: var(--text-primary, #1a1a1a); }
-    .preview-row strong.cleared { color: #2e7d32; }
+    .preview-row strong.cleared { color: var(--status-success, #2e7d32); }
 
     @media (max-width: 768px) {
       .payment-grid { grid-template-columns: 1fr; }

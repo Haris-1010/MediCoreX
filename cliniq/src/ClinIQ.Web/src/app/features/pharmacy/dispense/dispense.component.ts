@@ -166,12 +166,12 @@ import { TenantService } from '../../../core/services/tenant.service';
     .section-icon {
       width: 34px; height: 34px; border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
-      background: #e8eaf6;
+      background: var(--bg-badge, #e8eaf6);
     }
-    .section-icon mat-icon { color: #3f51b5; font-size: 18px; width: 18px; height: 18px; }
+    .section-icon mat-icon { color: var(--accent-primary, #3f51b5); font-size: 18px; width: 18px; height: 18px; }
 
-    .section-title { margin: 0; font-size: 0.95rem; font-weight: 600; color: #1a237e; }
-    .section-sub { font-size: 0.78rem; color: #7986cb; }
+    .section-title { margin: 0; font-size: 0.95rem; font-weight: 600; color: var(--text-primary, #1a237e); }
+    .section-sub { font-size: 0.78rem; color: var(--text-muted, #7986cb); }
 
     .rx-status {
       margin-left: auto;
@@ -179,12 +179,12 @@ import { TenantService } from '../../../core/services/tenant.service';
       border-radius: 12px;
       font-size: 0.75rem;
       font-weight: 600;
-      background: #c8e6c9;
-      color: #2e7d32;
+      background: var(--status-success-bg, #c8e6c9);
+      color: var(--status-success, #2e7d32);
     }
     .rx-status.pending {
       background: var(--status-warning-bg, #fff3e0);
-      color: #e65100;
+      color: var(--status-warning, #e65100);
     }
 
     .info-grid {
@@ -198,22 +198,22 @@ import { TenantService } from '../../../core/services/tenant.service';
       flex-direction: column;
       gap: 2px;
     }
-    .info-label { font-size: 0.72rem; color: #7986cb; text-transform: uppercase; letter-spacing: 0.3px; }
+    .info-label { font-size: 0.72rem; color: var(--text-muted, #7986cb); text-transform: uppercase; letter-spacing: 0.3px; }
     .info-value { font-size: 0.88rem; font-weight: 500; color: var(--text-primary, #333); }
 
     .med-table { width: 100%; }
 
     .med-name { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-    .med-name strong { color: #1a237e; }
-    .med-detail { font-size: 0.78rem; color: #5c6bc0; background: #e8eaf6; padding: 1px 6px; border-radius: 4px; }
+    .med-name strong { color: var(--text-primary, #1a237e); }
+    .med-detail { font-size: 0.78rem; color: var(--accent-secondary, #5c6bc0); background: var(--bg-badge, #e8eaf6); padding: 1px 6px; border-radius: 4px; }
 
     .freq-badge {
       display: inline-block;
       padding: 2px 8px;
       border-radius: 4px;
       font-size: 0.78rem;
-      background: #e3f2fd;
-      color: #1565c0;
+      background: var(--status-info-bg, #e3f2fd);
+      color: var(--status-info, #1565c0);
     }
 
     .timing-badges { display: flex; gap: 4px; margin-top: 4px; }
@@ -221,7 +221,7 @@ import { TenantService } from '../../../core/services/tenant.service';
       width: 20px; height: 20px; border-radius: 50%;
       display: inline-flex; align-items: center; justify-content: center;
       font-size: 0.65rem; font-weight: 700;
-      background: #e8eaf6; color: #3f51b5;
+      background: var(--bg-badge, #e8eaf6); color: var(--accent-primary, #3f51b5);
     }
 
     .qty-field { width: 70px; }
@@ -231,19 +231,19 @@ import { TenantService } from '../../../core/services/tenant.service';
     ::ng-deep .qty-field .mat-mdc-text-field-wrapper,
     ::ng-deep .price-field .mat-mdc-text-field-wrapper { padding: 0 8px; }
 
-    .price-cell { font-weight: 600; color: #1a237e; }
+    .price-cell { font-weight: 600; color: var(--text-primary, #1a237e); }
 
     .grand-total {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 0.75rem 1rem;
-      background: #f5f6ff;
+      background: var(--bg-secondary, #f5f6ff);
       border-radius: 8px;
       margin-top: 0.75rem;
       font-size: 1.1rem;
     }
-    .grand-total strong { color: #1a237e; }
+    .grand-total strong { color: var(--text-primary, #1a237e); }
 
     .action-bar {
       display: flex;

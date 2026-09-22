@@ -84,7 +84,7 @@ import { NotificationService } from '../../../core/services/notification.service
   `,
   styles: [`
     .register-card {
-      background: white;
+      background: var(--bg-card, #fff);
       padding: 2.5rem;
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -100,7 +100,7 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .subtitle {
-      color: #666;
+      color: var(--text-secondary);
       text-align: center;
       margin-bottom: 2rem;
     }
@@ -123,7 +123,7 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .terms-checkbox a {
-      color: #3f51b5;
+      color: var(--accent-primary);
     }
 
     .submit-btn {
@@ -134,11 +134,11 @@ import { NotificationService } from '../../../core/services/notification.service
     .login-link {
       text-align: center;
       margin-top: 1.5rem;
-      color: #666;
+      color: var(--text-secondary);
     }
 
     .login-link a {
-      color: #3f51b5;
+      color: var(--accent-primary);
       text-decoration: none;
       font-weight: 500;
     }

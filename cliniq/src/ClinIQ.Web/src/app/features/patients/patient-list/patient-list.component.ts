@@ -230,8 +230,8 @@ interface Patient {
     }
 
     .blood-group {
-      background: #ffebee;
-      color: #c62828;
+      background: var(--status-error-bg, #ffebee);
+      color: var(--status-error, #c62828);
       padding: 0.25rem 0.5rem;
       border-radius: 4px;
       font-size: 0.75rem;
@@ -244,7 +244,7 @@ interface Patient {
     }
 
     .delete-action {
-      color: #f44336;
+      color: var(--status-error, #f44336);
     }
   `]
 })

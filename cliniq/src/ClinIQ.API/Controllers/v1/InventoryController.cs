@@ -394,7 +394,7 @@ public class InventoryController : ControllerBase
 
     [HttpPost("transfers")]
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.InventoryTransfer)]
-    public IActionResult CreateTransfer([FromBody] System.Text.Json.JsonElement request)
+    public IActionResult CreateTransfer([FromBody] object request)
     {
         return Ok(Result<object>.Success(new { id = Guid.NewGuid() }, "Transfer created"));
     }

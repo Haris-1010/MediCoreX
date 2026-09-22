@@ -52,7 +52,7 @@ import { NotificationService } from '../../../core/services/notification.service
   `,
   styles: [`
     .reset-card {
-      background: white;
+      background: var(--bg-card, #fff);
       padding: 2.5rem;
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -68,7 +68,7 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .subtitle {
-      color: #666;
+      color: var(--text-secondary);
       text-align: center;
       margin-bottom: 2rem;
     }
@@ -91,7 +91,7 @@ import { NotificationService } from '../../../core/services/notification.service
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      color: #3f51b5;
+      color: var(--accent-primary);
       text-decoration: none;
     }
 

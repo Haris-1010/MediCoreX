@@ -125,7 +125,7 @@ import { AudioAnnouncementService } from '../token-generation/audio-announcement
       padding: 1rem 1.5rem;
       border-bottom: 1px solid var(--border-color, #f0f0f0);
     }
-    .card-title mat-icon { color: #3f51b5; }
+    .card-title mat-icon { color: var(--accent-primary, #3f51b5); }
     .card-title h3 { margin: 0; font-size: 1rem; }
 
     /* Current Patient */
@@ -140,8 +140,8 @@ import { AudioAnnouncementService } from '../token-generation/audio-announcement
       width: 100px;
       height: 100px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #1a237e, #3f51b5);
-      color: white;
+      background: linear-gradient(135deg, var(--accent-primary, #1a237e), var(--accent-primary, #3f51b5));
+      color: var(--text-inverse, #fff);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -152,7 +152,7 @@ import { AudioAnnouncementService } from '../token-generation/audio-announcement
 
     .details h2 { margin: 0; font-size: 1.25rem; }
     .details .mrn { margin: 0.25rem 0; color: var(--text-muted, #888); font-size: 0.85rem; }
-    .details .wait { margin: 0 0 1rem; color: #f57c00; font-size: 0.8rem; }
+    .details .wait { margin: 0 0 1rem; color: var(--status-warning, #f57c00); font-size: 0.8rem; }
     .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
     .no-patient {
@@ -189,8 +189,8 @@ import { AudioAnnouncementService } from '../token-generation/audio-announcement
       width: 38px;
       height: 38px;
       border-radius: 50%;
-      background: #e8eaf6;
-      color: #3f51b5;
+      background: var(--bg-badge, #e8eaf6);
+      color: var(--accent-primary, #3f51b5);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -204,7 +204,7 @@ import { AudioAnnouncementService } from '../token-generation/audio-announcement
     .info p { margin: 0.15rem 0 0; font-size: 0.75rem; color: var(--text-muted, #888); }
 
     .item-actions { display: flex; }
-    .remove-btn { color: #e53935; }
+    .remove-btn { color: var(--status-error, #e53935); }
 
     .empty {
       text-align: center;

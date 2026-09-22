@@ -79,9 +79,9 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
   styles: [`
     .card { background: white; padding: 1.5rem; border-radius: 8px; }
     table { width: 100%; }
-    .status-chip { padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: #ffcdd2; color: #c62828; }
-    .status-chip.active { background: #c8e6c9; color: #2e7d32; }
-    .empty { text-align: center; color: #888; padding: 2rem; }
+    .status-chip { padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: var(--status-error-bg, #ffcdd2); color: var(--status-error, #c62828); }
+    .status-chip.active { background: var(--status-success-bg, #c8e6c9); color: var(--status-success, #2e7d32); }
+    .empty { text-align: center; color: var(--text-muted, #888); padding: 2rem; }
     .full-width { width: 100%; }
   `]
 })

@@ -44,16 +44,16 @@ import { ApiService } from '../../../core/services/api.service';
     </app-main-layout>
   `,
   styles: [`.stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-    .stat-card { display: flex; align-items: center; gap: 1rem; background: white; padding: 1.5rem; border-radius: 8px; }
-    .stat-card mat-icon { font-size: 40px; width: 40px; height: 40px; color: #3f51b5; }
-    .stat-card h3 { margin: 0; font-size: 1.75rem; } .stat-card p { margin: 0; color: #666; }
+    .stat-card { display: flex; align-items: center; gap: 1rem; background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; }
+    .stat-card mat-icon { font-size: 40px; width: 40px; height: 40px; color: var(--accent-primary, #3f51b5); }
+    .stat-card h3 { margin: 0; font-size: 1.75rem; } .stat-card p { margin: 0; color: var(--text-secondary, #666); }
     .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-    .card { background: white; padding: 1.5rem; border-radius: 8px; } .card h3 { margin: 0 0 1rem; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; } .card h3 { margin: 0 0 1rem; }
     .ward-list, .admission-list { display: flex; flex-direction: column; gap: 0.75rem; }
-    .ward-item, .admission-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #f5f5f5; border-radius: 8px; }
-    .ward-info h4, .info h4 { margin: 0; } .ward-info p, .info p { margin: 0; font-size: 0.875rem; color: #666; }
-    .occupancy { display: flex; align-items: center; gap: 0.5rem; } .bar { width: 100px; height: 8px; background: #e0e0e0; border-radius: 4px; } .fill { height: 100%; background: #3f51b5; border-radius: 4px; }
-    .meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; } .meta span { font-size: 0.75rem; color: #666; }`]
+    .ward-item, .admission-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-hover, #f5f5f5); border-radius: 8px; }
+    .ward-info h4, .info h4 { margin: 0; } .ward-info p, .info p { margin: 0; font-size: 0.875rem; color: var(--text-secondary, #666); }
+    .occupancy { display: flex; align-items: center; gap: 0.5rem; } .bar { width: 100px; height: 8px; background: var(--border-color, #e0e0e0); border-radius: 4px; } .fill { height: 100%; background: var(--accent-primary, #3f51b5); border-radius: 4px; }
+    .meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; } .meta span { font-size: 0.75rem; color: var(--text-secondary, #666); }`]
 })
 export class IpdDashboardComponent implements OnInit {
   stats = { totalAdmissions: 0, totalBeds: 0, availableBeds: 0, todayAdmissions: 0, todayDischarges: 0 };

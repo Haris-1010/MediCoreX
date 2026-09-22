@@ -41,14 +41,14 @@ import { Component, Input } from '@angular/core';
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
     }
 
-    .stats-icon {
+     .stats-icon {
       width: 56px;
       height: 56px;
       border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #e8eaf6;
+      background: var(--bg-icon-primary, #e8eaf6);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
@@ -59,21 +59,21 @@ import { Component, Input } from '@angular/core';
       color: var(--accent-primary, #1a237e);
     }
 
-     .stats-primary .stats-icon { background: #e8eaf6; }
+     .stats-primary .stats-icon { background: var(--bg-icon-primary, #e8eaf6); }
     .stats-primary .stats-icon mat-icon { color: var(--accent-primary, #1a237e); }
     .stats-primary { border-left-color: var(--accent-primary, #1a237e); }
 
-    .stats-accent .stats-icon { background: #e0f2f1; }
-    .stats-accent .stats-icon mat-icon { color: #00695c; }
-    .stats-accent { border-left-color: #00695c; }
+    .stats-accent .stats-icon { background: var(--bg-icon-accent, #e0f2f1); }
+    .stats-accent .stats-icon mat-icon { color: var(--accent-secondary, #00695c); }
+    .stats-accent { border-left-color: var(--accent-secondary, #00695c); }
 
-    .stats-warn .stats-icon { background: #fce4ec; }
-    .stats-warn .stats-icon mat-icon { color: #c62828; }
-    .stats-warn { border-left-color: #c62828; }
+    .stats-warn .stats-icon { background: var(--bg-icon-warn, #fce4ec); }
+    .stats-warn .stats-icon mat-icon { color: var(--color-error, #c62828); }
+    .stats-warn { border-left-color: var(--color-error, #c62828); }
 
-    .stats-success .stats-icon { background: #e8f5e9; }
-    .stats-success .stats-icon mat-icon { color: #2e7d32; }
-    .stats-success { border-left-color: #2e7d32; }
+    .stats-success .stats-icon { background: var(--bg-icon-success, #e8f5e9); }
+    .stats-success .stats-icon mat-icon { color: var(--color-success, #2e7d32); }
+    .stats-success { border-left-color: var(--color-success, #2e7d32); }
 
      .stats-content {
       flex: 1;
@@ -97,7 +97,7 @@ import { Component, Input } from '@angular/core';
     .stats-value {
       font-size: 2.25rem;
       font-weight: 700;
-      color: #1a237e;
+      color: var(--text-primary, #1a237e);
       line-height: 1.2;
     }
 

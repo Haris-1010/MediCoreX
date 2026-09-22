@@ -15,12 +15,12 @@ export interface QueueToken {
   queueDate: string;
   joinedAt?: string | null;
   calledAt?: string | null;
-  consultationFee?: number;
   totalAmount?: number;
   paymentMethod?: string;
   invoiceNumber?: string;
   priority?: number;
   services?: { itemName: string; amount: number; quantity: number }[];
+  additionalServices?: { serviceName: string; amount: number; quantity: number }[];
 }
 
 @Component({
@@ -109,14 +109,9 @@ export interface QueueToken {
                   <button mat-icon-button matTooltip="Complete" (click)="completeConsultation(token)">
                     <mat-icon>check_circle</mat-icon>
                   </button>
-                  @if (!isCompleted(token)) {
-                    <button mat-icon-button matTooltip="Edit" (click)="editToken(token)">
-                      <mat-icon>edit</mat-icon>
-                    </button>
-                    <button mat-icon-button color="warn" matTooltip="Remove" (click)="deleteToken(token)">
-                      <mat-icon>delete</mat-icon>
-                    </button>
-                  }
+                  <button mat-icon-button color="warn" matTooltip="Remove" (click)="deleteToken(token)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
                 </td>
               </ng-container>
 
@@ -216,10 +211,9 @@ export class TokenListComponent implements OnInit, OnDestroy {
               queueDate: t.queueDate || new Date().toLocaleDateString(),
               joinedAt: t.joinedAt,
               calledAt: t.calledAt,
-              consultationFee: t.consultationFee,
-              totalAmount: t.totalAmount,
-              paymentMethod: t.paymentMethod,
-              invoiceNumber: t.invoiceNumber,
+              totalAmount: t.totalAmount || 0,
+              paymentMethod: t.paymentMethod || '',
+              invoiceNumber: t.invoiceNumber || '',
               priority: t.priority,
               services: t.services || [],
             })) || []
@@ -242,10 +236,6 @@ export class TokenListComponent implements OnInit, OnDestroy {
     if (s.includes('waiting')) return 'status-waiting';
     if (s.includes('cancelled')) return 'status-cancelled';
     return '';
-  }
-
-  isCompleted(token: QueueToken): boolean {
-    return (token.status || '').toLowerCase().includes('completed');
   }
 
   getWaitingCount(): number {
@@ -275,11 +265,17 @@ export class TokenListComponent implements OnInit, OnDestroy {
     if (!printWindow) return;
 
     const printedAt = token.joinedAt ? new Date(token.joinedAt).toLocaleString() : new Date().toLocaleString();
-    const statusClass = this.getStatusClass(token.status);
+    const services = (token as any).services || [];
+    const totalAmount = (token as any).totalAmount || 0;
+    const paymentMethod = (token as any).paymentMethod || 'Cash';
 
-    const services = token.services || [];
     const servicesHtml = services.length > 0
-      ? `<div class="detail-row" style="flex-direction:column;gap:4px;"><span style="font-weight:600;">Services:</span>${services.map((s: any) => `<span style="padding-left:12px;">${this.escapeHtml(s.itemName)} × ${s.quantity || 1} — Rs. ${s.amount}</span>`).join('')}</div>`
+      ? services.map((s: any) =>
+          `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:13px;">
+            <span>${this.escapeHtml(s.itemName || s.name || 'Service')}</span>
+            <span>Rs. ${s.amount || s.price || 0}</span>
+          </div>`
+        ).join('')
       : '';
 
     printWindow.document.write(`
@@ -287,50 +283,79 @@ export class TokenListComponent implements OnInit, OnDestroy {
       <head>
         <title>Token Receipt - Token #${token.tokenNumber}</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          .receipt { max-width: 300px; margin: 0 auto; border: 1px solid #ddd; padding: 20px; }
-          .header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-          .token-number { font-size: 24px; font-weight: bold; color: #2563eb; margin: 10px 0; }
-          .patient-info { margin: 15px 0; }
-          .doctor-info { margin: 15px 0; font-size: 14px; color: #666; }
-          .details { margin: 15px 0; }
-          .detail-row { display: flex; justify-content: space-between; margin: 5px 0; }
-          .status { padding: 5px 10px; border-radius: 4px; color: white; font-size: 12px; margin-top: 10px; }
-          .status-waiting { background: #f59e0b; }
-          .status-called { background: #3b82f6; }
-          .status-in-consultation { background: #10b981; }
-          .status-completed { background: #6b7280; }
-          .status-cancelled { background: #ef4444; }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { font-family: 'Courier New', monospace; padding: 20px; max-width: 400px; margin: 0 auto; }
+          .receipt-header { display: flex; justify-content: space-between; border-bottom: 3px solid #3f51b5; padding-bottom: 10px; margin-bottom: 10px; }
+          .hospital-info h2 { color: #1a237e; font-size: 18px; }
+          .hospital-info p { font-size: 11px; color: #666; }
+          .receipt-title h2 { color: #3f51b5; font-size: 18px; text-align: right; }
+          .receipt-title p { font-size: 11px; color: #666; text-align: right; }
+          .info-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 13px; }
+          .info-row span:first-child { color: #666; font-size: 11px; text-transform: uppercase; }
+          .info-row strong { color: #1a237e; }
+          .token-badge { font-size: 22px; color: #3f51b5; font-weight: 700; background: #e8eaf6; padding: 4px 12px; border-radius: 4px; }
+          .section-title { font-size: 11px; color: #666; text-transform: uppercase; margin-top: 12px; margin-bottom: 4px; font-weight: 600; }
+          .grand-total { display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; color: #1a237e; border-top: 2px solid #3f51b5; padding-top: 8px; margin-top: 8px; }
+          .payment-info { text-align: center; margin-top: 12px; font-size: 12px; color: #666; }
+          .proceed-text { text-align: center; font-weight: bold; color: #3f51b5; margin-top: 10px; font-size: 13px; }
+          .footer { text-align: center; margin-top: 16px; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 8px; }
         </style>
       </head>
       <body>
         <div class="receipt">
-          <div class="header">
-            <h3>MediCoreX - Token Receipt</h3>
-            <div class="token-number">Token #${token.tokenNumber}</div>
-          </div>
-          <div class="patient-info">
-            <strong>Patient:</strong> ${this.escapeHtml(token.patientName)}<br>
-            <strong>MRN:</strong> ${this.escapeHtml(token.mrn)}
-          </div>
-          <div class="doctor-info">
-            <strong>Doctor:</strong> ${this.escapeHtml(token.doctorName)}
-          </div>
-          <div class="details">
-            <div class="detail-row">
-              <span>Queue Date:</span><span>${this.escapeHtml(token.queueDate)}</span>
+          <div class="receipt-header">
+            <div class="hospital-info">
+              <h2>MediCoreX</h2>
+              <p>Clinic & Hospital Management</p>
             </div>
-            <div class="detail-row">
-              <span>Joined At:</span><span>${this.escapeHtml(printedAt)}</span>
+            <div class="receipt-title">
+              <h2>OPD TOKEN</h2>
+              <p>Token Receipt</p>
             </div>
-            <div class="detail-row">
-              <span>Status:</span><span class="status ${statusClass}">${this.escapeHtml(token.status)}</span>
-            </div>
-            ${servicesHtml}
           </div>
-          <div class="footer" style="margin-top: 20px; font-size: 12px; color: #666; text-align: center;">
-            Generated by MediCoreX Hospital Management System
+
+          <div class="info-row">
+            <span>Patient</span>
+            <strong>${this.escapeHtml(token.patientName)}</strong>
           </div>
+          <div class="info-row">
+            <span>MRN</span>
+            <strong>${this.escapeHtml(token.mrn)}</strong>
+          </div>
+          <div class="info-row">
+            <span>Doctor</span>
+            <strong>Dr. ${this.escapeHtml(token.doctorName)}</strong>
+          </div>
+          <div class="info-row">
+            <span>Token No.</span>
+            <strong class="token-badge">#${token.tokenNumber}</strong>
+          </div>
+          <div class="info-row">
+            <span>Date</span>
+            <strong>${this.escapeHtml(token.queueDate)}</strong>
+          </div>
+          <div class="info-row">
+            <span>Time</span>
+            <strong>${this.escapeHtml(printedAt)}</strong>
+          </div>
+
+          ${totalAmount > 0 ? `
+          <div class="section-title">Billing</div>
+          ${servicesHtml}
+          <div class="grand-total">
+            <span>Total Paid</span>
+            <span>Rs. ${totalAmount}</span>
+          </div>
+          <div class="payment-info">
+            <span>${paymentMethod}</span>
+          </div>
+          ` : servicesHtml ? `
+          <div class="section-title">Services</div>
+          ${servicesHtml}
+          ` : ''}
+
+          <p class="proceed-text">Please proceed to consultation</p>
+          <div class="footer">Generated by MediCoreX Hospital Management System</div>
         </div>
       </body>
       </html>
@@ -381,17 +406,6 @@ export class TokenListComponent implements OnInit, OnDestroy {
           console.error('Failed to complete consultation:', err);
         }
       });
-    });
-  }
-
-  editToken(token: QueueToken): void {
-    this.dialog.open(ConfirmDialogComponent, {
-      data: {
-        title: 'Edit Token',
-        message: `Editing token #${token.tokenNumber} is not available in this view yet.`,
-        confirmText: 'OK',
-        cancelText: 'Close'
-      }
     });
   }
 

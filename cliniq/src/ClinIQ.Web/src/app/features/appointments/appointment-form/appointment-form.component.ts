@@ -210,19 +210,19 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
       align-items: center;
       gap: 0.75rem;
       padding: 0.75rem 1rem;
-      background: #e8eaf6;
+      background: var(--bg-badge, #e8eaf6);
       border-radius: 8px;
       margin: 0.5rem 0 1rem;
     }
-    .selected-patient-card mat-icon { color: #3f51b5; }
+    .selected-patient-card mat-icon { color: var(--accent-primary, #3f51b5); }
     .selected-patient-card .patient-info { flex: 1; }
     .selected-patient-card .patient-info strong { display: block; }
     .selected-patient-card .patient-info span { font-size: 0.8rem; color: var(--text-muted, #666); }
 
     :host ::ng-deep .patient-option-item { display: flex; flex-direction: column; padding: 4px 0; }
     :host ::ng-deep .patient-option-item .name { font-weight: 500; }
-    :host ::ng-deep .patient-option-item .details { font-size: 0.75rem; color: #888; }
-    :host ::ng-deep .quick-add-option { color: #3f51b5; font-weight: 500; }
+    :host ::ng-deep .patient-option-item .details { font-size: 0.75rem; color: var(--text-muted, #888); }
+    :host ::ng-deep .quick-add-option { color: var(--accent-primary, #3f51b5); font-weight: 500; }
     :host ::ng-deep .quick-add-option mat-icon { margin-right: 8px; vertical-align: middle; }
 
     :host ::ng-deep .mat-mdc-dialog-title { display: flex; align-items: center; gap: 0.5rem; }
@@ -230,12 +230,12 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
 
     :host ::ng-deep .doctor-option-item { display: flex; flex-direction: column; padding: 4px 0; }
     :host ::ng-deep .doctor-option-item .name { font-weight: 500; }
-    :host ::ng-deep .doctor-option-item .details { font-size: 0.75rem; color: #888; }
+    :host ::ng-deep .doctor-option-item .details { font-size: 0.75rem; color: var(--text-muted, #888); }
 
     :host ::ng-deep .mat-mdc-autocomplete-panel { max-height: 300px !important; border-radius: 8px !important; border: 1px solid var(--border-color, #c5cae9) !important; box-shadow: var(--shadow-lg, 0 4px 16px rgba(0,0,0,0.12)) !important; }
     :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option { padding: 10px 16px !important; line-height: 1.4 !important; }
-    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option:hover { background-color: #e8eaf6 !important; }
-    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option.mat-mdc-option-active { background-color: #c5cae9 !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option:hover { background-color: var(--bg-secondary, #e8eaf6) !important; }
+    :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option.mat-mdc-option-active { background-color: var(--bg-badge, #c5cae9) !important; }
   `]
 })
 export class AppointmentFormComponent implements OnInit, OnDestroy {

@@ -32,13 +32,13 @@ import { ApiService } from '../../../core/services/api.service';
   `,
   styles: [`.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
     .stat-card { display: flex; align-items: center; gap: 1rem; padding: 1.5rem; border-radius: 8px; color: white; }
-    .stat-card.critical { background: #d32f2f; } .stat-card.urgent { background: #f57c00; }
-    .stat-card.moderate { background: #fbc02d; color: #333; } .stat-card.stable { background: #388e3c; }
+    .stat-card.critical { background: var(--status-error, #d32f2f); } .stat-card.urgent { background: var(--status-warning, #f57c00); }
+    .stat-card.moderate { background: var(--status-info-bg, #fbc02d); color: var(--text-primary, #333); } .stat-card.stable { background: var(--status-success, #388e3c); }
     .stat-card mat-icon { font-size: 40px; width: 40px; height: 40px; } .stat-card h3 { margin: 0; font-size: 2rem; } .stat-card p { margin: 0; }
-    .card { background: white; padding: 1.5rem; border-radius: 8px; } .card h3 { margin: 0 0 1rem; } table { width: 100%; }
+    .card { background: var(--bg-card, #fff); padding: 1.5rem; border-radius: 8px; } .card h3 { margin: 0 0 1rem; } table { width: 100%; }
     .priority-badge { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
-    .priority-badge.critical { background: #ffebee; color: #c62828; } .priority-badge.urgent { background: #fff3e0; color: #e65100; }
-    .priority-badge.moderate { background: #fffde7; color: #f9a825; } .priority-badge.stable { background: #e8f5e9; color: #2e7d32; }`]
+    .priority-badge.critical { background: var(--status-error-bg, #ffebee); color: var(--status-error, #c62828); } .priority-badge.urgent { background: var(--status-warning-bg, #fff3e0); color: var(--status-warning, #e65100); }
+    .priority-badge.moderate { background: var(--status-info-bg, #fffde7); color: var(--status-info, #f9a825); } .priority-badge.stable { background: var(--status-success-bg, #e8f5e9); color: var(--status-success, #2e7d32); }`]
 })
 export class EmergencyDashboardComponent implements OnInit {
   stats = { critical: 0, urgent: 0, moderate: 0, stable: 0 };
