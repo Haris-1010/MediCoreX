@@ -1,9 +1,9 @@
-import { Component, Input, OnInit, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { ApiService } from '../../../../core/services/api.service';
 
-interface GrowthData {
+interface RevenueData {
   month: string;
-  patients: number;
+  revenue: number;
 }
 
 @Component({
@@ -11,208 +11,264 @@ interface GrowthData {
   selector: 'app-patient-growth-chart',
   template: `
     <div class="growth-chart">
-      <div class="chart-header">
-        <a class="full-report" routerLink="/reports">Full Report <mat-icon>open_in_new</mat-icon></a>
+      <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+      <div class="chart-body" *ngIf="!loading && revenueData.length > 0">
+        <div class="chart-top">
+          <div class="chart-total">
+            <span class="total-label">Total Collected</span>
+            <span class="total-value">Rs. {{ totalRevenue | number:'1.0-0' }}</span>
+          </div>
+        </div>
+
+        <div class="svg-wrapper">
+          <svg [attr.viewBox]="'0 0 ' + svgWidth + ' ' + svgHeight"
+               preserveAspectRatio="none"
+               class="area-chart">
+            <defs>
+              <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#3f51b5" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="#3f51b5" stop-opacity="0.02"/>
+              </linearGradient>
+            </defs>
+
+            <!-- grid lines + y-axis labels -->
+            <ng-container *ngFor="let y of gridY; let i = index">
+              <line [attr.x1]="padLeft" [attr.y1]="y"
+                    [attr.x2]="svgWidth - padRight" [attr.y2]="y"
+                    stroke="#e5e7eb" stroke-width="1" stroke-dasharray="4,3"/>
+              <text [attr.x]="padLeft - 6" [attr.y]="y + 4"
+                    text-anchor="end" fill="#94a3b8" font-size="10">{{ yLabels[i] }}</text>
+            </ng-container>
+
+            <!-- area fill -->
+            <path [attr.d]="areaPath" fill="url(#areaFill)"/>
+
+            <!-- line -->
+            <path [attr.d]="linePath" fill="none"
+                  stroke="#3f51b5" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+
+            <!-- dots + values -->
+            <ng-container *ngFor="let d of chartPoints; let i = index">
+              <circle [attr.cx]="d.x" [attr.cy]="d.y" r="4"
+                      fill="#fff" stroke="#3f51b5" stroke-width="2.5"/>
+              <text *ngIf="revenueData[i].revenue > 0"
+                    [attr.x]="d.x" [attr.y]="d.y - 12"
+                    text-anchor="middle"
+                    fill="#1a237e" font-size="10" font-weight="600">
+                {{ formatCurrency(revenueData[i].revenue) }}
+              </text>
+            </ng-container>
+          </svg>
+
+          <!-- x-axis labels -->
+          <div class="x-labels">
+            <span *ngFor="let d of revenueData" class="x-label">{{ d.month }}</span>
+          </div>
+        </div>
       </div>
-      <div class="chart-container" #chartContainer>
-        <svg [attr.viewBox]="'0 0 ' + svgWidth + ' ' + svgHeight" class="line-chart">
-          <!-- Grid lines -->
-          <line *ngFor="let y of gridLines" [attr.x1]="padding" [attr.y1]="y" [attr.x2]="svgWidth - padding" [attr.y2]="y" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="4"/>
 
-          <!-- Y-axis labels -->
-          <text *ngFor="let label of yLabels; let i = index" [attr.x]="padding - 10" [attr.y]="yPositions[i] + 4" text-anchor="end" fill="#999" font-size="11">{{ label }}</text>
-
-          <!-- Area fill -->
-          <path [attr.d]="areaPath" fill="url(#areaGradient)" opacity="0.3"/>
-
-          <!-- Line -->
-          <path [attr.d]="linePath" fill="none" stroke="#1a237e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-
-          <!-- Data points -->
-          <circle *ngFor="let point of dataPoints; let i = index"
-                  [attr.cx]="point.x" [attr.cy]="point.y" r="4"
-                  fill="#1a237e" stroke="white" stroke-width="2"
-                  class="data-point"/>
-
-          <!-- X-axis labels -->
-          <text *ngFor="let point of dataPoints; let i = index"
-                [attr.x]="point.x" [attr.y]="svgHeight - 10"
-                text-anchor="middle" fill="#999" font-size="11">
-            {{ growthData[i].month }}
-          </text>
-
-          <!-- Gradient definition -->
-          <defs>
-            <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style="stop-color:#1a237e;stop-opacity:0.4"/>
-              <stop offset="100%" style="stop-color:#1a237e;stop-opacity:0.05"/>
-            </linearGradient>
-          </defs>
-        </svg>
+      <div class="empty-state" *ngIf="!loading && revenueData.length === 0">
+        <span>No revenue data</span>
       </div>
     </div>
   `,
   styles: [`
     .growth-chart {
-      min-height: 250px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
     }
 
-    .chart-header {
+    .chart-body {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .chart-top {
       display: flex;
       justify-content: flex-end;
-      margin-bottom: 0.5rem;
+      margin-bottom: 8px;
+      flex-shrink: 0;
     }
 
-    .full-report {
-      font-size: 0.8rem;
+    .chart-total {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      padding: 4px 10px;
+      background: #f0f4ff;
+      border-radius: 6px;
+    }
+
+    .total-label {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .total-value {
+      font-size: 14px;
+      font-weight: 700;
       color: #1a237e;
-      text-decoration: none;
+    }
+
+    .svg-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .area-chart {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      overflow: visible;
+    }
+
+    .x-labels {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 4px 0;
+      flex-shrink: 0;
+    }
+
+    .x-label {
+      flex: 1;
+      text-align: center;
+      font-size: 10px;
       font-weight: 500;
+      color: #94a3b8;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .empty-state {
+      flex: 1;
       display: flex;
       align-items: center;
-      gap: 0.25rem;
+      justify-content: center;
+      color: #94a3b8;
+      font-size: 13px;
     }
 
-    .full-report mat-icon {
-      font-size: 14px;
-      width: 14px;
-      height: 14px;
-    }
-
-    .full-report:hover {
-      text-decoration: underline;
-    }
-
-    .chart-container {
-      width: 100%;
-      height: 220px;
-    }
-
-    .line-chart {
-      width: 100%;
-      height: 100%;
-    }
-
-    .data-point {
-      cursor: pointer;
-      transition: r 0.2s ease;
-    }
-
-    .data-point:hover {
-      r: 6;
+    @media (max-width: 768px) {
+      .x-label { font-size: 8px; }
+      .total-label { font-size: 10px; }
+      .total-value { font-size: 12px; }
     }
   `]
 })
-export class PatientGrowthChartComponent implements OnInit, AfterViewInit {
+export class PatientGrowthChartComponent implements OnInit {
   @Input() loading: boolean = false;
-  @ViewChild('chartContainer') chartContainer!: ElementRef;
 
-  growthData: GrowthData[] = [];
+  revenueData: RevenueData[] = [];
+  totalRevenue = 0;
 
-  svgWidth = 500;
-  svgHeight = 250;
-  padding = 50;
-  dataPoints: { x: number; y: number }[] = [];
+  svgWidth = 600;
+  svgHeight = 200;
+  padLeft = 52;
+  padRight = 10;
+  padTop = 10;
+  padBottom = 10;
+
+  chartPoints: { x: number; y: number }[] = [];
   linePath = '';
   areaPath = '';
-  gridLines: number[] = [];
+  gridY: number[] = [];
   yLabels: string[] = [];
-  yPositions: number[] = [];
+
+  private maxValue = 1;
 
   constructor(private api: ApiService) {}
 
   ngOnInit(): void {
-    this.loadGrowthData();
+    this.loadRevenueData();
   }
 
-  loadGrowthData(): void {
+  loadRevenueData(): void {
     this.loading = true;
-    this.api.get<GrowthData[]>('v1/dashboard/patient-growth').subscribe({
+    this.api.get<RevenueData[]>('v1/dashboard/monthly-revenue').subscribe({
       next: (data) => {
-        this.growthData = data || [];
+        this.revenueData = data || [];
+        this.totalRevenue = this.revenueData.reduce((sum, d) => sum + (d.revenue || 0), 0);
         this.loading = false;
-        this.calculateChart();
+        this.buildChart();
       },
       error: () => {
-        this.loadGrowthFallback();
-      }
-    });
-  }
-
-  private loadGrowthFallback(): void {
-    this.api.get<any>('v1/patients', { pageNumber: 1, pageSize: 1000 }).subscribe({
-      next: (data) => {
-        const items = Array.isArray(data) ? data : (data?.items || []);
-        const firstMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 11, 1);
-        this.growthData = Array.from({ length: 12 }, (_, index) => {
-          const month = new Date(firstMonth.getFullYear(), firstMonth.getMonth() + index, 1);
-          const patients = items.filter((patient: any) => {
-            const createdAt = new Date(patient.createdAt);
-            return createdAt.getFullYear() === month.getFullYear() && createdAt.getMonth() === month.getMonth();
-          }).length;
-          return { month: month.toLocaleString('en-US', { month: 'short' }), patients };
-        });
+        this.revenueData = [];
         this.loading = false;
-        this.calculateChart();
-      },
-      error: () => { this.growthData = []; this.loading = false; this.calculateChart(); }
+        this.buildChart();
+      }
     });
   }
 
-  ngAfterViewInit(): void {
-    if (this.chartContainer) {
-      const width = this.chartContainer.nativeElement.offsetWidth;
-      if (width > 0) {
-        this.svgWidth = width;
-        this.calculateChart();
-      }
-    }
+  formatCurrency(value: number): string {
+    if (value === 0) return '0';
+    if (value >= 100000) return (value / 100000).toFixed(1) + 'L';
+    if (value >= 1000) return (value / 1000).toFixed(1) + 'K';
+    return value.toFixed(0);
   }
 
-  private calculateChart(): void {
-    if (!this.growthData.length) return;
-
-    const maxValue = Math.max(...this.growthData.map(d => d.patients), 1);
-    const chartHeight = this.svgHeight - 40;
-    const chartWidth = this.svgWidth - this.padding * 2;
-
-    // Calculate Y-axis labels and grid lines
-    const steps = 5;
-    const stepValue = Math.ceil(maxValue / steps / 1000) * 1000;
-    this.gridLines = [];
-    this.yLabels = [];
-    this.yPositions = [];
-
-    for (let i = 0; i <= steps; i++) {
-      const value = i * stepValue;
-      const y = this.svgHeight - 30 - (value / maxValue) * chartHeight;
-      this.gridLines.push(y);
-      this.yLabels.push(this.formatNumber(value));
-      this.yPositions.push(y);
+  private buildChart(): void {
+    if (!this.revenueData.length) {
+      this.chartPoints = [];
+      this.linePath = '';
+      this.areaPath = '';
+      this.gridY = [];
+      this.yLabels = [];
+      return;
     }
 
-    // Calculate data points
-    this.dataPoints = this.growthData.map((d, i) => ({
-      x: this.padding + (this.growthData.length === 1 ? chartWidth / 2 : (i / (this.growthData.length - 1)) * chartWidth),
-      y: this.svgHeight - 30 - (d.patients / maxValue) * chartHeight
+    const actualMax = Math.max(...this.revenueData.map(d => d.revenue || 0), 0);
+
+    if (actualMax <= 0) {
+      this.maxValue = 1;
+    } else {
+      const steps = 4;
+      const rawStep = actualMax / steps;
+      const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+      const stepValue = Math.ceil(rawStep / magnitude) * magnitude;
+      this.maxValue = stepValue * steps;
+    }
+
+    const n = this.revenueData.length;
+    const w = this.svgWidth - this.padLeft - this.padRight;
+    const h = this.svgHeight - this.padTop - this.padBottom;
+
+    this.chartPoints = this.revenueData.map((d, i) => ({
+      x: this.padLeft + (n === 1 ? w / 2 : (i / (n - 1)) * w),
+      y: this.padTop + h - (this.maxValue > 0 ? (d.revenue / this.maxValue) * h : 0)
     }));
 
-    // Generate line path
-    this.linePath = this.dataPoints.map((p, i) =>
-      (i === 0 ? 'M' : 'L') + ` ${p.x} ${p.y}`
-    ).join(' ');
-
-    // Generate area path
-    const bottomY = this.svgHeight - 30;
-    this.areaPath = `M ${this.dataPoints[0].x} ${bottomY} ` +
-      this.dataPoints.map(p => `L ${p.x} ${p.y}`).join(' ') +
-      ` L ${this.dataPoints[this.dataPoints.length - 1].x} ${bottomY} Z`;
-  }
-
-  private formatNumber(num: number): string {
-    if (num >= 1000) {
-      return (num / 1000).toFixed(0) + ',000';
+    const steps = 4;
+    this.gridY = [];
+    this.yLabels = [];
+    for (let i = 0; i <= steps; i++) {
+      this.gridY.push(this.padTop + (i / steps) * h);
+      const val = this.maxValue - (i * (this.maxValue / steps));
+      this.yLabels.push(this.formatCurrency(val));
     }
-    return num.toString();
+
+    if (this.chartPoints.length > 0) {
+      const first = this.chartPoints[0];
+      const last = this.chartPoints[this.chartPoints.length - 1];
+      const bottomY = this.padTop + h;
+
+      this.linePath = this.chartPoints
+        .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`)
+        .join(' ');
+
+      this.areaPath =
+        `M ${first.x} ${bottomY} ` +
+        this.chartPoints.map(p => `L ${p.x} ${p.y}`).join(' ') +
+        ` L ${last.x} ${bottomY} Z`;
+    }
   }
 }

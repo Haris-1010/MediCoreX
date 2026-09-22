@@ -106,7 +106,7 @@ public class SettingsController : ControllerBase
 
     [HttpPut("{section}")]
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.SettingsEdit)]
-    public async Task<IActionResult> UpdateSettings(string section, [FromBody] Dictionary<string, object> request)
+    public async Task<IActionResult> UpdateSettings(string section, [FromBody] Dictionary<string, System.Text.Json.JsonElement> request)
     {
         var tenantId = _tenantService.GetCurrentTenantId();
         if (tenantId is null)
@@ -122,34 +122,34 @@ public class SettingsController : ControllerBase
         if (sectionLower == "general")
         {
             if (request.TryGetValue("currency", out var currency))
-                tenant.Currency = currency?.ToString() ?? "USD";
+                tenant.Currency = currency.ToString() ?? "USD";
             if (request.TryGetValue("timezone", out var tz))
-                tenant.Timezone = tz?.ToString() ?? "UTC";
+                tenant.Timezone = tz.ToString() ?? "UTC";
             if (request.TryGetValue("phone", out var phone))
-                tenant.Phone = phone?.ToString();
+                tenant.Phone = phone.ToString();
             if (request.TryGetValue("email", out var email))
-                tenant.Email = email?.ToString();
+                tenant.Email = email.ToString();
             if (request.TryGetValue("address", out var addr))
-                tenant.Address = addr?.ToString();
+                tenant.Address = addr.ToString();
             if (request.TryGetValue("organizationName", out var name))
-                tenant.Name = name?.ToString() ?? tenant.Name;
+                tenant.Name = name.ToString() ?? tenant.Name;
         }
         else if (sectionLower == "billing")
         {
             if (request.TryGetValue("currency", out var currency))
-                tenant.Currency = currency?.ToString() ?? "USD";
+                tenant.Currency = currency.ToString() ?? "USD";
 
             var savedSettings = ParseSettings(tenant.Settings) ?? new Dictionary<string, object>();
             if (request.TryGetValue("invoicePrefix", out var prefix))
-                savedSettings["invoicePrefix"] = prefix?.ToString() ?? "INV-";
+                savedSettings["invoicePrefix"] = prefix.ToString() ?? "INV-";
             if (request.TryGetValue("defaultTax", out var tax))
-                savedSettings["defaultTax"] = tax?.ToString() ?? "0";
+                savedSettings["defaultTax"] = tax.ToString() ?? "0";
             if (request.TryGetValue("paymentDueDays", out var days))
-                savedSettings["paymentDueDays"] = days?.ToString() ?? "30";
+                savedSettings["paymentDueDays"] = days.ToString() ?? "30";
             if (request.TryGetValue("allowPartialPayments", out var partial))
-                savedSettings["allowPartialPayments"] = partial?.ToString() ?? "true";
+                savedSettings["allowPartialPayments"] = partial.ToString() ?? "true";
             if (request.TryGetValue("lateFeePercent", out var lateFee))
-                savedSettings["lateFeePercent"] = lateFee?.ToString() ?? "2.5";
+                savedSettings["lateFeePercent"] = lateFee.ToString() ?? "2.5";
             tenant.Settings = SerializeSettings(savedSettings);
         }
 

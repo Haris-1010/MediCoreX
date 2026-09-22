@@ -20,14 +20,13 @@ interface PatientSearchResult {
       <mat-label>Search Patient</mat-label>
       <input matInput [formControl]="searchControl" [matAutocomplete]="auto" placeholder="Search by name or phone">
       <mat-icon matPrefix>search</mat-icon>
-      <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onPatientSelected($event)">
+      <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayPatient" (optionSelected)="onPatientSelected($event)">
         <mat-option *ngFor="let patient of searchResults" [value]="patient">
           <div class="patient-option">
-            <span class="name">{{ patient.fullName }}</span>
-            <span class="details">{{ patient.phone | phone }}</span>
+            <span class="name">{{ patient.fullName }} ({{ patient.phone || 'No phone' }})</span>
           </div>
         </mat-option>
-        <mat-option *ngIf="searchResults.length === 0 && searchControl.value" disabled>
+        <mat-option *ngIf="searchResults.length === 0 && searchControl.value && searchControl.value.length >= 2" disabled>
           No patients found
         </mat-option>
       </mat-autocomplete>
@@ -37,7 +36,6 @@ interface PatientSearchResult {
     .search-field { width: 100%; }
     .patient-option { display: flex; flex-direction: column; }
     .patient-option .name { font-weight: 500; }
-    .patient-option .details { font-size: 0.75rem; color: #666; }
   `]
 })
 export class PatientSearchComponent implements OnInit, OnDestroy {
@@ -66,6 +64,12 @@ export class PatientSearchComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  displayPatient(p: any): string {
+    if (!p) return '';
+    if (typeof p === 'string') return p;
+    return `${p.fullName || ''} (${p.phone || 'No phone'})`;
   }
 
   onPatientSelected(event: any): void {

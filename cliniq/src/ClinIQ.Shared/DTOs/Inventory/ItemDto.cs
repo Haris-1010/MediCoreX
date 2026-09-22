@@ -47,7 +47,6 @@ public record ItemDetailDto(
     decimal MinimumStock,
     decimal MaximumStock,
     decimal ReorderLevel,
-    decimal ReorderQuantity,
     bool TracksExpiry,
     bool TracksBatches,
     bool IsActive,
@@ -80,7 +79,6 @@ public record CreateItemRequest(
     decimal MinimumStock,
     decimal MaximumStock,
     decimal ReorderLevel,
-    decimal ReorderQuantity,
     bool TracksExpiry,
     bool TracksBatches,
     Guid? DefaultWarehouseId

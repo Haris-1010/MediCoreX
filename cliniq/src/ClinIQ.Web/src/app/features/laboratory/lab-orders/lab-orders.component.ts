@@ -25,7 +25,10 @@ import { MatDialog } from '@angular/material/dialog';
         <table mat-table [dataSource]="orders">
           <ng-container matColumnDef="orderNumber"><th mat-header-cell *matHeaderCellDef>Order #</th><td mat-cell *matCellDef="let o">{{ o.orderNumber }}</td></ng-container>
           <ng-container matColumnDef="patient"><th mat-header-cell *matHeaderCellDef>Patient</th><td mat-cell *matCellDef="let o">{{ o.patientName }}<br><small>MRN: {{ o.mrn }}</small></td></ng-container>
-          <ng-container matColumnDef="tests"><th mat-header-cell *matHeaderCellDef>Tests</th><td mat-cell *matCellDef="let o">{{ o.testCount }} test(s)</td></ng-container>
+          <ng-container matColumnDef="tests"><th mat-header-cell *matHeaderCellDef>Tests</th><td mat-cell *matCellDef="let o">
+            <span *ngIf="o.items?.length > 0"><span *ngFor="let item of o.items; let last = last">{{ item.serviceName }}<span *ngIf="!last">, </span></span></span>
+            <span *ngIf="!o.items?.length">{{ o.testCount }} test(s)</span>
+          </td></ng-container>
           <ng-container matColumnDef="date"><th mat-header-cell *matHeaderCellDef>Date</th><td mat-cell *matCellDef="let o">{{ o.orderDate | date:'mediumDate' }}</td></ng-container>
           <ng-container matColumnDef="priority"><th mat-header-cell *matHeaderCellDef>Priority</th><td mat-cell *matCellDef="let o"><app-status-badge [status]="o.priority"></app-status-badge></td></ng-container>
           <ng-container matColumnDef="status"><th mat-header-cell *matHeaderCellDef>Status</th><td mat-cell *matCellDef="let o"><app-status-badge [status]="o.status"></app-status-badge></td></ng-container>
@@ -34,6 +37,7 @@ import { MatDialog } from '@angular/material/dialog';
             <button mat-icon-button color="primary" [routerLink]="['/laboratory/results', o.id]" matTooltip="View Results" *ngIf="o.status === 'Verified' || o.status === 'Completed'"><mat-icon>visibility</mat-icon></button>
             <button mat-icon-button color="primary" (click)="printOrder(o.id)" matTooltip="Print"><mat-icon>print</mat-icon></button>
             <button mat-icon-button color="warn" (click)="cancelOrder(o)" matTooltip="Cancel Order" *ngIf="o.status !== 'Verified' && o.status !== 'Completed' && o.status !== 'Cancelled'"><mat-icon>cancel</mat-icon></button>
+            <button mat-icon-button color="warn" (click)="deleteOrder(o)" matTooltip="Delete Order" *ngIf="o.status === 'Cancelled' || o.status === 'Ordered'"><mat-icon>delete</mat-icon></button>
           </td></ng-container>
           <tr mat-header-row *matHeaderRowDef="columns"></tr>
           <tr mat-row *matRowDef="let row; columns: columns;"></tr>
@@ -78,6 +82,20 @@ export class LabOrdersComponent implements OnInit {
         this.api.post(`v1/laboratory/orders/${order.id}/cancel`, {}).subscribe({
           next: () => { this.notification.success('Order cancelled'); this.load(); },
           error: (err) => this.notification.error(err?.message || 'Failed to cancel order')
+        });
+      }
+    });
+  }
+
+  deleteOrder(order: any) {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: { title: 'Delete Order', message: `Are you sure you want to permanently delete order ${order.orderNumber}? This action cannot be undone.`, confirmText: 'Delete', cancelText: 'No' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete(`v1/laboratory/orders`, order.id).subscribe({
+          next: () => { this.notification.success('Order deleted'); this.load(); },
+          error: (err) => this.notification.error(err?.message || 'Failed to delete order')
         });
       }
     });

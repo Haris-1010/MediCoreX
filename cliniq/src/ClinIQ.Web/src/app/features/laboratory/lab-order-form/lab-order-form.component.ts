@@ -21,10 +21,7 @@ import { NotificationService } from '../../../core/services/notification.service
               <mat-icon matPrefix>search</mat-icon>
               <mat-autocomplete #patientAuto="matAutocomplete" [displayWith]="displayPatient" (optionSelected)="onPatientSelected($event)">
                 <mat-option *ngFor="let p of filteredPatients" [value]="p">
-                  <div class="autocomplete-option">
-                    <span class="name">{{ p.fullName }}</span>
-                    <span class="detail">{{ p.phone || 'No phone' }} | MRN: {{ p.mrn }}</span>
-                  </div>
+                  <span>{{ p.fullName }} ({{ p.phone || 'No phone' }})</span>
                 </mat-option>
               </mat-autocomplete>
               <mat-error>Patient is required</mat-error>
@@ -179,9 +176,7 @@ import { NotificationService } from '../../../core/services/notification.service
     .total-label { text-align: right; }
     .total-price { color: var(--accent-primary, #1a237e); font-size: 1rem; }
     .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color, #eee); }
-    :host ::ng-deep .autocomplete-option { display: flex; flex-direction: column; padding: 4px 0; }
-    :host ::ng-deep .autocomplete-option .name { font-weight: 500; }
-    :host ::ng-deep .autocomplete-option .detail { font-size: 0.75rem; color: var(--text-muted, #888); }
+
   `]
 })
 export class LabOrderFormComponent implements OnInit {

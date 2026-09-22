@@ -77,7 +77,7 @@ import { NotificationService } from '../../../core/services/notification.service
                 <input matInput type="number" [(ngModel)]="paramForm.displayOrder">
               </mat-form-field>
             </div>
-            <div class="form-row" *ngIf="paramForm.dataType === 'Numeric'">
+            <div class="form-row" *ngIf="isNumericType()">
               <mat-form-field appearance="outline">
                 <mat-label>Min Value</mat-label>
                 <input matInput type="number" [(ngModel)]="paramForm.minValue">
@@ -87,7 +87,7 @@ import { NotificationService } from '../../../core/services/notification.service
                 <input matInput type="number" [(ngModel)]="paramForm.maxValue">
               </mat-form-field>
             </div>
-            <div class="form-row" *ngIf="paramForm.dataType === 'Numeric'">
+            <div class="form-row" *ngIf="isNumericType()">
               <mat-form-field appearance="outline">
                 <mat-label>Male Range</mat-label>
                 <input matInput [(ngModel)]="paramForm.maleRange" placeholder="e.g. 14-18">
@@ -96,6 +96,26 @@ import { NotificationService } from '../../../core/services/notification.service
                 <mat-label>Female Range</mat-label>
                 <input matInput [(ngModel)]="paramForm.femaleRange" placeholder="e.g. 12-16">
               </mat-form-field>
+            </div>
+            <div class="form-row" *ngIf="isNumericType()">
+              <mat-form-field appearance="outline">
+                <mat-label>Child Range</mat-label>
+                <input matInput [(ngModel)]="paramForm.childRange" placeholder="e.g. 11-14">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Critical Low</mat-label>
+                <input matInput type="number" [(ngModel)]="paramForm.criticalLow">
+              </mat-form-field>
+            </div>
+            <div class="form-row" *ngIf="isNumericType()">
+              <mat-form-field appearance="outline">
+                <mat-label>Critical High</mat-label>
+                <input matInput type="number" [(ngModel)]="paramForm.criticalHigh">
+              </mat-form-field>
+            </div>
+            <div *ngIf="isOptionType()" class="options-section">
+              <label class="section-label">Dropdown Options (one per line)</label>
+              <textarea matInput [(ngModel)]="optionsText" rows="4" placeholder="Option 1&#10;Option 2&#10;Option 3" class="options-textarea"></textarea>
             </div>
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Description</mat-label>
@@ -126,6 +146,9 @@ import { NotificationService } from '../../../core/services/notification.service
     .form-row mat-form-field { flex: 1; }
     .full-width { width: 100%; }
     .dialog-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+    .options-section { margin-bottom: 1rem; }
+    .section-label { display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-secondary, #666); }
+    .options-textarea { width: 100%; border: 1px solid var(--border-color, #ccc); border-radius: 4px; padding: 0.5rem; font-family: inherit; resize: vertical; }
   `]
 })
 export class LabTestParametersComponent implements OnInit {
@@ -137,6 +160,7 @@ export class LabTestParametersComponent implements OnInit {
   editingParameter: any = null;
   paramForm: any = {};
   saving = false;
+  optionsText = '';
 
   constructor(private api: ApiService, private route: ActivatedRoute, private notification: NotificationService) {}
 
@@ -155,28 +179,77 @@ export class LabTestParametersComponent implements OnInit {
     this.api.get<any[]>(`v1/laboratory/services/${this.serviceId}/parameters`).subscribe(r => this.parameters = r);
   }
 
+  isNumericType(): boolean {
+    return this.normalizeDataType(this.paramForm.dataType) === 'numeric';
+  }
+
+  isOptionType(): boolean {
+    return this.normalizeDataType(this.paramForm.dataType) === 'option';
+  }
+
+  private normalizeDataType(dt: any): string {
+    return (dt || '').toString().toLowerCase();
+  }
+
   openAddDialog() {
     this.editingParameter = null;
-    this.paramForm = { name: '', code: '', unit: '', dataType: 'Numeric', normalRange: '', displayOrder: this.parameters.length + 1, minValue: null, maxValue: null, maleRange: '', femaleRange: '', description: '' };
+    this.paramForm = { name: '', code: '', unit: '', dataType: 'Numeric', normalRange: '', displayOrder: this.parameters.length + 1, minValue: null, maxValue: null, maleRange: '', femaleRange: '', childRange: '', criticalLow: null, criticalHigh: null, description: '', options: '' };
+    this.optionsText = '';
     this.showDialog = true;
   }
 
   editParameter(param: any) {
     this.editingParameter = param;
     this.paramForm = { ...param };
+    // Normalize dataType to PascalCase so mat-select matches the option value
+    const rawDt = (param.dataType || '').toString().toLowerCase();
+    if (rawDt === 'numeric' || rawDt === '1') this.paramForm.dataType = 'Numeric';
+    else if (rawDt === 'text' || rawDt === '2') this.paramForm.dataType = 'Text';
+    else if (rawDt === 'boolean' || rawDt === '3') this.paramForm.dataType = 'Boolean';
+    else if (rawDt === 'option' || rawDt === '4') this.paramForm.dataType = 'Option';
+    // Convert stored JSON options array to editable text (one per line)
+    if (param.options) {
+      try {
+        const arr = JSON.parse(param.options);
+        this.optionsText = Array.isArray(arr) ? arr.join('\n') : '';
+      } catch {
+        this.optionsText = param.options || '';
+      }
+    } else {
+      this.optionsText = '';
+    }
     this.showDialog = true;
   }
 
   saveParameter() {
     if (!this.paramForm.name) return;
     this.saving = true;
+
+    // Build payload with proper DataType string value (always send PascalCase for backend parsing)
+    const payload = { ...this.paramForm };
+    const rawDt = (payload.dataType || '').toString();
+    // Normalize to PascalCase for backend Enum.TryParse
+    const dtLower = rawDt.toLowerCase();
+    if (dtLower === 'numeric' || dtLower === '1') payload.dataType = 'Numeric';
+    else if (dtLower === 'text' || dtLower === '2') payload.dataType = 'Text';
+    else if (dtLower === 'boolean' || dtLower === '3') payload.dataType = 'Boolean';
+    else if (dtLower === 'option' || dtLower === '4') payload.dataType = 'Option';
+
+    // Convert options text to JSON array
+    if (this.isOptionType() && this.optionsText.trim()) {
+      const opts = this.optionsText.split('\n').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+      payload.options = JSON.stringify(opts);
+    } else if (!this.isOptionType()) {
+      payload.options = '';
+    }
+
     if (this.editingParameter) {
-      this.api.put(`v1/laboratory/parameters`, this.editingParameter.id, this.paramForm).subscribe({
+      this.api.put(`v1/laboratory/parameters`, this.editingParameter.id, payload).subscribe({
         next: () => { this.notification.success('Parameter saved'); this.showDialog = false; this.loadParameters(); this.saving = false; },
         error: () => { this.saving = false; }
       });
     } else {
-      this.api.post(`v1/laboratory/services/${this.serviceId}/parameters`, this.paramForm).subscribe({
+      this.api.post(`v1/laboratory/services/${this.serviceId}/parameters`, payload).subscribe({
         next: () => { this.notification.success('Parameter saved'); this.showDialog = false; this.loadParameters(); this.saving = false; },
         error: () => { this.saving = false; }
       });

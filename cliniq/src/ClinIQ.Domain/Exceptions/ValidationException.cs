@@ -5,6 +5,7 @@ namespace ClinIQ.Domain.Exceptions;
 /// </summary>
 public class ValidationException : DomainException
 {
+    [System.Text.Json.Serialization.JsonIgnore]
     public IDictionary<string, string[]> Errors { get; }
 
     public ValidationException()

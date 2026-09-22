@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ClinIQ.API.Authorization;
+using ClinIQ.Domain.Entities.Billing;
 using ClinIQ.Domain.Entities.Clinical;
 using ClinIQ.Domain.Enums;
 using ClinIQ.Infrastructure.Data;
@@ -217,6 +218,9 @@ public class LaboratoryController : ControllerBase
                 Priority = o.IsUrgent ? "Urgent" : "Routine",
                 o.ClinicalIndication,
                 TestCount = _context.LabOrderItems.Count(i => i.MedicalOrderId == o.Id),
+                Items = _context.LabOrderItems.Where(i => i.MedicalOrderId == o.Id).Select(i => new { i.ServiceName, i.ServiceCode, i.UnitPrice, i.NetAmount }).ToList(),
+                o.IsBilled,
+                o.InvoiceId,
                 o.CompletedAt
             })
             .ToListAsync();
@@ -285,6 +289,78 @@ public class LaboratoryController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+
+        // Auto-create invoice
+        var labItems = await _context.LabOrderItems.Where(i => i.MedicalOrderId == order.Id).ToListAsync();
+        if (labItems.Count > 0)
+        {
+            var totalAmount = labItems.Sum(i => i.NetAmount);
+            var invoiceCount = await _context.Invoices.CountAsync() + 1;
+            var invoiceNumber = $"INV-{DateTime.UtcNow:yyyyMMdd}-{invoiceCount:D5}";
+
+            var invoice = new Invoice
+            {
+                InvoiceNumber = invoiceNumber,
+                PatientId = request.PatientId,
+                InvoiceDate = DateTime.UtcNow,
+                Status = InvoiceStatus.Draft,
+                SubTotal = totalAmount,
+                TotalAmount = totalAmount,
+                OutstandingAmount = totalAmount,
+                Notes = $"Lab Order #{orderNumber}"
+            };
+
+            var displayOrder = 0;
+            foreach (var item in labItems)
+            {
+                invoice.Items.Add(new InvoiceItem
+                {
+                    InvoiceId = invoice.Id,
+                    ServiceId = item.ServiceId,
+                    ItemType = "Service",
+                    ItemName = item.ServiceName,
+                    ItemCode = item.ServiceCode,
+                    Description = $"Lab Test - {item.ServiceName}",
+                    Quantity = item.Quantity,
+                    UnitPrice = item.UnitPrice,
+                    Amount = item.NetAmount,
+                    TotalAmount = item.NetAmount,
+                    ReferenceId = order.Id,
+                    ReferenceType = "LabOrder",
+                    DisplayOrder = displayOrder++
+                });
+            }
+
+            _context.Invoices.Add(invoice);
+            await _context.SaveChangesAsync();
+
+            // Create payment record
+            var paymentCount = await _context.Payments.CountAsync() + 1;
+            var paymentNumber = $"PAY-{DateTime.UtcNow:yyyyMMdd}-{paymentCount:D5}";
+
+            var payment = new Payment
+            {
+                PaymentNumber = paymentNumber,
+                InvoiceId = invoice.Id,
+                PatientId = request.PatientId,
+                PaymentDate = DateTime.UtcNow,
+                Amount = totalAmount,
+                PaymentMethod = PaymentMethod.Cash,
+                Status = PaymentStatus.Completed,
+                Notes = $"Lab Order #{orderNumber} payment"
+            };
+            _context.Payments.Add(payment);
+
+            // Mark invoice as paid
+            invoice.PaidAmount = totalAmount;
+            invoice.OutstandingAmount = 0;
+            invoice.Status = InvoiceStatus.Paid;
+
+            // Link order to invoice
+            order.IsBilled = true;
+            order.InvoiceId = invoice.Id;
+            await _context.SaveChangesAsync();
+        }
 
         return Ok(Result<object>.Success(new
         {
@@ -356,9 +432,12 @@ public class LaboratoryController : ControllerBase
                                 r.Unit,
                                 r.NormalRange,
                                 Flag = r.Flag.ToString(),
-                                DataType = r.DataType.ToString(),
+                                r.DataType,
                                 r.IsAbnormal,
-                                r.DisplayOrder
+                                r.DisplayOrder,
+                                Options = r.ParameterId != null
+                                    ? _context.LabTestParameters.Where(p => p.Id == r.ParameterId).Select(p => p.Options).FirstOrDefault()
+                                    : null
                             })
                             .ToList()
                     })
@@ -369,14 +448,14 @@ public class LaboratoryController : ControllerBase
         if (order == null)
             return NotFound(Result.Failure("Order not found"));
 
-        // Auto-populate LabResultParameters from LabTestParameters when empty
+        // Auto-populate LabResultParameters from LabTestParameters when empty,
+        // and sync stale parameters when test parameter config has changed.
         var itemIds = order.Items.Select(i => i.Id).ToList();
-        var existingParamCounts = await _context.LabResultParameters
+        var existingParams = await _context.LabResultParameters
             .Where(r => itemIds.Contains(r.LabOrderItemId))
-            .GroupBy(r => r.LabOrderItemId)
-            .Select(g => new { OrderItemId = g.Key, Count = g.Count() })
             .ToListAsync();
-        var existingParamMap = existingParamCounts.ToDictionary(x => x.OrderItemId, x => x.Count);
+        var existingParamsByItem = existingParams.GroupBy(r => r.LabOrderItemId)
+            .ToDictionary(g => g.Key, g => g.ToList());
 
         var serviceIds = order.Items.Select(i => i.ServiceId).ToList();
         var testParams = await _context.LabTestParameters
@@ -389,33 +468,78 @@ public class LaboratoryController : ControllerBase
         bool hasChanges = false;
         foreach (var item in order.Items)
         {
-            if (existingParamMap.TryGetValue(item.Id, out var count) && count > 0)
-                continue;
+            existingParamsByItem.TryGetValue(item.Id, out var existingParamsForItem);
+            var existingParamList = existingParamsForItem ?? new List<Domain.Entities.Clinical.LabResultParameter>();
 
             if (!paramsByService.TryGetValue(item.ServiceId, out var templateParams))
                 continue;
 
-            foreach (var tp in templateParams)
+            // If no result parameters exist yet, create them from template
+            if (existingParamList.Count == 0)
             {
-                _context.LabResultParameters.Add(new Domain.Entities.Clinical.LabResultParameter
+                foreach (var tp in templateParams)
                 {
-                    LabOrderItemId = item.Id,
-                    ParameterId = tp.Id,
-                    ParameterName = tp.Name,
-                    ParameterCode = tp.Code,
-                    Unit = tp.Unit,
-                    DataType = tp.DataType,
-                    NormalRange = tp.NormalRange,
-                    DisplayOrder = tp.DisplayOrder
-                });
+                    _context.LabResultParameters.Add(new Domain.Entities.Clinical.LabResultParameter
+                    {
+                        LabOrderItemId = item.Id,
+                        ParameterId = tp.Id,
+                        ParameterName = tp.Name,
+                        ParameterCode = tp.Code,
+                        Unit = tp.Unit,
+                        DataType = tp.DataType,
+                        NormalRange = tp.NormalRange,
+                        DisplayOrder = tp.DisplayOrder
+                    });
+                }
+                hasChanges = true;
             }
-            hasChanges = true;
+            else
+            {
+                // Sync: update DataType, Unit, NormalRange from current test parameter config
+                // for parameters that have no result value entered yet
+                foreach (var ep in existingParamList)
+                {
+                    if (ep.ParameterId == null) continue;
+                    var tp = templateParams.FirstOrDefault(t => t.Id == ep.ParameterId.Value);
+                    if (tp == null) continue;
+
+                    bool changed = false;
+                    if (ep.DataType != tp.DataType) { ep.DataType = tp.DataType; changed = true; }
+                    if (ep.Unit != tp.Unit) { ep.Unit = tp.Unit; changed = true; }
+                    if (ep.NormalRange != tp.NormalRange) { ep.NormalRange = tp.NormalRange; changed = true; }
+                    if (ep.ParameterName != tp.Name) { ep.ParameterName = tp.Name; changed = true; }
+                    if (ep.ParameterCode != tp.Code) { ep.ParameterCode = tp.Code; changed = true; }
+                    if (ep.DisplayOrder != tp.DisplayOrder) { ep.DisplayOrder = tp.DisplayOrder; changed = true; }
+                    if (changed) hasChanges = true;
+                }
+
+                // Check for new parameters added to test config that don't exist in result yet
+                var existingParamIds = existingParamList.Where(p => p.ParameterId.HasValue).Select(p => p.ParameterId!.Value).ToHashSet();
+                foreach (var tp in templateParams)
+                {
+                    if (!existingParamIds.Contains(tp.Id))
+                    {
+                        _context.LabResultParameters.Add(new Domain.Entities.Clinical.LabResultParameter
+                        {
+                            LabOrderItemId = item.Id,
+                            ParameterId = tp.Id,
+                            ParameterName = tp.Name,
+                            ParameterCode = tp.Code,
+                            Unit = tp.Unit,
+                            DataType = tp.DataType,
+                            NormalRange = tp.NormalRange,
+                            DisplayOrder = tp.DisplayOrder
+                        });
+                        hasChanges = true;
+                    }
+                }
+            }
         }
 
         if (hasChanges)
             await _context.SaveChangesAsync();
 
-        // Re-fetch order to include newly created parameters
+        // Re-fetch order to include newly created/updated parameters
         order = await _context.MedicalOrders
             .Where(o => o.Id == id && o.OrderType == MedicalOrderType.Lab && !o.IsDeleted)
             .Select(o => new
@@ -475,9 +599,12 @@ public class LaboratoryController : ControllerBase
                                 r.Unit,
                                 r.NormalRange,
                                 Flag = r.Flag.ToString(),
-                                DataType = r.DataType.ToString(),
+                                r.DataType,
                                 r.IsAbnormal,
-                                r.DisplayOrder
+                                r.DisplayOrder,
+                                Options = r.ParameterId != null
+                                    ? _context.LabTestParameters.Where(p => p.Id == r.ParameterId).Select(p => p.Options).FirstOrDefault()
+                                    : null
                             })
                             .ToList()
                     })
@@ -504,6 +631,19 @@ public class LaboratoryController : ControllerBase
 
         await _context.SaveChangesAsync();
         return Ok(Result.Success("Order updated"));
+    }
+
+    [HttpPost("orders/{id:guid}/cancel")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryOrdersEdit)]
+    public async Task<IActionResult> CancelOrder(Guid id)
+    {
+        var order = await _context.MedicalOrders.FirstOrDefaultAsync(o => o.Id == id && o.OrderType == MedicalOrderType.Lab && !o.IsDeleted);
+        if (order == null)
+            return NotFound(Result.Failure("Order not found"));
+
+        order.Status = MedicalOrderStatus.Cancelled;
+        await _context.SaveChangesAsync();
+        return Ok(Result.Success("Order cancelled"));
     }
 
     [HttpDelete("orders/{id:guid}")]
@@ -678,6 +818,9 @@ public class LaboratoryController : ControllerBase
         if (request.Items == null || request.Items.Count == 0)
             return BadRequest(Result.Failure("No results provided"));
 
+        // Pre-fetch all test parameters for fallback DataType lookup
+        var testParamCache = new Dictionary<Guid, TestParameterDataType>();
+
         foreach (var itemResult in request.Items)
         {
             var item = await _context.LabOrderItems.FirstOrDefaultAsync(i => i.Id == itemResult.OrderItemId && i.MedicalOrderId == id);
@@ -690,6 +833,23 @@ public class LaboratoryController : ControllerBase
             {
                 foreach (var param in itemResult.Parameters)
                 {
+                    // Resolve DataType: try from request first, then fallback to test parameter config
+                    var dataType = TestParameterDataType.Numeric;
+                    if (!string.IsNullOrEmpty(param.DataType) && Enum.TryParse<TestParameterDataType>(param.DataType, true, out var parsedDt))
+                    {
+                        dataType = parsedDt;
+                    }
+                    else if (param.ParameterId.HasValue)
+                    {
+                        // Fallback: look up from the test parameter definition
+                        if (!testParamCache.TryGetValue(param.ParameterId.Value, out dataType))
+                        {
+                            var testParam = await _context.LabTestParameters.FindAsync(param.ParameterId.Value);
+                            dataType = testParam?.DataType ?? TestParameterDataType.Numeric;
+                            testParamCache[param.ParameterId.Value] = dataType;
+                        }
+                    }
+
                     var resultParam = new Domain.Entities.Clinical.LabResultParameter
                     {
                         LabOrderItemId = item.Id,
@@ -699,7 +859,7 @@ public class LaboratoryController : ControllerBase
                         ResultValue = param.ResultValue,
                         Unit = param.Unit,
                         NormalRange = param.NormalRange,
-                        DataType = Enum.TryParse<TestParameterDataType>(param.DataType, true, out var dt) ? dt : TestParameterDataType.Numeric,
+                        DataType = dataType,
                         DisplayOrder = param.DisplayOrder,
                         EnteredById = request.EnteredById,
                         EnteredAt = DateTime.UtcNow

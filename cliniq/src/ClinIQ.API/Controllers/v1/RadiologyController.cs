@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ClinIQ.Domain.Entities.Billing;
 using ClinIQ.Domain.Enums;
 using ClinIQ.Infrastructure.Data;
 using ClinIQ.Shared.Models;
@@ -100,6 +101,8 @@ public class RadiologyController : ControllerBase
                     .Where(i => i.MedicalOrderId == o.Id)
                     .Select(i => new { i.ServiceName, i.Modality, i.BodyPart, Status = i.Status.ToString() })
                     .ToList(),
+                o.IsBilled,
+                o.InvoiceId,
                 o.CompletedAt
             })
             .ToListAsync();
@@ -173,6 +176,78 @@ public class RadiologyController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+
+        // Auto-create invoice
+        var radItems = await _context.RadiologyOrderItems.Where(i => i.MedicalOrderId == order.Id).ToListAsync();
+        if (radItems.Count > 0)
+        {
+            var totalAmount = radItems.Sum(i => i.NetAmount);
+            var invoiceCount = await _context.Invoices.CountAsync() + 1;
+            var invoiceNumber = $"INV-{DateTime.UtcNow:yyyyMMdd}-{invoiceCount:D5}";
+
+            var invoice = new Invoice
+            {
+                InvoiceNumber = invoiceNumber,
+                PatientId = request.PatientId,
+                InvoiceDate = DateTime.UtcNow,
+                Status = InvoiceStatus.Draft,
+                SubTotal = totalAmount,
+                TotalAmount = totalAmount,
+                OutstandingAmount = totalAmount,
+                Notes = $"Radiology Order #{orderNumber}"
+            };
+
+            var displayOrder = 0;
+            foreach (var item in radItems)
+            {
+                invoice.Items.Add(new InvoiceItem
+                {
+                    InvoiceId = invoice.Id,
+                    ServiceId = item.ServiceId,
+                    ItemType = "Service",
+                    ItemName = item.ServiceName,
+                    ItemCode = item.ServiceCode,
+                    Description = $"Radiology - {item.ServiceName}" + (item.Modality != null ? $" ({item.Modality})" : ""),
+                    Quantity = 1,
+                    UnitPrice = item.UnitPrice,
+                    Amount = item.NetAmount,
+                    TotalAmount = item.NetAmount,
+                    ReferenceId = order.Id,
+                    ReferenceType = "RadiologyOrder",
+                    DisplayOrder = displayOrder++
+                });
+            }
+
+            _context.Invoices.Add(invoice);
+            await _context.SaveChangesAsync();
+
+            // Create payment record
+            var paymentCount = await _context.Payments.CountAsync() + 1;
+            var paymentNumber = $"PAY-{DateTime.UtcNow:yyyyMMdd}-{paymentCount:D5}";
+
+            var payment = new Payment
+            {
+                PaymentNumber = paymentNumber,
+                InvoiceId = invoice.Id,
+                PatientId = request.PatientId,
+                PaymentDate = DateTime.UtcNow,
+                Amount = totalAmount,
+                PaymentMethod = PaymentMethod.Cash,
+                Status = PaymentStatus.Completed,
+                Notes = $"Radiology Order #{orderNumber} payment"
+            };
+            _context.Payments.Add(payment);
+
+            // Mark invoice as paid
+            invoice.PaidAmount = totalAmount;
+            invoice.OutstandingAmount = 0;
+            invoice.Status = InvoiceStatus.Paid;
+
+            // Link order to invoice
+            order.IsBilled = true;
+            order.InvoiceId = invoice.Id;
+            await _context.SaveChangesAsync();
+        }
 
         return Ok(Result<object>.Success(new
         {

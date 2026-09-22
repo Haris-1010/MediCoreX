@@ -87,7 +87,12 @@ import { Component, Input } from '@angular/core';
     }
 
     .stats-accent-bar {
-    display: none;   }
+      display: block;
+      width: 4px;
+      height: 24px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
 
     .stats-value {
       font-size: 2.25rem;

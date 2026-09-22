@@ -68,12 +68,42 @@ import { AuthService } from '../../../core/services/auth.service';
             </div>
             <div class="parameters" *ngIf="item.parameters && item.parameters.length > 0">
               <div class="param" *ngFor="let param of item.parameters; let pi = index">
-                <mat-form-field appearance="outline" class="param-field">
+                <!-- Numeric: number input -->
+                <mat-form-field appearance="outline" class="param-field" *ngIf="getDataType(param) === 'numeric'">
+                  <mat-label>{{ param.parameterName }}</mat-label>
+                  <input matInput type="number" step="any" [(ngModel)]="param.resultValue" [placeholder]="param.unit || 'Value'">
+                </mat-form-field>
+
+                <!-- Boolean: select Yes/No -->
+                <mat-form-field appearance="outline" class="param-field" *ngIf="getDataType(param) === 'boolean'">
+                  <mat-label>{{ param.parameterName }}</mat-label>
+                  <mat-select [(ngModel)]="param.resultValue">
+                    <mat-option value="">-- Select --</mat-option>
+                    <mat-option value="Positive">Positive</mat-option>
+                    <mat-option value="Negative">Negative</mat-option>
+                    <mat-option value="Yes">Yes</mat-option>
+                    <mat-option value="No">No</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <!-- Option: dropdown from configured options -->
+                <mat-form-field appearance="outline" class="param-field" *ngIf="getDataType(param) === 'option'">
+                  <mat-label>{{ param.parameterName }}</mat-label>
+                  <mat-select [(ngModel)]="param.resultValue">
+                    <mat-option value="">-- Select --</mat-option>
+                    <mat-option *ngFor="let opt of getParamOptions(param)" [value]="opt">{{ opt }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <!-- Text (default): text input -->
+                <mat-form-field appearance="outline" class="param-field" *ngIf="getDataType(param) === 'text' || !getDataType(param)">
                   <mat-label>{{ param.parameterName }}</mat-label>
                   <input matInput [(ngModel)]="param.resultValue" [placeholder]="param.unit || 'Value'">
                 </mat-form-field>
+
                 <div class="param-meta">
                   <span class="range" *ngIf="param.normalRange">Ref: {{ param.normalRange }} {{ param.unit }}</span>
+                  <span class="data-type-badge">{{ getDataType(param) }}</span>
                   <mat-icon *ngIf="isAbnormal(param)" color="warn" class="warning-icon" matTooltip="Out of range">warning</mat-icon>
                 </div>
               </div>
@@ -108,6 +138,7 @@ import { AuthService } from '../../../core/services/auth.service';
     .param-field { margin-bottom: -1.5em !important; }
     .param-meta { display: flex; align-items: center; gap: 4px; }
     .range { font-size: 0.7rem; color: var(--text-secondary, #666); }
+    .data-type-badge { font-size: 0.6rem; background: #f0f0f0; color: #888; padding: 1px 6px; border-radius: 8px; text-transform: uppercase; }
     .warning-icon { font-size: 16px; width: 16px; height: 16px; }
     .full-width { width: 100%; }
     .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
@@ -162,6 +193,23 @@ export class ResultEntryComponent implements OnInit {
     });
   }
 
+  getDataType(param: any): string {
+    return (param.dataType || '').toString().toLowerCase();
+  }
+
+  getParamOptions(param: any): string[] {
+    // Options may come from the parameter config or be stored as JSON
+    if (param.options) {
+      try {
+        const parsed = JSON.parse(param.options);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }
+
   isAbnormal(param: any): boolean {
     if (!param.resultValue || !param.normalRange) return false;
     const val = parseFloat(param.resultValue);
@@ -185,7 +233,7 @@ export class ResultEntryComponent implements OnInit {
         parameterId: p.parameterId || p.id || null,
         parameterName: p.parameterName || p.name,
         parameterCode: p.parameterCode || p.code,
-        resultValue: p.resultValue || '',
+        resultValue: p.resultValue != null ? String(p.resultValue) : '',
         unit: p.unit,
         normalRange: p.normalRange,
         dataType: p.dataType || 'Numeric',
@@ -194,8 +242,7 @@ export class ResultEntryComponent implements OnInit {
     }));
     this.api.post(`v1/laboratory/orders/${this.order.id}/save-results`, {
       enteredById: this.auth.getCurrentUser()?.id || null,
-      items,
-      comments: this.comments || null
+      items
     }).subscribe({
       next: () => { this.notification.success('Results saved successfully'); this.router.navigate(['/laboratory']); },
       error: (err) => { this.saving = false; this.notification.error(err?.message || 'Failed to save results'); }

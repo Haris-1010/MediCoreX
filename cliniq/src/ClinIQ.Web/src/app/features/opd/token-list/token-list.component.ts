@@ -1,14 +1,7 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Component, OnInit, OnDestroy, signal } from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
-import { MatTableModule } from '@angular/material/table';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiService } from '../../../core/services/api.service';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
@@ -32,26 +25,162 @@ export interface QueueToken {
 
 @Component({
   selector: 'app-token-list',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    RouterModule,
-    MatTableModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatTooltipModule
-  ],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  templateUrl: './token-list.component.html',
-  styleUrl: './token-list.component.css'
+  standalone: false,
+  template: `
+    <app-main-layout>
+      <app-page-header title="Token List" [breadcrumbs]="[{ label: 'OPD', route: '/opd' }, { label: 'Tokens' }]">
+        <button mat-raised-button color="primary" routerLink="/opd/token"><mat-icon>add_circle</mat-icon> New Token</button>
+      </app-page-header>
+
+      <div class="token-list-container">
+        @if (loading()) {
+          <div class="loading-container">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p class="loading-text">Loading tokens...</p>
+          </div>
+        }
+
+        @if (!loading() && errorMessage()) {
+          <div class="error-container">
+            <mat-icon class="error-icon">error_outline</mat-icon>
+            <p>{{ errorMessage() }}</p>
+            <button mat-raised-button color="primary" (click)="loadTokens()">Retry</button>
+          </div>
+        }
+
+        @if (!loading() && tokens().length === 0 && !errorMessage()) {
+          <div class="empty-container">
+            <mat-icon class="empty-icon">confirmation_number</mat-icon>
+            <p>No tokens found for today.</p>
+            <p class="empty-sub">Tokens will appear here as they are generated.</p>
+          </div>
+        }
+
+        @if (!loading() && tokens().length > 0) {
+          <div class="table-wrapper">
+            <table mat-table [dataSource]="tokens()">
+              <ng-container matColumnDef="tokenNumber">
+                <th mat-header-cell *matHeaderCellDef>Token #</th>
+                <td mat-cell *matCellDef="let token" class="token-number-cell">{{ token.tokenNumber }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="patientName">
+                <th mat-header-cell *matHeaderCellDef>Patient</th>
+                <td mat-cell *matCellDef="let token">{{ token.patientName }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="mrn">
+                <th mat-header-cell *matHeaderCellDef>MRN</th>
+                <td mat-cell *matCellDef="let token">{{ token.mrn || '—' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="doctorName">
+                <th mat-header-cell *matHeaderCellDef>Doctor</th>
+                <td mat-cell *matCellDef="let token">{{ token.doctorName }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>Status</th>
+                <td mat-cell *matCellDef="let token">
+                  <span class="status-badge" [ngClass]="getStatusClass(token.status)">{{ token.status }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="joinedAt">
+                <th mat-header-cell *matHeaderCellDef>Joined At</th>
+                <td mat-cell *matCellDef="let token">
+                  @if (token.joinedAt) {
+                    <span>{{ token.joinedAt | date:'short' }}</span>
+                  } @else {
+                    <span>—</span>
+                  }
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Actions</th>
+                <td mat-cell *matCellDef="let token">
+                  <button mat-icon-button matTooltip="Print" (click)="printToken(token)">
+                    <mat-icon>print</mat-icon>
+                  </button>
+                  <button mat-icon-button matTooltip="Call" (click)="callPatient(token)">
+                    <mat-icon>phone</mat-icon>
+                  </button>
+                  <button mat-icon-button matTooltip="Complete" (click)="completeConsultation(token)">
+                    <mat-icon>check_circle</mat-icon>
+                  </button>
+                  @if (!isCompleted(token)) {
+                    <button mat-icon-button matTooltip="Edit" (click)="editToken(token)">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" matTooltip="Remove" (click)="deleteToken(token)">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  }
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            </table>
+          </div>
+
+          <div class="summary-section">
+            <div class="summary-item">
+              <span class="summary-label">Total Tokens:</span>
+              <span class="summary-value">{{ tokens().length }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label waiting">Waiting:</span>
+              <span class="summary-value">{{ getWaitingCount() }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label consultation">In Consultation:</span>
+              <span class="summary-value">{{ getInConsultationCount() }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label completed">Completed:</span>
+              <span class="summary-value">{{ getCompletedCount() }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </app-main-layout>
+  `,
+  styles: [`
+    .token-list-container { padding: 1.5rem; }
+    .loading-container { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; gap: 1rem; }
+    .loading-text { color: var(--text-muted); font-size: 0.9rem; }
+    .error-container { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; gap: 1rem; }
+    .error-icon { font-size: 48px; width: 48px; height: 48px; color: var(--danger); }
+    .empty-container { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; gap: 0.5rem; }
+    .empty-icon { font-size: 64px; width: 64px; height: 64px; color: var(--text-muted); opacity: 0.5; }
+    .empty-sub { color: var(--text-muted); font-size: 0.85rem; }
+    .table-wrapper { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-color); }
+    .token-number-cell { font-weight: 600; color: var(--accent-primary); }
+    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+    .status-waiting { background: var(--badge-warning-bg); color: var(--badge-warning-text); }
+    .status-called { background: var(--badge-info-bg); color: var(--badge-info-text); }
+    .status-in-consultation { background: var(--badge-success-bg); color: var(--badge-success-text); }
+    .status-completed { background: var(--bg-badge); color: var(--text-muted); }
+    .status-cancelled { background: var(--badge-danger-bg); color: var(--badge-danger-text); }
+    .summary-section { display: flex; gap: 2rem; margin-top: 1.5rem; padding: 1rem 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; }
+    .summary-item { display: flex; align-items: center; gap: 0.5rem; }
+    .summary-label { font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; }
+    .summary-label.waiting { color: var(--warning); }
+    .summary-label.consultation { color: var(--success); }
+    .summary-label.completed { color: var(--text-muted); }
+    .summary-value { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+    @media (max-width: 768px) { .summary-section { flex-direction: column; gap: 0.75rem; } }
+  `]
 })
-export class TokenListComponent implements OnInit {
+export class TokenListComponent implements OnInit, OnDestroy {
   tokens = signal<QueueToken[]>([]);
   loading = signal(true);
   errorMessage = signal<string | null>(null);
   displayedColumns = ['tokenNumber', 'patientName', 'mrn', 'doctorName', 'status', 'joinedAt', 'actions'];
+
+  private destroy$ = new Subject<void>();
 
   constructor(
     private api: ApiService,
@@ -62,12 +191,17 @@ export class TokenListComponent implements OnInit {
     this.loadTokens();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   loadTokens(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
     this.api
       .get<any>('v1/opd/current-queue')
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res: any) => {
           const list = Array.isArray(res) ? res : (res?.data || res?.result || []);

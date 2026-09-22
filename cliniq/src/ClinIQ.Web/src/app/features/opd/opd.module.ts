@@ -27,15 +27,15 @@ const routes: Routes = [
     QueueManagementComponent,
     ConsultationComponent,
     TokenDisplayComponent,
-    TokenGenerationComponent
+    TokenGenerationComponent,
+    TokenListComponent
   ],
   providers: [AudioAnnouncementService],
   imports: [
     CommonModule,
     SharedModule,
     LayoutModule,
-    RouterModule.forChild(routes),
-    TokenListComponent
+    RouterModule.forChild(routes)
   ]
 })
 export class OpdModule { }

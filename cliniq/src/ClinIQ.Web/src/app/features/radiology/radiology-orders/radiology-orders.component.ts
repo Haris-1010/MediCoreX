@@ -33,6 +33,7 @@ import { MatDialog } from '@angular/material/dialog';
             <button mat-icon-button color="primary" [routerLink]="['../reports', o.id]" matTooltip="View / Enter Report"><mat-icon>edit_note</mat-icon></button>
             <button mat-icon-button color="primary" (click)="printOrder(o.id)" matTooltip="Print"><mat-icon>print</mat-icon></button>
             <button mat-icon-button color="warn" (click)="cancelOrder(o)" matTooltip="Cancel Order" *ngIf="o.status !== 'Verified' && o.status !== 'Completed' && o.status !== 'Cancelled'"><mat-icon>cancel</mat-icon></button>
+            <button mat-icon-button color="warn" (click)="deleteOrder(o)" matTooltip="Delete Order" *ngIf="o.status === 'Cancelled' || o.status === 'Ordered'"><mat-icon>delete</mat-icon></button>
           </td></ng-container>
           <tr mat-header-row *matHeaderRowDef="columns"></tr>
           <tr mat-row *matRowDef="let row; columns: columns;"></tr>
@@ -74,6 +75,20 @@ export class RadiologyOrdersComponent implements OnInit {
         this.api.post(`v1/radiology/orders/${order.id}/cancel`, {}).subscribe({
           next: () => { this.notification.success('Order cancelled'); this.load(); },
           error: (err) => this.notification.error(err?.message || 'Failed to cancel order')
+        });
+      }
+    });
+  }
+
+  deleteOrder(order: any) {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: { title: 'Delete Order', message: `Are you sure you want to permanently delete order ${order.orderNumber}? This action cannot be undone.`, confirmText: 'Delete', cancelText: 'No' }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete(`v1/radiology/orders`, order.id).subscribe({
+          next: () => { this.notification.success('Order deleted'); this.load(); },
+          error: (err) => this.notification.error(err?.message || 'Failed to delete order')
         });
       }
     });

@@ -140,10 +140,7 @@ export interface ItemDialogData {
           <mat-form-field appearance="outline">
             <mat-label>Reorder Level</mat-label>
             <input matInput type="number" formControlName="reorderLevel" min="0">
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Reorder Qty</mat-label>
-            <input matInput type="number" formControlName="reorderQuantity" min="0">
+            <mat-hint>Alert when stock falls below this</mat-hint>
           </mat-form-field>
         </div>
 
@@ -407,7 +404,6 @@ export class ItemDialogComponent implements OnInit {
         taxPercent: [item?.taxPercent || 0],
         currentStock: [item?.currentStock || 0, Validators.min(0)],
         reorderLevel: [item?.reorderLevel || 10],
-        reorderQuantity: [item?.reorderQuantity || 0],
         isMedicine: [item?.isMedicine ?? true],
         requiresPrescription: [item?.requiresPrescription ?? false],
         isActive: [item?.isActive ?? true]

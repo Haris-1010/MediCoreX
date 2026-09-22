@@ -1,4 +1,7 @@
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using ClinIQ.API.Filters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -9,7 +12,12 @@ public static class ServiceExtensions
 {
     public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddControllers();
+        services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+            });
         services.AddEndpointsApiExplorer();
         services.AddHttpContextAccessor();
         services.AddSignalR();
@@ -73,6 +81,20 @@ public static class ServiceExtensions
                 Version = "v1",
                 Description = "Multi-tenant Clinic & Hospital Management / EMR SaaS API"
             });
+
+            c.CustomSchemaIds(type =>
+            {
+                if (type.IsGenericType)
+                {
+                    var name = type.Name.Split('`')[0];
+                    var args = string.Join("_", type.GetGenericArguments().Select(t => t.Name));
+                    return $"{name}_{args}";
+                }
+                return type.FullName ?? type.Name;
+            });
+
+            c.SchemaFilter<ObjectTypeFilter>();
+            c.IgnoreObsoleteActions();
 
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {

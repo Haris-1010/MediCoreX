@@ -137,7 +137,6 @@ public class InventoryController : ControllerBase
                 i.MinimumStock,
                 i.MaximumStock,
                 i.ReorderLevel,
-                i.ReorderQuantity,
                 i.TracksExpiry,
                 i.TracksBatches,
                 i.ExpiryWarningDays,
@@ -191,7 +190,6 @@ public class InventoryController : ControllerBase
             MinimumStock = request.MinimumStock,
             MaximumStock = request.MaximumStock,
             ReorderLevel = request.ReorderLevel,
-            ReorderQuantity = request.ReorderQuantity,
             TracksExpiry = request.TracksExpiry,
             TracksBatches = request.TracksBatches,
             ExpiryWarningDays = request.ExpiryWarningDays,
@@ -242,7 +240,6 @@ public class InventoryController : ControllerBase
         item.MinimumStock = request.MinimumStock;
         item.MaximumStock = request.MaximumStock;
         item.ReorderLevel = request.ReorderLevel;
-        item.ReorderQuantity = request.ReorderQuantity;
         item.TracksExpiry = request.TracksExpiry;
         item.TracksBatches = request.TracksBatches;
         item.ExpiryWarningDays = request.ExpiryWarningDays;
@@ -397,7 +394,7 @@ public class InventoryController : ControllerBase
 
     [HttpPost("transfers")]
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.InventoryTransfer)]
-    public IActionResult CreateTransfer([FromBody] object request)
+    public IActionResult CreateTransfer([FromBody] System.Text.Json.JsonElement request)
     {
         return Ok(Result<object>.Success(new { id = Guid.NewGuid() }, "Transfer created"));
     }
@@ -660,7 +657,6 @@ public class InventoryController : ControllerBase
         public decimal MinimumStock { get; set; }
         public decimal MaximumStock { get; set; }
         public decimal ReorderLevel { get; set; }
-        public decimal ReorderQuantity { get; set; }
         public bool TracksExpiry { get; set; }
         public bool TracksBatches { get; set; }
         public bool IsActive { get; set; }

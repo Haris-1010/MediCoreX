@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace ClinIQ.Shared.Models;
 
 /// <summary>
@@ -9,6 +11,7 @@ public class Result
     public string? Message { get; protected set; }
     public string? Code { get; protected set; }
     public IEnumerable<string> Errors { get; protected set; } = Enumerable.Empty<string>();
+    [JsonIgnore]
     public IDictionary<string, string[]>? ValidationErrors { get; protected set; }
 
     protected Result() { }

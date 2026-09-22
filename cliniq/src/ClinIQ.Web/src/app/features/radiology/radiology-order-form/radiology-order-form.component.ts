@@ -20,10 +20,7 @@ import { NotificationService } from '../../../core/services/notification.service
               <mat-icon matPrefix>search</mat-icon>
               <mat-autocomplete #patientAuto="matAutocomplete" [displayWith]="displayPatient" (optionSelected)="onPatientSelected($event)">
                 <mat-option *ngFor="let p of filteredPatients" [value]="p">
-                  <div class="autocomplete-option">
-                    <span class="name">{{ p.fullName }}</span>
-                    <span class="detail">{{ p.phone || 'No phone' }} | MRN: {{ p.mrn }}</span>
-                  </div>
+                  <span>{{ p.fullName }} ({{ p.phone || 'No phone' }})</span>
                 </mat-option>
               </mat-autocomplete>
               <mat-error>Patient is required</mat-error>
@@ -92,17 +89,21 @@ import { NotificationService } from '../../../core/services/notification.service
                   <tr *ngFor="let s of selectedServiceItems; let i = index">
                     <td><strong>{{ s.name }}</strong></td>
                     <td>{{ s.code }}</td>
+                   <td>
+  <mat-form-field appearance="outline" class="compact-field">
+    <input matInput [(ngModel)]="s._modality" [ngModelOptions]="{standalone: true}" placeholder="CT / MRI">
+  </mat-form-field>
+</td>
+<td>
+  <mat-form-field appearance="outline" class="compact-field">
+    <input matInput [(ngModel)]="s._bodyPart" [ngModelOptions]="{standalone: true}" placeholder="Chest / Brain">
+  </mat-form-field>
+</td>
                     <td>
-                      <mat-form-field appearance="outline" class="compact-field">
-                        <input matInput [(ngModel)]="s._modality" [ngModelOptions]="{standalone: true}" placeholder="e.g. CT, MRI">
-                      </mat-form-field>
-                    </td>
-                    <td>
-                      <mat-form-field appearance="outline" class="compact-field">
-                        <input matInput [(ngModel)]="s._bodyPart" [ngModelOptions]="{standalone: true}" placeholder="e.g. Chest, Brain">
-                      </mat-form-field>
-                    </td>
-                    <td>Rs. {{ s.price }}</td>
+  <mat-form-field appearance="outline" class="compact-field price-field">
+    <input matInput type="number" [(ngModel)]="s._price" [ngModelOptions]="{standalone: true}" min="0" placeholder="0">
+  </mat-form-field>
+</td>
                     <td><button mat-icon-button color="warn" type="button" (click)="removeService(s.id)"><mat-icon>remove_circle</mat-icon></button></td>
                   </tr>
                 </tbody>
@@ -164,17 +165,55 @@ import { NotificationService } from '../../../core/services/notification.service
     .selected-services { margin-top: 1rem; }
     .selected-services h4 { margin: 0 0 0.5rem; font-size: 0.95rem; }
     .services-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    .services-table th { background: var(--accent-primary, #1a237e); color: white; padding: 8px 12px; text-align: left; }
-    .services-table td { padding: 8px 12px; border-bottom: 1px solid var(--border-color, #eee); }
+    .services-table th {
+  padding: 8px 10px; background: var(--accent-primary, #1a237e); color: white; padding: 8px 12px; text-align: left; }
+   
+    .services-table td {
+  padding: 6px 10px;
+  vertical-align: middle;  border-bottom: 1px solid var(--border-color, #eee); }
     .services-table tfoot td { font-weight: 600; border-top: 2px solid var(--accent-primary, #1a237e); }
     .total-label { text-align: right; }
     .total-price { color: var(--accent-primary, #1a237e); font-size: 1rem; }
     .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color, #eee); }
-    .compact-field { margin-bottom: -1.25em !important; }
-    .compact-field ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
-    :host ::ng-deep .autocomplete-option { display: flex; flex-direction: column; padding: 4px 0; }
-    :host ::ng-deep .autocomplete-option .name { font-weight: 500; }
-    :host ::ng-deep .autocomplete-option .detail { font-size: 0.75rem; color: var(--text-muted, #888); }
+  .compact-field {
+  width: 110px;
+  margin: 0 !important;
+}
+
+.compact-field ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+.compact-field ::ng-deep .mat-mdc-text-field-wrapper {
+  padding: 0 6px !important;
+  height: 32px !important;
+}
+
+.compact-field ::ng-deep .mat-mdc-form-field-flex {
+  align-items: center;
+  min-height: 32px !important;
+  height: 32px !important;
+}
+
+.compact-field ::ng-deep .mat-mdc-form-field-infix {
+  padding: 0 !important;
+  min-height: 32px !important;
+  border-top: none !important;
+}
+
+.compact-field ::ng-deep .mat-mdc-input-element {
+  padding: 0 !important;
+  font-size: 0.8rem !important;
+  line-height: 32px !important;
+  height: 32px !important;
+}
+.price-field {
+  width: 90px;
+  margin: 0 !important;
+}
+ 
+
+
   `]
 })
 export class RadiologyOrderFormComponent implements OnInit {
@@ -295,7 +334,9 @@ export class RadiologyOrderFormComponent implements OnInit {
 
   onServiceSelectionChange() {
     const selectedIds = this.orderForm.value.selectedServices || [];
-    this.selectedServiceItems = this.radiologyServices.filter(s => selectedIds.includes(s.id));
+    this.selectedServiceItems = this.radiologyServices
+      .filter(s => selectedIds.includes(s.id))
+      .map(s => ({ ...s, _price: s.price }));
   }
 
   removeService(id: string) {
@@ -305,7 +346,7 @@ export class RadiologyOrderFormComponent implements OnInit {
   }
 
   get totalPrice(): number {
-    return this.selectedServiceItems.reduce((sum, s) => sum + (s.price || 0), 0);
+    return this.selectedServiceItems.reduce((sum, s) => sum + (s._price || 0), 0);
   }
 
   onSubmit() {
@@ -316,7 +357,7 @@ export class RadiologyOrderFormComponent implements OnInit {
       serviceId: s.id,
       modality: s._modality || null,
       bodyPart: s._bodyPart || null,
-      discount: 0
+      discount: Math.max(0, s.price - (s._price || s.price))
     }));
     this.api.post('v1/radiology/orders', {
       patientId: fv.patientId,

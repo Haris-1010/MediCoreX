@@ -28,7 +28,6 @@ public class DashboardController : ControllerBase
         var tomorrow = today.AddDays(1);
         var totalPatients = await _context.Patients.CountAsync(p => !p.IsDeleted);
         var todayAppointments = await _context.Appointments.CountAsync(a => !a.IsDeleted && a.AppointmentDate >= today && a.AppointmentDate < tomorrow);
-        var activeAdmissions = await _context.Admissions.CountAsync(a => !a.IsDeleted && a.Status == Domain.Enums.AdmissionStatus.Admitted);
         var todayRevenue = await _context.Invoices
             .Where(i => !i.IsDeleted && i.InvoiceDate.Date == DateTime.Today && i.Status == Domain.Enums.InvoiceStatus.Paid)
             .SumAsync(i => i.TotalAmount);
@@ -37,11 +36,14 @@ public class DashboardController : ControllerBase
             .Where(i => !i.IsDeleted && i.Status != Domain.Enums.InvoiceStatus.Paid && i.Status != Domain.Enums.InvoiceStatus.Cancelled && i.Status != Domain.Enums.InvoiceStatus.Refunded && i.Status != Domain.Enums.InvoiceStatus.WrittenOff)
             .SumAsync(i => i.TotalAmount - i.PaidAmount);
 
+        var lowStockItems = await _context.Items
+            .CountAsync(i => !i.IsDeleted && i.IsActive && i.CurrentStock <= i.ReorderLevel);
+
         return Ok(Result<object>.Success(new
         {
             totalPatients,
             todayAppointments,
-            activeAdmissions,
+            lowStockItems,
             todayRevenue,
             amountReceivables,
             patientGrowth = 0.0,
@@ -154,6 +156,31 @@ public class DashboardController : ControllerBase
     public IActionResult GetRevenue([FromQuery] string period = "daily")
     {
         return Ok(Result<object[]>.Success(Array.Empty<object>()));
+    }
+
+    [HttpGet("monthly-revenue")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.DashboardView)]
+    public async Task<IActionResult> GetMonthlyRevenue()
+    {
+        var firstMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-11);
+
+        var invoices = await _context.Invoices
+            .Where(i => !i.IsDeleted && i.InvoiceDate >= firstMonth)
+            .Select(i => new { i.TotalAmount, i.InvoiceDate })
+            .ToListAsync();
+
+        var result = Enumerable.Range(0, 12)
+            .Select(offset => firstMonth.AddMonths(offset))
+            .Select(month => new
+            {
+                Month = month.ToString("MMM", CultureInfo.InvariantCulture),
+                Revenue = invoices
+                    .Where(i => i.InvoiceDate.Year == month.Year && i.InvoiceDate.Month == month.Month)
+                    .Sum(i => i.TotalAmount)
+            })
+            .ToArray();
+
+        return Ok(Result<object[]>.Success(result));
     }
 
     [HttpGet("bed-stats")]

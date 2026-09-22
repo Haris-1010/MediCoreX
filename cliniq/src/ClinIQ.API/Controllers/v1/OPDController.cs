@@ -109,32 +109,78 @@ public class OPDController : ControllerBase
         var tomorrow = today.AddDays(1);
 
         var queue = await _context.Queues
-            .Where(q => !q.IsDeleted && q.QueueDate >= today && q.QueueDate < tomorrow
-                && q.Status != QueueStatus.Completed && q.Status != QueueStatus.Cancelled)
+            .Where(q => !q.IsDeleted && q.QueueDate >= today && q.QueueDate < tomorrow)
             .OrderBy(q => q.TokenNumber)
             .Select(q => new
             {
                 q.Id,
                 q.TokenNumber,
-                PatientName = q.Patient != null ? q.Patient.FirstName + " " + q.Patient.LastName : null,
-                PatientMRN = q.Patient != null ? q.Patient.MRN : null,
-                DoctorName = q.DoctorId != null
-                    ? _context.Users.Where(u => u.Id == q.DoctorId).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault()
-                    : null,
+                q.PatientId,
+                PatientName = _context.Patients.Where(p => p.Id == q.PatientId).Select(p => p.FirstName + " " + p.LastName).FirstOrDefault(),
+                PatientMRN = _context.Patients.Where(p => p.Id == q.PatientId).Select(p => p.MRN).FirstOrDefault(),
+                DoctorName = _context.Users.Where(u => u.Id == q.DoctorId).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
                 q.DoctorId,
                 Status = q.Status.ToString(),
                 q.JoinedAt,
                 q.CalledAt,
-                Services = _context.InvoiceItems
-                    .Where(ii => ii.Invoice != null && ii.Invoice.PatientId == q.PatientId
-                        && ii.Invoice.InvoiceDate.Date == today
-                        && !ii.Invoice.IsDeleted)
-                    .Select(ii => new { ii.ItemName, ii.Amount, ii.Quantity })
-                    .ToList()
+                q.QueueDate
             })
             .ToListAsync();
 
-        return Ok(Result<object>.Success(queue));
+        var patientIds = queue.Where(q => q.PatientId != Guid.Empty).Select(q => q.PatientId).Distinct().ToList();
+
+        var invoiceItemsByPatient = new Dictionary<Guid, List<object>>();
+
+        if (patientIds.Any())
+        {
+            var todayInvoices = await _context.Invoices
+                .Where(i => !i.IsDeleted
+                    && patientIds.Contains(i.PatientId)
+                    && i.InvoiceDate >= today && i.InvoiceDate < tomorrow)
+                .Select(i => new { i.Id, i.PatientId })
+                .ToListAsync();
+
+            var invoiceIds = todayInvoices.Select(i => i.Id).ToList();
+            var patientInvoiceMap = todayInvoices.ToDictionary(i => i.Id, i => i.PatientId);
+
+            var invoiceItems = await _context.InvoiceItems
+                .Where(ii => invoiceIds.Contains(ii.InvoiceId))
+                .Select(ii => new
+                {
+                    ii.InvoiceId,
+                    ii.ItemName,
+                    ii.Amount,
+                    ii.Quantity
+                })
+                .ToListAsync();
+
+            invoiceItemsByPatient = invoiceItems
+                .Where(ii => patientInvoiceMap.ContainsKey(ii.InvoiceId))
+                .GroupBy(ii => patientInvoiceMap[ii.InvoiceId])
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => (object)new { x.ItemName, x.Amount, x.Quantity }).ToList()
+                );
+        }
+
+        var result = queue.Select(q => new
+        {
+            q.Id,
+            q.TokenNumber,
+            q.PatientName,
+            q.PatientMRN,
+            q.DoctorName,
+            q.DoctorId,
+            q.Status,
+            q.JoinedAt,
+            q.CalledAt,
+            q.QueueDate,
+            Services = invoiceItemsByPatient.ContainsKey(q.PatientId)
+                ? invoiceItemsByPatient[q.PatientId]
+                : new List<object>()
+        }).ToList();
+
+        return Ok(Result<object>.Success(result));
     }
 
     // ─────────────────────────── Queue per Doctor (management) ───────────────────────────
@@ -299,6 +345,57 @@ public class OPDController : ControllerBase
         }
 
         _context.Invoices.Add(invoice);
+
+        // Create MedicalOrders for lab/radiology services
+        if (request.AdditionalServices != null && request.AdditionalServices.Any())
+        {
+            var serviceIds = request.AdditionalServices.Select(s => s.ServiceId).ToList();
+            var orderedServices = await _context.Services
+                .Where(s => serviceIds.Contains(s.Id) && !s.IsDeleted && s.IsActive)
+                .ToListAsync();
+
+            foreach (var svc in orderedServices)
+            {
+                if (svc.Type == ServiceType.Laboratory)
+                {
+                    var labCount = await _context.MedicalOrders.CountAsync(o => o.OrderType == MedicalOrderType.Lab && o.OrderDate.Date == DateTime.UtcNow.Date);
+                    var labOrderNumber = $"LAB-{DateTime.UtcNow:yyyyMMdd}-{(labCount + 1):D4}";
+
+                    _context.MedicalOrders.Add(new Domain.Entities.Clinical.MedicalOrder
+                    {
+                        OrderNumber = labOrderNumber,
+                        PatientId = request.PatientId,
+                        OrderedById = request.DoctorId,
+                        OrderType = MedicalOrderType.Lab,
+                        Status = MedicalOrderStatus.Ordered,
+                        OrderDate = DateTime.UtcNow,
+                        OrderItems = svc.Name,
+                        InvoiceId = invoice.Id,
+                        IsBilled = true,
+                        Notes = $"Auto-generated from OPD Token #{tokenNumber}"
+                    });
+                }
+                else if (svc.Type == ServiceType.Radiology)
+                {
+                    var radCount = await _context.MedicalOrders.CountAsync(o => o.OrderType == MedicalOrderType.Radiology && o.OrderDate.Date == DateTime.UtcNow.Date);
+                    var radOrderNumber = $"RAD-{DateTime.UtcNow:yyyyMMdd}-{(radCount + 1):D4}";
+
+                    _context.MedicalOrders.Add(new Domain.Entities.Clinical.MedicalOrder
+                    {
+                        OrderNumber = radOrderNumber,
+                        PatientId = request.PatientId,
+                        OrderedById = request.DoctorId,
+                        OrderType = MedicalOrderType.Radiology,
+                        Status = MedicalOrderStatus.Ordered,
+                        OrderDate = DateTime.UtcNow,
+                        OrderItems = svc.Name,
+                        InvoiceId = invoice.Id,
+                        IsBilled = true,
+                        Notes = $"Auto-generated from OPD Token #{tokenNumber}"
+                    });
+                }
+            }
+        }
 
         // Create payment record
         var paymentCount = await _context.Payments.CountAsync() + 1;

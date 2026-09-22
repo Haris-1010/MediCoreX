@@ -9,7 +9,7 @@ import { PermissionService } from '../../core/services/permission.service';
 interface DashboardStats {
   totalPatients: number;
   totalAppointments: number;
-  newItemsRequired: number;
+  lowStockItems: number;
   amountReceivables: number;
 }
 
@@ -30,7 +30,6 @@ interface TodayAppointment {
       <!-- Stats Cards -->
       <div class="stats-grid">
         <app-stats-card
-          *ngIf="canViewPatients || canViewReports"
           title="Total Patient"
           [value]="stats.totalPatients"
           icon="person"
@@ -39,8 +38,7 @@ interface TodayAppointment {
         </app-stats-card>
 
         <app-stats-card
-          *ngIf="canViewAppointments || canViewReports"
-          title="Total Appointments"
+          title="Today's Appointments"
           [value]="stats.totalAppointments"
           icon="event"
           color="accent"
@@ -48,16 +46,14 @@ interface TodayAppointment {
         </app-stats-card>
 
         <app-stats-card
-          *ngIf="canViewInventory || canViewReports"
-          title="New Items Required"
-          [value]="stats.newItemsRequired"
-          icon="widgets"
+          title="Low Stock Items"
+          [value]="stats.lowStockItems"
+          icon="warning"
           color="warn"
-          subtitle="Control the inventory, Control the profits">
+          subtitle="Items below reorder level">
         </app-stats-card>
 
         <app-stats-card
-          *ngIf="canViewReports"
           title="Amount Receivables"
           [value]="stats.amountReceivables"
           [isCurrency]="true"
@@ -75,7 +71,7 @@ interface TodayAppointment {
       </div>
 
       <!-- Main Content -->
-      <div class="dashboard-grid" *ngIf="canViewPatients || canViewAppointments">
+      <div class="dashboard-grid">
         <!-- Today's Appointments -->
         <div class="card appointments-card" *ngIf="canViewAppointments">
           <div class="card-header">
@@ -100,15 +96,15 @@ interface TodayAppointment {
           </app-new-patient-list>
         </div>
 
-        <!-- Patient Growth Chart -->
-        <div class="card growth-card" *ngIf="canViewPatients">
+        <!-- Monthly Revenue Chart -->
+        <div class="card growth-card">
           <div class="card-header">
             <h3>
-              <mat-icon class="card-icon">trending_up</mat-icon>
-              Patient Growth Chart
+              <mat-icon class="card-icon">paid</mat-icon>
+              Monthly Revenue
             </h3>
           </div>
-          <app-patient-growth-chart [loading]="loadingGrowth">
+          <app-patient-growth-chart>
           </app-patient-growth-chart>
         </div>
 
@@ -130,15 +126,23 @@ interface TodayAppointment {
     .dashboard-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
+      grid-auto-rows: minmax(280px, auto);
       gap: 1.25rem;
     }
 
     .card {
-      background: var(--bg-card, #fff);
+      background: white;
       border-radius: 8px;
-      box-shadow: var(--shadow-md, 0 1px 3px rgba(0, 0, 0, 0.08));
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
       padding: 1.25rem;
-      border: 1px solid var(--border-color, #e8e8e8);
+      border: 1px solid #e8e8e8;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .growth-card {
+      grid-row: span 1;
     }
 
     .card-header {
@@ -147,14 +151,15 @@ interface TodayAppointment {
       align-items: center;
       margin-bottom: 1rem;
       padding-bottom: 0.75rem;
-      border-bottom: 1px solid var(--border-color, #f0f0f0);
+      border-bottom: 1px solid #f0f0f0;
+      flex-shrink: 0;
     }
 
     .card-header h3 {
       margin: 0;
       font-size: 1rem;
       font-weight: 600;
-      color: var(--accent-primary, #1a237e);
+      color: #1a237e;
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -164,7 +169,7 @@ interface TodayAppointment {
       font-size: 20px;
       width: 20px;
       height: 20px;
-      color: var(--accent-primary, #1a237e);
+      color: #1a237e;
     }
 
     .no-permissions {
@@ -219,14 +224,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   stats: DashboardStats = {
     totalPatients: 0,
     totalAppointments: 0,
-    newItemsRequired: 0,
+    lowStockItems: 0,
     amountReceivables: 0
   };
 
   todayAppointments: TodayAppointment[] = [];
   loadingAppointments = true;
   loadingPatients = true;
-  loadingGrowth = false;
 
   canViewPatients = false;
   canViewAppointments = false;
@@ -298,8 +302,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.stats = {
           totalPatients: data.totalPatients,
-          totalAppointments: (data as any).totalAppointments ?? (data as any).todayAppointments ?? (data as any).patientVisits ?? 0,
-          newItemsRequired: (data as any).newItemsRequired ?? (data as any).activeAdmissions ?? 0,
+          totalAppointments: (data as any).totalAppointments ?? (data as any).todayAppointments ?? 0,
+          lowStockItems: (data as any).lowStockItems ?? 0,
           amountReceivables: (data as any).amountReceivables ?? 0
         };
       },

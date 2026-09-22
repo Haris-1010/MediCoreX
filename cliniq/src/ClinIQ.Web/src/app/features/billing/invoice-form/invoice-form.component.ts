@@ -926,7 +926,7 @@ export class InvoiceFormComponent implements OnInit, OnDestroy {
   }
 onItemFocus() {
   if (this.allServices.length === 0) {
-    this.api.get<any[]>('v1/services/active').subscribe(res => {
+    this.api.get<any[]>('v1/services/active', { type: 1 }).subscribe(res => {
       this.allServices = Array.isArray(res) ? res : ((res as any)?.data ?? []);
     });
   }
@@ -941,8 +941,9 @@ onItemSearchInput(event: any) {
 
   const termLower = term.toLowerCase();
 
-  // Services: client-side filter
+  // Services: client-side filter (only General type, exclude Lab/Radiology)
   const svcMapped = this.allServices
+    .filter(s => s.type === 1)
     .filter(s =>
       s.name?.toLowerCase().includes(termLower) ||
       s.code?.toLowerCase().includes(termLower)
