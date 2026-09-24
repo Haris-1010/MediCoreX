@@ -22,15 +22,6 @@
       </div>
     </mat-tab>
 
-    <mat-tab label="Appointments">
-      <div class="tab-content">
-        <h3>Appointment Settings</h3>
-        <mat-form-field appearance="outline"><mat-label>Default Slot Duration (minutes)</mat-label><input matInput type="number" [(ngModel)]="appointmentSettings.slotDuration"></mat-form-field>
-        <mat-form-field appearance="outline"><mat-label>Advance Booking Days</mat-label><input matInput type="number" [(ngModel)]="appointmentSettings.advanceBookingDays"></mat-form-field>
-        <mat-slide-toggle [(ngModel)]="appointmentSettings.allowOnlineBooking">Allow Online Booking</mat-slide-toggle>
-      </div>
-    </mat-tab>
-
     <mat-tab label="Billing">
       <div class="tab-content">
         <h3>Billing Settings</h3>
@@ -38,6 +29,134 @@
         <mat-form-field appearance="outline"><mat-label>Default Tax %</mat-label><input matInput type="number" [(ngModel)]="billingSettings.defaultTax"></mat-form-field>
         <mat-form-field appearance="outline"><mat-label>Payment Due Days</mat-label><input matInput type="number" [(ngModel)]="billingSettings.paymentDueDays"></mat-form-field>
         <div class="form-actions"><button mat-raised-button color="primary" type="button" (click)="saveBilling()">Save Billing Settings</button></div>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Locations" *appHasPermission="['organization.locations.view', 'settings.view']; mode: 'any'">
+      <div class="tab-content" style="max-width: 1100px;">
+        <div class="section-header">
+          <div>
+            <h3>Locations</h3>
+            <p class="muted">Branches and sites within this organization. Data is scoped to the selected location.</p>
+          </div>
+          <button mat-raised-button color="primary" *appHasPermission="['organization.locations.create', 'settings.edit']; mode: 'any'" (click)="addLocation()">
+            <mat-icon>add</mat-icon> Add Location
+          </button>
+        </div>
+
+        <div class="form-card" *ngIf="showLocationForm" style="margin-bottom: 1rem;">
+          <h4 style="margin: 0 0 1rem;">{{ editingLocation ? 'Edit Location' : 'New Location' }}</h4>
+          <form [formGroup]="locationForm" (ngSubmit)="saveLocation()">
+            <div class="form-grid">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Name *</mat-label>
+                <input matInput formControlName="name" placeholder="e.g. Main Clinic">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Code *</mat-label>
+                <input matInput formControlName="code" placeholder="e.g. MAIN">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Phone</mat-label>
+                <input matInput formControlName="phone">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Email</mat-label>
+                <input matInput type="email" formControlName="email">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>City</mat-label>
+                <input matInput formControlName="city">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>State</mat-label>
+                <input matInput formControlName="state">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Country</mat-label>
+                <input matInput formControlName="country">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Postal Code</mat-label>
+                <input matInput formControlName="postalCode">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Timezone</mat-label>
+                <input matInput formControlName="timezone" placeholder="e.g. Asia/Karachi">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="form-field" *ngIf="editingLocation">
+                <mat-label>Status</mat-label>
+                <mat-select formControlName="isActive">
+                  <mat-option [value]="true">Active</mat-option>
+                  <mat-option [value]="false">Inactive</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="form-field" style="grid-column: 1 / -1;">
+                <mat-label>Address</mat-label>
+                <textarea matInput formControlName="address" rows="2"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="form-field" style="grid-column: 1 / -1;">
+                <mat-label>Description</mat-label>
+                <textarea matInput formControlName="description" rows="2"></textarea>
+              </mat-form-field>
+            </div>
+            <div class="form-actions-row">
+              <button type="button" mat-stroked-button (click)="cancelLocation()">Cancel</button>
+              <button mat-raised-button color="primary" type="submit" [disabled]="locationSaving">
+                {{ locationSaving ? 'Saving...' : (editingLocation ? 'Update Location' : 'Create Location') }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Code</th>
+                <th>City</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Main</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="locationsLoading">
+                <td colspan="7" class="empty-state">Loading locations...</td>
+              </tr>
+              <tr *ngIf="!locationsLoading && locations.length === 0">
+                <td colspan="7" class="empty-state">No locations yet.</td>
+              </tr>
+              <tr *ngFor="let loc of locations">
+                <td>
+                  <strong>{{ loc.name }}</strong>
+                  <div class="muted" *ngIf="loc.description">{{ loc.description }}</div>
+                </td>
+                <td>{{ loc.code }}</td>
+                <td>{{ loc.city || '—' }}</td>
+                <td>{{ loc.phone || '—' }}</td>
+                <td>
+                  <span class="badge" [class.badge-success]="loc.isActive" [class.badge-muted]="!loc.isActive">
+                    {{ loc.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge badge-info" *ngIf="loc.isMainBranch">Main</span>
+                </td>
+                <td class="actions">
+                  <button mat-icon-button type="button" *appHasPermission="['organization.locations.edit', 'settings.edit']; mode: 'any'" (click)="editLocation(loc)" matTooltip="Edit">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button type="button" color="warn" *appHasPermission="['organization.locations.delete', 'settings.edit']; mode: 'any'" (click)="deleteLocation(loc)" matTooltip="Delete">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </mat-tab>
 

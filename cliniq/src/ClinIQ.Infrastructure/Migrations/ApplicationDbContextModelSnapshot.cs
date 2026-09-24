@@ -1464,6 +1464,9 @@ namespace ClinIQ.Infrastructure.Migrations
                     b.Property<int?>("BloodGroup")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("ChronicConditions")
                         .HasColumnType("nvarchar(max)");
 
@@ -1636,6 +1639,8 @@ namespace ClinIQ.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.HasIndex("TenantId", "Email");
 
@@ -3070,6 +3075,9 @@ namespace ClinIQ.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsMaster")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsSuperAdmin")
                         .HasColumnType("bit");
 
@@ -3109,6 +3117,9 @@ namespace ClinIQ.Infrastructure.Migrations
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PlainPassword")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
@@ -3159,6 +3170,9 @@ namespace ClinIQ.Infrastructure.Migrations
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UserType")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -5769,6 +5783,9 @@ namespace ClinIQ.Infrastructure.Migrations
 
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("HasAllLocations")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");

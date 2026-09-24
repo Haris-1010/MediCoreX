@@ -100,7 +100,7 @@ public class PermissionService : IPermissionService
                 .IgnoreQueryFilters().AsNoTracking()
                 .Where(ur => ur.UserId == userId && ur.TenantId == tenantId)
                 .Join(_context.Roles.IgnoreQueryFilters()
-                          .Where(r => r.TenantId == tenantId && r.IsActive && !r.IsDeleted),
+                          .Where(r => (r.TenantId == null || r.TenantId == tenantId) && r.IsActive && !r.IsDeleted),
                       ur => ur.RoleId, r => r.Id, (_, r) => r.Id)
                 .Distinct()
                 .Join(_context.RolePermissions.IgnoreQueryFilters(),

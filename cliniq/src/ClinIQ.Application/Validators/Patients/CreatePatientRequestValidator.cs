@@ -7,13 +7,12 @@ public class CreatePatientRequestValidator : AbstractValidator<CreatePatientRequ
 {
     public CreatePatientRequestValidator()
     {
-        RuleFor(x => x.FirstName)
-            .NotEmpty().WithMessage("First name is required")
-            .MaximumLength(100).WithMessage("First name must not exceed 100 characters");
-
-        RuleFor(x => x.LastName)
-            .NotEmpty().WithMessage("Last name is required")
-            .MaximumLength(100).WithMessage("Last name must not exceed 100 characters");
+        RuleFor(x => x)
+            .Must(x => !string.IsNullOrWhiteSpace(x.FullName)
+                || !string.IsNullOrWhiteSpace(x.FirstName))
+            .WithMessage("Full name is required")
+            .Must(x => (x.FullName ?? $"{x.FirstName} {x.LastName}").Trim().Length <= 200)
+            .WithMessage("Full name must not exceed 200 characters");
 
         RuleFor(x => x.MiddleName)
             .MaximumLength(100).WithMessage("Middle name must not exceed 100 characters")

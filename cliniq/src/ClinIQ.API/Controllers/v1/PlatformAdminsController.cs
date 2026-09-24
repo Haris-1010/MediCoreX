@@ -29,11 +29,11 @@ public class PlatformAdminsController : ControllerBase
         var admins = await context.Users
             .IgnoreQueryFilters()
             .AsNoTracking()
-            .Where(user => user.IsSuperAdmin && !user.IsDeleted)
+            .Where(user => user.IsSuperAdmin && !user.IsDeleted && !user.IsMaster)
             .OrderBy(user => user.FirstName)
             .Select(user => new PlatformAdminListItem(
                 user.Id, user.FirstName, user.LastName, user.Email, user.PhoneNumber,
-                user.IsActive, user.LastLoginAt, user.CreatedAt))
+                user.IsActive, user.IsMaster, user.LastLoginAt, user.CreatedAt))
             .ToListAsync(cancellationToken);
 
         return Ok(admins);
@@ -58,6 +58,7 @@ public class PlatformAdminsController : ControllerBase
             NormalizedEmail = email.ToUpperInvariant(),
             EmailConfirmed = true,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            PlainPassword = request.Password,
             FirstName = request.FirstName.Trim(),
             LastName = request.LastName.Trim(),
             PhoneNumber = request.Phone,
@@ -88,8 +89,16 @@ public class PlatformAdminsController : ControllerBase
     {
         if (!IsSuperAdmin) return Forbid();
 
+        // A platform admin must not be able to suspend/deactivate themselves.
+        var currentUserIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!active && Guid.TryParse(currentUserIdStr, out var currentUserId) && currentUserId == id)
+            return BadRequest(new { message = "You cannot deactivate your own account." });
+
         var user = await context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(item => item.Id == id, cancellationToken);
         if (user is null || !user.IsSuperAdmin) return NotFound(new { message = "Platform admin not found." });
+
+        if (!active && user.IsMaster)
+            return BadRequest(new { message = "You cannot suspend this admin." });
 
         user.IsActive = active;
         await context.SaveChangesAsync(cancellationToken);

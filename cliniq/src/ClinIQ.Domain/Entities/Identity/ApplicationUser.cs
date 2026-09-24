@@ -48,6 +48,13 @@ public class ApplicationUser : BaseAuditableEntity
 
     public bool IsActive { get; set; } = true;
     public bool IsSuperAdmin { get; set; }
+
+    /// <summary>
+    /// Master owner of the entire platform. Only this account can access
+    /// the master portal and pause/resume the whole system.
+    /// </summary>
+    public bool IsMaster { get; set; }
+
     public DateTime? LastLoginAt { get; set; }
     public string? LastLoginIp { get; set; }
 
@@ -56,8 +63,17 @@ public class ApplicationUser : BaseAuditableEntity
     public bool MustChangePassword { get; set; }
     public DateTime? PasswordChangedAt { get; set; }
 
+    /// <summary>
+    /// Reversible copy of the current password for platform admin display only.
+    /// Cleared when the user changes their own password.
+    /// </summary>
+    public string? PlainPassword { get; set; }
+
     /// <summary>Designation shown in staff lists, e.g. "Senior Consultant".</summary>
     public string? Designation { get; set; }
+
+    /// <summary>Staff category chosen at creation: Doctor, PharmacyManager, LabManager, Receptionist or Nurse.</summary>
+    public string? UserType { get; set; }
 
     // Settings (JSON)
     public string? Settings { get; set; }

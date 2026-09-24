@@ -8,17 +8,17 @@ import { LayoutModule } from '../../layout/layout.module';
 import { SettingsComponent } from './settings.component';
 import { UserListComponent } from './users/user-list.component';
 import { UserFormComponent } from './users/user-form.component';
-import { RoleListComponent } from './roles/role-list.component';
-import { RoleFormComponent } from './roles/role-form.component';
+import { UserPermissionsComponent } from './users/user-permissions.component';
 
 const routes: Routes = [
   { path: '', component: SettingsComponent },
   { path: 'users', component: UserListComponent },
   { path: 'users/new', component: UserFormComponent },
   { path: 'users/edit/:id', component: UserFormComponent },
-  { path: 'roles', component: RoleListComponent },
-  { path: 'roles/new', component: RoleFormComponent },
-  { path: 'roles/edit/:id', component: RoleFormComponent }
+  { path: 'users/:id/permissions', component: UserPermissionsComponent },
+  { path: 'roles', redirectTo: 'users', pathMatch: 'full' },
+  { path: 'roles/new', redirectTo: 'users', pathMatch: 'full' },
+  { path: 'roles/edit/:id', redirectTo: 'users', pathMatch: 'full' }
 ];
 
 @NgModule({
@@ -26,8 +26,7 @@ const routes: Routes = [
     SettingsComponent,
     UserListComponent,
     UserFormComponent,
-    RoleListComponent,
-    RoleFormComponent
+    UserPermissionsComponent
   ],
   imports: [
     CommonModule,

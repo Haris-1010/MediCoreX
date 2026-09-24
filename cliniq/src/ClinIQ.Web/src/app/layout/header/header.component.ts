@@ -1,11 +1,14 @@
-import { Component, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
+import { Component, Output, EventEmitter, OnInit, OnDestroy, effect } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AuthService, User } from '../../core/services/auth.service';
 import { TenantService, Tenant, Branch } from '../../core/services/tenant.service';
+import { PermissionService, CurrentUserContext } from '../../core/services/permission.service';
 import { SignalRService, NotificationMessage } from '../../core/services/signalr.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { StorageService } from '../../core/services/storage.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   standalone: false,
@@ -24,15 +27,20 @@ import { ThemeService } from '../../core/services/theme.service';
 
       <span class="spacer"></span>
 
-      <!-- Branch Selector -->
-      <button mat-button [matMenuTriggerFor]="branchMenu" class="branch-selector" *ngIf="branches.length > 1">
-        <mat-icon>business</mat-icon>
-        <span>{{ currentBranch?.name || 'Select Branch' }}</span>
+      <!-- Location Selector -->
+      <button mat-button [matMenuTriggerFor]="branchMenu" class="branch-selector" *ngIf="showLocationSelector">
+        <mat-icon>location_on</mat-icon>
+        <span>{{ currentLocationLabel }}</span>
         <mat-icon>arrow_drop_down</mat-icon>
       </button>
       <mat-menu #branchMenu="matMenu">
+        <button mat-menu-item *ngIf="hasAllLocationAccess" (click)="switchToAllLocations()">
+          <mat-icon *ngIf="isAllLocationsMode">check</mat-icon>
+          <span>All Locations</span>
+        </button>
+        <mat-divider *ngIf="hasAllLocationAccess && branches.length"></mat-divider>
         <button mat-menu-item *ngFor="let branch of branches" (click)="switchBranch(branch)">
-          <mat-icon *ngIf="branch.id === currentBranch?.id">check</mat-icon>
+          <mat-icon *ngIf="branch.id === currentBranch?.id && !isAllLocationsMode">check</mat-icon>
           <span>{{ branch.name }}</span>
         </button>
       </mat-menu>
@@ -241,18 +249,28 @@ export class HeaderComponent implements OnInit, OnDestroy {
   notifications: NotificationMessage[] = [];
   unreadCount = 0;
   isDark = false;
+  hasAllLocationAccess = false;
+  isAllLocationsMode = false;
 
   private destroy$ = new Subject<void>();
 
   constructor(
     private authService: AuthService,
     private tenantService: TenantService,
+    private permissions: PermissionService,
     private signalRService: SignalRService,
     private themeService: ThemeService,
-    private router: Router
-  ) {}
+    private router: Router,
+    private storage: StorageService
+  ) {
+    effect(() => {
+      this.applyPermissionContext(this.permissions.current());
+    });
+  }
 
   ngOnInit(): void {
+    this.syncAllLocationsFlag();
+
     this.authService.currentUser$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(user => {
@@ -269,6 +287,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe(branch => {
       this.currentBranch = branch;
+      this.syncAllLocationsFlag();
     });
 
     this.tenantService.branches$.pipe(
@@ -291,11 +310,23 @@ export class HeaderComponent implements OnInit, OnDestroy {
     ).subscribe(theme => {
       this.isDark = theme === 'dark';
     });
+
+    // Initial branch list load (permission context may arrive later).
+    this.tenantService.loadBranches().subscribe({ error: () => {} });
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  get showLocationSelector(): boolean {
+    return this.branches.length > 1 || (this.hasAllLocationAccess && this.branches.length > 0);
+  }
+
+  get currentLocationLabel(): string {
+    if (this.isAllLocationsMode) return 'All Locations';
+    return this.currentBranch?.name || 'Select Location';
   }
 
   getUserInitials(): string {
@@ -306,9 +337,27 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   switchBranch(branch: Branch): void {
-    this.authService.switchBranch(branch.id).subscribe(() => {
-      this.tenantService.setCurrentBranch(branch);
-      window.location.reload();
+    if (this.isAllLocationsMode === false && this.currentBranch?.id === branch.id) return;
+
+    this.authService.switchBranch(branch.id).subscribe({
+      next: () => {
+        this.tenantService.setCurrentBranch(branch);
+        window.location.reload();
+      },
+      error: () => {
+        // Keep current selection on failure.
+      }
+    });
+  }
+
+  switchToAllLocations(): void {
+    if (this.isAllLocationsMode) return;
+
+    this.authService.switchBranch('all').subscribe({
+      next: () => {
+        window.location.reload();
+      },
+      error: () => {}
     });
   }
 
@@ -337,5 +386,52 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   logout(): void {
     this.authService.logout();
+  }
+
+  private applyPermissionContext(ctx: CurrentUserContext | null): void {
+    this.hasAllLocationAccess = !!(ctx?.hasAllLocationAccess || ctx?.isSuperAdmin);
+    this.syncAllLocationsFlag();
+
+    if (ctx?.accessibleBranches?.length) {
+      const mapped: Branch[] = ctx.accessibleBranches.map(b => ({
+        id: b.branchId,
+        name: b.branchName,
+        code: '',
+        address: '',
+        phone: '',
+        email: '',
+        isActive: true
+      }));
+      this.branches = mapped;
+      this.tenantService.setBranches(mapped);
+    }
+
+    // Never stamp a concrete branch while the user is in All Locations mode —
+    // JWT still carries a write target, but storage must stay 'all'.
+    const stored = this.getStoredBranchId();
+    if (stored === 'all') {
+      return;
+    }
+
+    if (stored) {
+      const match = this.branches.find(b => b.id === stored);
+      if (match && this.currentBranch?.id !== match.id) {
+        this.tenantService.setCurrentBranch(match);
+      }
+      return;
+    }
+
+    if (ctx?.branchId) {
+      const match = this.branches.find(b => b.id === ctx.branchId);
+      if (match) this.tenantService.setCurrentBranch(match);
+    }
+  }
+
+  private getStoredBranchId(): string | null {
+    return this.storage.getItem<string>(environment.branchKey);
+  }
+
+  private syncAllLocationsFlag(): void {
+    this.isAllLocationsMode = this.getStoredBranchId() === 'all';
   }
 }

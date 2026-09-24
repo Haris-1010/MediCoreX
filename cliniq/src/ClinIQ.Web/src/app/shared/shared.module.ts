@@ -45,6 +45,8 @@ import { StatusBadgeComponent } from './components/status-badge/status-badge.com
 import { EmptyStateComponent } from './components/empty-state/empty-state.component';
 import { SearchInputComponent } from './components/search-input/search-input.component';
 import { DateRangePickerComponent } from './components/date-range-picker/date-range-picker.component';
+import { PatientPickerComponent } from './components/patient-picker/patient-picker.component';
+import { LocationContextComponent } from './components/location-context/location-context.component';
 
 // Shared Pipes
 import { DateFormatPipe } from './pipes/date-format.pipe';
@@ -101,7 +103,9 @@ const SharedComponents = [
   StatusBadgeComponent,
   EmptyStateComponent,
   SearchInputComponent,
-  DateRangePickerComponent
+  DateRangePickerComponent,
+  PatientPickerComponent,
+  LocationContextComponent
 ];
 
 const SharedPipes = [

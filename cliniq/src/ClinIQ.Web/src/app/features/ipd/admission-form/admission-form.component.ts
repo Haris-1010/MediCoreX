@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { PatientPickerComponent, PatientPickerValue } from '../../../shared/components/patient-picker/patient-picker.component';
 
 @Component({
   standalone: false,
@@ -13,12 +14,12 @@ import { NotificationService } from '../../../core/services/notification.service
       <div class="card">
         <form [formGroup]="form" (ngSubmit)="submit()">
           <h3>Patient Information</h3>
-          <mat-form-field appearance="outline" class="full-width"><mat-label>Search Patient</mat-label>
-            <input matInput [matAutocomplete]="patientAuto" formControlName="patientSearch" placeholder="Search by name or phone..." (focus)="onPatientFocus()" (input)="onPatientSearchInput($event)">
-            <mat-autocomplete #patientAuto="matAutocomplete" [displayWith]="displayPatient" (optionSelected)="onPatientSelected($event)">
-              <mat-option *ngFor="let p of filteredPatients" [value]="p">{{ p.fullName }} ({{ p.phone || 'No phone' }})</mat-option>
-            </mat-autocomplete>
-          </mat-form-field>
+          <app-patient-picker
+            #patientPicker
+            label="Patient"
+            [required]="true"
+            (patientChange)="onPatientChange($event)">
+          </app-patient-picker>
 
           <h3>Admission Details</h3>
           <div class="form-row">
@@ -32,8 +33,7 @@ import { NotificationService } from '../../../core/services/notification.service
               <mat-autocomplete #doctorAuto="matAutocomplete" [displayWith]="displayDoctor" (optionSelected)="onDoctorSelected($event)">
                 <mat-option *ngFor="let d of filteredDoctors" [value]="d">
                   <div class="doctor-option-item">
-                    <span class="name">Dr. {{ d.fullName }}</span>
-                    <span class="details">{{ d.specialization || '' }}</span>
+                    <span class="name">Dr. {{ d.fullName }}<span *ngIf="d.specialization"> - ({{ d.specialization }})</span></span>
                   </div>
                 </mat-option>
               </mat-autocomplete>
@@ -80,18 +80,20 @@ import { NotificationService } from '../../../core/services/notification.service
     :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option:hover { background-color: var(--bg-hover, #e8eaf6) !important; }`]
 })
 export class AdmissionFormComponent implements OnInit {
+  @ViewChild('patientPicker') patientPicker!: PatientPickerComponent;
+
   form!: FormGroup; saving = false;
-  filteredPatients: any[] = []; filteredDoctors: any[] = [];
-  allPatients: any[] = []; allDoctors: any[] = [];
+  filteredDoctors: any[] = [];
+  allDoctors: any[] = [];
   doctors: any[] = []; wards: any[] = []; availableBeds: any[] = [];
 
-  private patientsLoaded = false; private doctorsLoaded = false;
+  private doctorsLoaded = false;
 
   constructor(private fb: FormBuilder, private api: ApiService, private router: Router, private notification: NotificationService) {}
 
   ngOnInit() {
     this.form = this.fb.group({
-      patientId: ['', Validators.required], patientSearch: [''], admissionType: ['Planned', Validators.required],
+      patientId: [''], admissionType: ['Planned', Validators.required],
       doctorId: ['', Validators.required], doctorSearch: [''], wardId: ['', Validators.required], bedId: ['', Validators.required],
       admissionReason: ['', Validators.required], provisionalDiagnosis: [''], depositAmount: [0]
     });
@@ -100,23 +102,8 @@ export class AdmissionFormComponent implements OnInit {
     });
   }
 
-  onPatientFocus() {
-    if (!this.patientsLoaded) {
-      this.api.get<any[]>('v1/patients/search', { limit: 1000 }).subscribe(r => {
-        this.allPatients = Array.isArray(r) ? r : ((r as any)?.data ?? []);
-        this.filteredPatients = [...this.allPatients];
-        this.patientsLoaded = true;
-      });
-    } else {
-      this.filteredPatients = [...this.allPatients];
-    }
-  }
-
-  onPatientSearchInput(event: Event) {
-    const term = (event.target as HTMLInputElement).value.toLowerCase();
-    this.filteredPatients = this.allPatients.filter(p =>
-      p.fullName?.toLowerCase().includes(term) || p.phone?.toLowerCase().includes(term)
-    );
+  onPatientChange(patient: PatientPickerValue | null) {
+    this.form.patchValue({ patientId: patient?.id || '' });
   }
 
   onDoctorFocus() {
@@ -139,16 +126,28 @@ export class AdmissionFormComponent implements OnInit {
     );
   }
 
-  displayPatient(p: any): string { return p ? `${p.fullName} (${p.phone || 'No phone'})` : ''; }
-  displayDoctor(d: any): string { return d ? `Dr. ${d.fullName}` : ''; }
+  displayDoctor(d: any): string {
+    if (!d) return '';
+    if (typeof d === 'string') return d;
+    const spec = d.specialization ? ` - (${d.specialization})` : '';
+    return `Dr. ${d.fullName || ''}${spec}`;
+  }
 
-  onPatientSelected(e: any) { this.form.patchValue({ patientId: e.option.value.id }); }
-  onDoctorSelected(e: any) { this.form.patchValue({ doctorId: e.option.value.id }); }
+  onDoctorSelected(e: any) {
+    const doctor = e.option.value;
+    this.form.patchValue({ doctorId: doctor.id, doctorSearch: this.displayDoctor(doctor) });
+  }
 
   loadBeds() { const wardId = this.form.value.wardId; if (wardId) this.api.get<any[]>(`v1/wards/${wardId}/available-beds`).subscribe(r => this.availableBeds = r); }
 
-  submit() {
-    if (this.form.invalid) return;
+  async submit() {
+    if (this.saving) return;
+    const patient = await this.patientPicker?.ensurePatient();
+    if (patient) this.form.patchValue({ patientId: patient.id });
+    if (this.form.invalid) {
+      if (!this.form.value.patientId) this.notification.error('Please select or create a patient');
+      return;
+    }
     this.saving = true;
     const v = this.form.value;
     const payload = {

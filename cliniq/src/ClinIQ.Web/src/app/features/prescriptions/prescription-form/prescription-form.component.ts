@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -7,6 +7,7 @@ import { takeUntil } from 'rxjs/operators';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { PrescriptionItemDialogComponent } from '../item-dialog/prescription-item-dialog.component';
+import { PatientPickerComponent, PatientPickerValue } from '../../../shared/components/patient-picker/patient-picker.component';
 
 @Component({
   standalone: false,
@@ -22,14 +23,15 @@ import { PrescriptionItemDialogComponent } from '../item-dialog/prescription-ite
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
         <div class="form-grid">
          <div class="col-4">
-         <mat-form-field appearance="outline">
-         <mat-label>Patient *</mat-label>
-          <input matInput [matAutocomplete]="patientAuto" formControlName="patientSearch" placeholder="Search patient by name or phone..." (focus)="onPatientFocus()" (input)="onPatientSearchInput($event)"> <mat-autocomplete #patientAuto="matAutocomplete" [displayWith]="displayPatient" (optionSelected)="onPatientSelected($event)"> <mat-option *ngFor="let p of filteredPatients" [value]="p"> {{ p.fullName }} ({{ p.phone || 'No phone' }})
-           </mat-option>
-           </mat-autocomplete>
-           <mat-error *ngIf="form.get('patientId')?.hasError('required')"> Patient is required </mat-error> </mat-form-field> </div>
+         <app-patient-picker
+           #patientPicker
+           label="Patient"
+           [required]="true"
+           (patientChange)="onPatientChange($event)">
+         </app-patient-picker>
+         </div>
            <div class="col-4"> <mat-form-field appearance="outline"> <mat-label>Doctor *</mat-label> <input matInput [matAutocomplete]="doctorAuto" formControlName="doctorSearch" placeholder="Search doctor by name or specialty..." (focus)="onDoctorFocus()" (input)="onDoctorSearchInput($event)">
-            <mat-autocomplete #doctorAuto="matAutocomplete" [displayWith]="displayDoctor" (optionSelected)="onDoctorSelected($event)"> <mat-option *ngFor="let d of filteredDoctors" [value]="d"> Dr. {{ d.fullName }} <span *ngIf="d.specialization"> - {{ d.specialization }} </span> </mat-option> </mat-autocomplete> <mat-error *ngIf="form.get('doctorId')?.hasError('required')"> Doctor is required </mat-error> </mat-form-field>
+            <mat-autocomplete #doctorAuto="matAutocomplete" [displayWith]="displayDoctor" (optionSelected)="onDoctorSelected($event)"> <mat-option *ngFor="let d of filteredDoctors" [value]="d"> Dr. {{ d.fullName }}<span *ngIf="d.specialization"> - ({{ d.specialization }})</span> </mat-option> </mat-autocomplete> <mat-error *ngIf="form.get('doctorId')?.hasError('required')"> Doctor is required </mat-error> </mat-form-field>
             </div>
             <div class="col-4">
              <mat-form-field appearance="outline"> <mat-label>Valid Date</mat-label> <input matInput [matDatepicker]="validUntilPicker" formControlName="validUntil"> <mat-datepicker-toggle matSuffix [for]="validUntilPicker"> </mat-datepicker-toggle> <mat-datepicker #validUntilPicker></mat-datepicker> </mat-form-field> </div>
@@ -196,15 +198,15 @@ import { PrescriptionItemDialogComponent } from '../item-dialog/prescription-ite
   `]
 })
 export class PrescriptionFormComponent implements OnInit, OnDestroy {
+  @ViewChild('patientPicker') patientPicker!: PatientPickerComponent;
+
   form!: FormGroup;
   isEditMode = false;
   saving = false;
   prescriptionId: string | null = null;
   admissionId: string | null = null;
-  filteredPatients: any[] = [];
   filteredDoctors: any[] = [];
   filteredMedicines: any[][] = [];
-  allPatients: any[] = [];
   allDoctors: any[] = [];
   private destroy$ = new Subject<void>();
 
@@ -223,8 +225,7 @@ export class PrescriptionFormComponent implements OnInit, OnDestroy {
     this.admissionId = this.route.snapshot.queryParamMap.get('admissionId');
     const patientId = this.route.snapshot.queryParamMap.get('patientId');
     this.form = this.fb.group({
-      patientId: [patientId || '', Validators.required],
-      patientSearch: [''],
+      patientId: [patientId || ''],
       doctorId: ['', Validators.required],
       doctorSearch: [''],
       diagnosis: [''],
@@ -235,12 +236,18 @@ export class PrescriptionFormComponent implements OnInit, OnDestroy {
       items: this.fb.array([])
     });
 
-    this.setupPatientSearch();
     this.setupDoctorSearch();
 
     if (patientId) {
       this.api.get<any>(`v1/patients/${patientId}`).subscribe({
-        next: (p) => { this.form.patchValue({ patientSearch: { id: p.id, fullName: p.fullName || (p.firstName + ' ' + p.lastName), mrn: p.mrn } }); }
+        next: (p) => {
+          this.patientPicker?.setPatient({
+            id: p.id,
+            mrn: p.mrn,
+            fullName: p.fullName || `${p.firstName || ''} ${p.lastName || ''}`.trim(),
+            phone: p.phone
+          });
+        }
       });
     }
 
@@ -251,6 +258,10 @@ export class PrescriptionFormComponent implements OnInit, OnDestroy {
     }
   }
 
+  onPatientChange(patient: PatientPickerValue | null) {
+    this.form.patchValue({ patientId: patient?.id || '' });
+  }
+
   private normalizeList<T>(value: any): T[] {
     if (Array.isArray(value)) return value as T[];
     if (!value || typeof value !== 'object') return [];
@@ -258,32 +269,6 @@ export class PrescriptionFormComponent implements OnInit, OnDestroy {
     if (Array.isArray(value.data)) return value.data as T[];
     if (Array.isArray(value.results)) return value.results as T[];
     return [];
-  }
-
-  private setupPatientSearch() {
-    // Loaded on focus, no API calls on type
-  }
-
-  onPatientFocus() {
-    if (this.allPatients.length === 0) {
-      this.api.get<any[]>('v1/patients/search', { limit: 1000 }).subscribe(r => {
-        this.allPatients = this.normalizeList(r);
-        this.filteredPatients = this.allPatients;
-      });
-    }
-  }
-
-  onPatientSearchInput(event: any) {
-    const term = (event.target.value || '').toLowerCase();
-    if (!term) {
-      this.filteredPatients = this.allPatients;
-      return;
-    }
-    this.filteredPatients = this.allPatients.filter(p =>
-      (p.fullName || '').toLowerCase().includes(term) ||
-      (p.phone || '').toLowerCase().includes(term) ||
-      (p.mrn || '').toLowerCase().includes(term)
-    );
   }
 
   ngOnDestroy(): void {
@@ -316,12 +301,11 @@ export class PrescriptionFormComponent implements OnInit, OnDestroy {
     );
   }
 
-  displayPatient(p: any): string {
-    return p ? `${p.fullName || ''} (${p.phone || 'No phone'})` : '';
-  }
-
   displayDoctor(d: any): string {
-    return d ? `Dr. ${d.fullName || ''}${d.specialization ? ' - ' + d.specialization : ''}` : '';
+    if (!d) return '';
+    if (typeof d === 'string') return d;
+    const spec = d.specialization ? ` - (${d.specialization})` : '';
+    return `Dr. ${d.fullName || ''}${spec}`;
   }
 
   displayMedicine(m: any): string {
@@ -330,12 +314,9 @@ export class PrescriptionFormComponent implements OnInit, OnDestroy {
     return m.name || '';
   }
 
-  onPatientSelected(e: any) {
-    this.form.patchValue({ patientId: e.option.value.id });
-  }
-
   onDoctorSelected(e: any) {
-    this.form.patchValue({ doctorId: e.option.value.id });
+    const doctor = e.option.value;
+    this.form.patchValue({ doctorId: doctor.id, doctorSearch: this.displayDoctor(doctor) });
   }
 
   onMedicineSearch(event: Event, index: number) {
@@ -385,7 +366,6 @@ export class PrescriptionFormComponent implements OnInit, OnDestroy {
       next: (rx) => {
         this.form.patchValue({
           patientId: rx.patientId,
-          patientSearch: { id: rx.patientId, fullName: rx.patientName, mrn: rx.patientNumber },
           doctorId: rx.doctorId,
           doctorSearch: { id: rx.doctorId, fullName: rx.doctorName },
           diagnosis: rx.diagnosis,
@@ -434,11 +414,14 @@ export class PrescriptionFormComponent implements OnInit, OnDestroy {
     this.filteredMedicines.splice(index, 1);
   }
 
-  onSubmit() {
+  async onSubmit() {
     if (this.saving) return;
 
+    const patient = await this.patientPicker?.ensurePatient();
+    if (patient) this.form.patchValue({ patientId: patient.id });
+
     if (!this.form.get('patientId')?.value) {
-      this.notification.error('Please select a patient');
+      this.notification.error('Please select or create a patient');
       return;
     }
 

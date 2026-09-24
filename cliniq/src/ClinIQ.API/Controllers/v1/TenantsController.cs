@@ -132,8 +132,11 @@ public class TenantsController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.SettingsView)]
     public async Task<IActionResult> GetTenant(Guid id)
     {
+        var currentTenantId = _tenantService.GetCurrentTenantId();
+        if (currentTenantId is null || currentTenantId.Value != id)
+            return NotFound(Result.Failure("Tenant not found"));
+
         var tenant = await _context.Tenants
-            .IgnoreQueryFilters()
             .Where(t => t.Id == id && !t.IsDeleted)
             .Select(t => new { t.Id, t.Name, t.Slug, t.IsActive })
             .FirstOrDefaultAsync();
@@ -147,18 +150,15 @@ public class TenantsController : ControllerBase
     private async Task<Tenant?> ResolveCurrentTenantAsync()
     {
         var tenantId = _tenantService.GetCurrentTenantId();
-        if (tenantId.HasValue)
+        if (!tenantId.HasValue)
         {
-            return await _context.Tenants
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(t => t.Id == tenantId.Value && !t.IsDeleted);
+            // Fail closed — never fall back to an arbitrary organization.
+            return null;
         }
 
         return await _context.Tenants
             .IgnoreQueryFilters()
-            .Where(t => !t.IsDeleted && t.IsActive)
-            .OrderBy(t => t.CreatedAt)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(t => t.Id == tenantId.Value && !t.IsDeleted);
     }
 }
 

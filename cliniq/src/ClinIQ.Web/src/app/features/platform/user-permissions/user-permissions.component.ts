@@ -409,14 +409,12 @@ export class UserPermissionsComponent implements OnInit, OnDestroy {
     let userResponse: UserPermissionsResponse | null = null;
 
     const buildGroups = () => {
-      if (!catalog.length) return;
+      if (!catalog.length || !userResponse) return;
 
       const userPermMap = new Map<string, { granted: boolean; source: string; branchId: string | null }>();
-      if (userResponse) {
-        for (const mod of userResponse.modules) {
-          for (const p of mod.permissions) {
-            userPermMap.set(p.name, { granted: p.granted, source: p.source, branchId: p.branchId });
-          }
+      for (const mod of userResponse.modules) {
+        for (const p of mod.permissions) {
+          userPermMap.set(p.name, { granted: p.granted, source: p.source, branchId: p.branchId });
         }
       }
 
@@ -506,8 +504,6 @@ export class UserPermissionsComponent implements OnInit, OnDestroy {
     const denies: string[] = [];
 
     this.currentStates.forEach((state, permName) => {
-      const original = this.originalStates.get(permName) || 'inherit';
-      if (state === original) return;
       if (state === 'grant') grants.push(permName);
       else if (state === 'deny') denies.push(permName);
     });

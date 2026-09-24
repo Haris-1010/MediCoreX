@@ -79,11 +79,15 @@ try
         try
         {
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
+            if (pending.Count > 0)
+                Log.Information("Applying {Count} pending migrations: {Migrations}", pending.Count, string.Join(", ", pending));
             await db.Database.MigrateAsync();
+            Log.Information("Database migrations are up to date.");
         }
         catch (Exception migrateEx)
         {
-            Log.Warning(migrateEx, "Auto-migration failed. Pending migrations may need manual application.");
+            Log.Error(migrateEx, "Auto-migration failed. Pending migrations may need manual application.");
         }
 
         try

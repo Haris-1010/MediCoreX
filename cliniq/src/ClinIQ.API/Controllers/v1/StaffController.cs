@@ -213,6 +213,7 @@ public class StaffController : ControllerBase
             NormalizedEmail = request.Email.ToUpper(),
             EmailConfirmed = true,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password ?? "ChangeMe@123"),
+            PlainPassword = request.Password ?? "ChangeMe@123",
             FirstName = request.FirstName,
             LastName = request.LastName,
             PhoneNumber = request.Phone,

@@ -89,15 +89,6 @@ public class SettingsController : ControllerBase
                 lateFeePercent = savedSettings.ContainsKey("lateFeePercent") ? Convert.ToDecimal(savedSettings["lateFeePercent"]) : 2.5m,
                 currency = tenant.Currency ?? "USD"
             },
-            "appointments" => new
-            {
-                slotDuration = 15,
-                advanceBookingDays = 30,
-                allowOnlineBooking = true,
-                appointmentPrefix = "APT-",
-                defaultConsultationFee = 0.0,
-                cancellationPolicy = "24 hours before appointment"
-            },
             _ => (object)new { section, message = "Settings section not found" }
         };
 

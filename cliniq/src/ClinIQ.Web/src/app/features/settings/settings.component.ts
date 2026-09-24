@@ -15,7 +15,6 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
     .form-row { display: flex; gap: 1rem; } .form-row mat-form-field { flex: 1; }
     .full-width { width: 100%; }
     .form-actions { margin-top: 1.5rem; }
-    mat-slide-toggle { margin: 1rem 0; display: block; }
 
     .section-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin: 0 0 1rem; }
     .section-header h3 { margin: 0; }
@@ -75,7 +74,6 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 export class SettingsComponent implements OnInit {
   generalForm!: FormGroup;
   brandingForm!: FormGroup;
-  appointmentSettings = { slotDuration: 30, advanceBookingDays: 30, allowOnlineBooking: true };
   billingSettings = { invoicePrefix: 'INV-', defaultTax: 0, paymentDueDays: 30 };
   logoUploading = false;
 
@@ -88,6 +86,14 @@ export class SettingsComponent implements OnInit {
   editingUser: any = null;
   userFormData: any = {};
   availableRoles: any[] = [];
+
+  // ---- Locations ----
+  locations: any[] = [];
+  locationsLoading = false;
+  showLocationForm = false;
+  editingLocation: any = null;
+  locationSaving = false;
+  locationForm!: FormGroup;
 
   // ---- Roles ----
   roles: any[] = [];
@@ -154,6 +160,7 @@ export class SettingsComponent implements OnInit {
     this.loadPermissionGroups();
     this.loadRoles();
     this.loadUsers();
+    this.loadLocations();
   }
 
   saveGeneral() { this.api.put('v1/settings', 'general', this.generalForm.value).subscribe(() => this.notification.success('Settings saved')); }
@@ -222,7 +229,7 @@ export class SettingsComponent implements OnInit {
 
   addUser() {
     this.editingUser = null;
-    this.userFormData = { firstName: '', lastName: '', email: '', phone: '', password: '', isActive: true, roleIds: [] };
+    this.userFormData = { firstName: '', lastName: '', email: '', phone: '', password: '', isActive: true, roleIds: [], branchIds: [] };
     this.showUserForm = true;
   }
 
@@ -234,7 +241,8 @@ export class SettingsComponent implements OnInit {
       email: user.email || '',
       phone: user.phoneNumber || user.phone || '',
       isActive: user.isActive ?? true,
-      roleIds: []
+      roleIds: [],
+      branchIds: []
     };
     this.showUserForm = true;
     this.api.get<any>(`v1/users/${user.id}`).subscribe({
@@ -245,6 +253,7 @@ export class SettingsComponent implements OnInit {
         this.userFormData.phone = u.phoneNumber || this.userFormData.phone;
         this.userFormData.isActive = u.isActive ?? this.userFormData.isActive;
         this.userFormData.roleIds = Array.isArray(u.roleIds) ? [...u.roleIds] : [];
+        this.userFormData.branchIds = Array.isArray(u.branchIds) ? [...u.branchIds] : [];
       },
       error: () => {}
     });
@@ -264,31 +273,16 @@ export class SettingsComponent implements OnInit {
     const d = this.userFormData;
     if (!d.firstName || !d.lastName || !d.email) { this.notification.error('First name, last name and email are required.'); return; }
     if (this.editingUser) {
-      this.api.put<any>('v1/users', this.editingUser.id, { email: d.email, firstName: d.firstName, lastName: d.lastName, phone: d.phone || null, isActive: d.isActive, roleIds: d.roleIds }).subscribe({
+      this.api.put<any>('v1/users', this.editingUser.id, { email: d.email, firstName: d.firstName, lastName: d.lastName, phone: d.phone || null, isActive: d.isActive, roleIds: d.roleIds, branchIds: d.branchIds || [] }).subscribe({
         next: () => { this.notification.success('User updated'); this.showUserForm = false; this.loadUsers(); },
         error: (err) => this.notification.error(this.extractError(err))
       });
     } else {
-      this.api.post<any>('v1/users', { email: d.email, password: d.password || 'ChangeMe@123', firstName: d.firstName, lastName: d.lastName, phone: d.phone || null, roleIds: d.roleIds }).subscribe({
+      this.api.post<any>('v1/users', { email: d.email, password: d.password || 'ChangeMe@123', firstName: d.firstName, lastName: d.lastName, phone: d.phone || null, roleIds: d.roleIds, branchIds: d.branchIds || [] }).subscribe({
         next: () => { this.notification.success('User created'); this.showUserForm = false; this.loadUsers(); },
         error: (err) => this.notification.error(this.extractError(err))
       });
     }
-  }
-
-  deleteUser(user: any) {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '400px',
-      data: { title: 'Delete User', message: `Are you sure you want to delete user ${user.email}? This action cannot be undone.`, confirmText: 'Delete', confirmColor: 'warn' }
-    });
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.api.delete<any>('v1/users', user.id).subscribe({
-          next: () => { this.notification.success('User deleted'); this.loadUsers(); },
-          error: (err) => this.notification.error(this.extractError(err))
-        });
-      }
-    });
   }
 
   resetPassword(user: any) {
@@ -308,6 +302,139 @@ export class SettingsComponent implements OnInit {
 
   userPageNav(delta: number) { this.userPage += delta; this.loadUsers(); }
 
+  // ------------------------- LOCATIONS -------------------------
+  private ensureLocationForm() {
+    if (this.locationForm) return;
+    this.locationForm = this.fb.group({
+      name: [''],
+      code: [''],
+      description: [''],
+      address: [''],
+      city: [''],
+      state: [''],
+      country: [''],
+      postalCode: [''],
+      phone: [''],
+      email: [''],
+      timezone: [''],
+      isActive: [true]
+    });
+  }
+
+  loadLocations() {
+    this.locationsLoading = true;
+    this.api.get<any[]>('v1/branches').subscribe({
+      next: (res) => {
+        this.locations = Array.isArray(res) ? res : [];
+        this.locationsLoading = false;
+      },
+      error: (err) => {
+        this.locationsLoading = false;
+        this.notification.error(this.extractError(err));
+      }
+    });
+  }
+
+  addLocation() {
+    this.ensureLocationForm();
+    this.editingLocation = null;
+    this.locationForm.reset({
+      name: '', code: '', description: '', address: '', city: '', state: '',
+      country: '', postalCode: '', phone: '', email: '', timezone: '', isActive: true
+    });
+    this.showLocationForm = true;
+  }
+
+  editLocation(loc: any) {
+    this.ensureLocationForm();
+    this.editingLocation = loc;
+    this.locationForm.patchValue({
+      name: loc.name || '',
+      code: loc.code || '',
+      description: loc.description || '',
+      address: loc.address || '',
+      city: loc.city || '',
+      state: loc.state || '',
+      country: loc.country || '',
+      postalCode: loc.postalCode || '',
+      phone: loc.phone || '',
+      email: loc.email || '',
+      timezone: loc.timezone || '',
+      isActive: loc.isActive ?? true
+    });
+    this.showLocationForm = true;
+  }
+
+  cancelLocation() {
+    this.showLocationForm = false;
+    this.editingLocation = null;
+  }
+
+  saveLocation() {
+    this.ensureLocationForm();
+    const d = this.locationForm.value;
+    if (!d.name?.trim() || !d.code?.trim()) {
+      this.notification.error('Name and code are required.');
+      return;
+    }
+
+    const payload = {
+      name: d.name.trim(),
+      code: d.code.trim(),
+      description: d.description || null,
+      address: d.address || null,
+      city: d.city || null,
+      state: d.state || null,
+      country: d.country || null,
+      postalCode: d.postalCode || null,
+      phone: d.phone || null,
+      email: d.email || null,
+      timezone: d.timezone || null,
+      isActive: d.isActive
+    };
+
+    this.locationSaving = true;
+    const req$ = this.editingLocation
+      ? this.api.put<any>('v1/branches', this.editingLocation.id, payload)
+      : this.api.post<any>('v1/branches', payload);
+
+    req$.subscribe({
+      next: () => {
+        this.notification.success(this.editingLocation ? 'Location updated' : 'Location created');
+        this.locationSaving = false;
+        this.cancelLocation();
+        this.loadLocations();
+      },
+      error: (err) => {
+        this.locationSaving = false;
+        this.notification.error(this.extractError(err));
+      }
+    });
+  }
+
+  deleteLocation(loc: any) {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Location',
+        message: `Are you sure you want to delete location "${loc.name}"? This cannot be undone.`,
+        confirmText: 'Delete',
+        confirmColor: 'warn'
+      }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.api.delete<any>('v1/branches', loc.id).subscribe({
+          next: () => {
+            this.notification.success('Location deleted');
+            this.loadLocations();
+          },
+          error: (err) => this.notification.error(this.extractError(err))
+        });
+      }
+    });
+  }
+
   // ------------------------- ROLES -------------------------
   loadPermissionGroups() {
     this.api.get<any[]>('v1/roles/permissions').subscribe({
@@ -318,7 +445,7 @@ export class SettingsComponent implements OnInit {
 
   loadRoles() {
     this.api.get<any[]>('v1/roles').subscribe({
-      next: (res) => { this.roles = Array.isArray(res) ? res.filter(role => !role.isSystemRole) : []; },
+      next: (res) => { this.roles = Array.isArray(res) ? res.filter(role => !(role.isSystemRole && ['SuperAdmin', 'OrganizationOwner'].includes(role.name))) : []; },
       error: (err) => this.notification.error(this.extractError(err))
     });
   }

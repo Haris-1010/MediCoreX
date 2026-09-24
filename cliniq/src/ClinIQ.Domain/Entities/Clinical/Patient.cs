@@ -4,9 +4,9 @@ using ClinIQ.Domain.Enums;
 namespace ClinIQ.Domain.Entities.Clinical;
 
 /// <summary>
-/// Patient entity - core clinical entity
+/// Patient entity - core clinical entity (location-scoped via Branch)
 /// </summary>
-public class Patient : TenantEntity
+public class Patient : BranchEntity
 {
     // Identification
     public string PatientNumber { get; set; } = string.Empty;

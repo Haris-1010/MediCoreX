@@ -83,8 +83,13 @@ public class RolesController : ControllerBase
         if (tenantId is null)
             return BadRequest(Result.Failure("Unable to resolve the current organization."));
 
+        // Include tenant roles and global system role templates (Doctor, Nurse, …)
+        // so they can be assigned to users in this organization.
         var roles = await _context.Roles
-            .Where(r => !r.IsDeleted && r.IsActive && !r.IsSystemRole && r.TenantId == tenantId.Value)
+            .Where(r => !r.IsDeleted && r.IsActive
+                && (r.TenantId == null || r.TenantId == tenantId.Value)
+                && r.NormalizedName != ClinIQ.Shared.Constants.Roles.SuperAdmin.ToUpperInvariant()
+                && r.NormalizedName != ClinIQ.Shared.Constants.Roles.OrganizationOwner.ToUpperInvariant())
             .Select(r => new
             {
                 r.Id,

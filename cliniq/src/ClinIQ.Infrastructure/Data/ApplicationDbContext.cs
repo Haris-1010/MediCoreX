@@ -152,12 +152,18 @@ public class ApplicationDbContext : DbContext
 
     public Guid? CurrentTenantId => _tenantService.GetCurrentTenantId();
     public Guid? CurrentBranchId => _tenantService.GetCurrentBranchId();
+    public bool CurrentHasAllLocationAccess => _tenantService.HasAllLocationAccess();
 
     /// <summary>
-    /// Combines both tenant isolation and soft delete filters into a single expression.
-    /// CRITICAL: EF Core only applies the LAST HasQueryFilter per entity. If we call
-    /// HasQueryFilter twice (once for tenant, once for soft delete), the second overwrites
-    /// the first. This method combines both conditions with AND so both are always active.
+    /// Combines tenant isolation, soft delete, and location (branch) scope into
+    /// a single expression. CRITICAL: EF Core only applies the LAST HasQueryFilter
+    /// per entity. If we call HasQueryFilter multiple times, the last overwrites
+    /// the previous. This method combines all conditions with AND so they are
+    /// always active.
+    ///
+    /// Branch scope (IBranchEntity only):
+    ///   HasAllLocationAccess OR (CurrentBranchId != null AND BranchId == CurrentBranchId)
+    /// Fail closed when neither All Locations nor a specific branch is resolved.
     /// </summary>
     private void ApplyCombinedQueryFilters(ModelBuilder modelBuilder)
     {
@@ -165,9 +171,10 @@ public class ApplicationDbContext : DbContext
         {
             var clrType = entityType.ClrType;
             var isTenantEntity = typeof(ITenantEntity).IsAssignableFrom(clrType);
+            var isBranchEntity = typeof(IBranchEntity).IsAssignableFrom(clrType);
             var isSoftDeletable = typeof(BaseAuditableEntity).IsAssignableFrom(clrType);
 
-            if (!isTenantEntity && !isSoftDeletable)
+            if (!isTenantEntity && !isSoftDeletable && !isBranchEntity)
                 continue;
 
             var parameter = System.Linq.Expressions.Expression.Parameter(clrType, "e");
@@ -186,6 +193,36 @@ public class ApplicationDbContext : DbContext
                 // no rows, so this is safe. Super-admin platform views and
                 // cross-tenant operations already use IgnoreQueryFilters() explicitly.
                 combinedCondition = System.Linq.Expressions.Expression.Equal(tenantProperty, contextProperty);
+            }
+
+            // Location scope for branch-scoped operational entities.
+            if (isBranchEntity)
+            {
+                var ctxConst = System.Linq.Expressions.Expression.Constant(this);
+
+                var allLocationsProperty = System.Linq.Expressions.Expression.Property(
+                    ctxConst, nameof(CurrentHasAllLocationAccess));
+                var currentBranchProperty = System.Linq.Expressions.Expression.Property(
+                    ctxConst, nameof(CurrentBranchId));
+                var branchProperty = System.Linq.Expressions.Expression.Property(
+                    parameter, nameof(IBranchEntity.BranchId));
+
+                // CurrentBranchId != null AND BranchId == CurrentBranchId
+                var currentBranchNotNull = System.Linq.Expressions.Expression.NotEqual(
+                    currentBranchProperty,
+                    System.Linq.Expressions.Expression.Constant(null, typeof(Guid?)));
+                var branchMatches = System.Linq.Expressions.Expression.Equal(
+                    branchProperty, currentBranchProperty);
+                var scopedToBranch = System.Linq.Expressions.Expression.AndAlso(
+                    currentBranchNotNull, branchMatches);
+
+                // HasAllLocationAccess OR scopedToBranch
+                var branchCondition = System.Linq.Expressions.Expression.OrElse(
+                    allLocationsProperty, scopedToBranch);
+
+                combinedCondition = combinedCondition is null
+                    ? branchCondition
+                    : System.Linq.Expressions.Expression.AndAlso(combinedCondition, branchCondition);
             }
 
             // Add soft delete filter: IsDeleted == false

@@ -1,0 +1,224 @@
+<div class="master-shell">
+  <aside class="master-sidebar">
+    <div class="brand">
+      <mat-icon>workspace_premium</mat-icon>
+      <div>
+        <strong>ClinIQ Master</strong>
+        <small>Control Portal</small>
+      </div>
+    </div>
+
+    <nav class="side-nav">
+      <a routerLink="/master/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <mat-icon>dashboard</mat-icon>
+        Dashboard
+      </a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <span class="current-user">
+        <mat-icon>account_circle</mat-icon>
+        <span class="user-text">
+          {{ currentUser?.firstName }} {{ currentUser?.lastName }}
+          <small>Master owner</small>
+        </span>
+      </span>
+      <button mat-stroked-button (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        Sign out
+      </button>
+    </div>
+  </aside>
+
+  <main class="master-main">
+    <div class="topbar">
+      <div class="topbar-title">
+        <h1>Master Dashboard</h1>
+        <p>System-wide control for organizations and platform admins</p>
+      </div>
+      <div class="topbar-actions" *ngIf="status">
+        <span class="system-badge" [class.paused]="status.systemPaused">
+          <span class="dot"></span>
+          {{ status.systemPaused ? 'SYSTEM PAUSED' : 'SYSTEM ACTIVE' }}
+        </span>
+        <button mat-raised-button
+                [class.btn-pause]="!status.systemPaused"
+                [class.btn-resume]="status.systemPaused"
+                [disabled]="actionLoading"
+                (click)="toggleSystem()">
+          <mat-spinner *ngIf="actionLoading" diameter="18"></mat-spinner>
+          <mat-icon *ngIf="!actionLoading">{{ status.systemPaused ? 'play_arrow' : 'pause' }}</mat-icon>
+          {{ status.systemPaused ? 'Resume System' : 'Pause System' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div *ngIf="loading" class="loading-state">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Loading master status…</p>
+      </div>
+
+      <ng-container *ngIf="!loading && status">
+        <div class="stat-grid">
+          <div class="stat-card" [class.warn]="status.systemPaused">
+            <div class="stat-icon">
+              <mat-icon>{{ status.systemPaused ? 'pause_circle' : 'check_circle' }}</mat-icon>
+            </div>
+            <div class="stat-body">
+              <strong>{{ status.systemPaused ? 'Paused' : 'Active' }}</strong>
+              <span>System Status</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <mat-icon>corporate_fare</mat-icon>
+            </div>
+            <div class="stat-body">
+              <strong>{{ status.organizations.active }} / {{ status.organizations.total }}</strong>
+              <span>Organizations Active</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <mat-icon>shield_person</mat-icon>
+            </div>
+            <div class="stat-body">
+              <strong>{{ status.platformAdmins.active }} / {{ status.platformAdmins.total }}</strong>
+              <span>Platform Admins Active</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="warning-banner" *ngIf="status.systemPaused">
+          <mat-icon>warning</mat-icon>
+          <div>
+            <strong>System is currently paused.</strong>
+            <p>All organizations and platform admins (except master) are blocked from accessing ClinIQ.</p>
+          </div>
+        </div>
+
+        <section class="panel" id="organizations">
+          <div class="panel-head">
+            <div>
+              <h2><mat-icon>corporate_fare</mat-icon> Organizations</h2>
+              <p class="panel-sub">{{ orgsSource.data.length }} customer organization{{ orgsSource.data.length === 1 ? '' : 's' }}</p>
+            </div>
+            <div class="panel-actions">
+              <button mat-stroked-button (click)="bulkOrgs('pause-all')" [disabled]="actionLoading">Pause All</button>
+              <button mat-stroked-button (click)="bulkOrgs('resume-all')" [disabled]="actionLoading">Resume All</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table mat-table [dataSource]="orgsSource" class="master-table">
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef>Name</th>
+                <td mat-cell *matCellDef="let org"><span class="strong">{{ org.name }}</span></td>
+              </ng-container>
+              <ng-container matColumnDef="email">
+                <th mat-header-cell *matHeaderCellDef>Email</th>
+                <td mat-cell *matCellDef="let org">{{ org.email }}</td>
+              </ng-container>
+              <ng-container matColumnDef="createdAt">
+                <th mat-header-cell *matHeaderCellDef>Created</th>
+                <td mat-cell *matCellDef="let org">{{ org.createdAt | date:'mediumDate' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>Status</th>
+                <td mat-cell *matCellDef="let org">
+                  <span class="chip" [class.chip-active]="org.isActive" [class.chip-paused]="!org.isActive">
+                    {{ org.isActive ? 'Active' : 'Paused' }}
+                  </span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef></th>
+                <td mat-cell *matCellDef="let org" class="actions-cell">
+                  <button mat-stroked-button [class.danger]="org.isActive" (click)="toggleOrg(org)">
+                    {{ org.isActive ? 'Pause' : 'Resume' }}
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="orgColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: orgColumns;"></tr>
+            </table>
+
+            <div class="empty" *ngIf="!orgsSource.data.length">No organizations found.</div>
+
+            <mat-paginator #orgPaginator
+                           [pageSize]="10"
+                           [pageSizeOptions]="[10, 25, 50]"
+                           showFirstLastButtons>
+            </mat-paginator>
+          </div>
+        </section>
+
+        <section class="panel" id="admins">
+          <div class="panel-head">
+            <div>
+              <h2><mat-icon>shield_person</mat-icon> Platform Admins</h2>
+              <p class="panel-sub">{{ adminsSource.data.length }} platform admin{{ adminsSource.data.length === 1 ? '' : 's' }}</p>
+            </div>
+            <div class="panel-actions">
+              <button mat-stroked-button (click)="bulkAdmins('pause-all')" [disabled]="actionLoading">Pause All</button>
+              <button mat-stroked-button (click)="bulkAdmins('resume-all')" [disabled]="actionLoading">Resume All</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table mat-table [dataSource]="adminsSource" class="master-table">
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef>Name</th>
+                <td mat-cell *matCellDef="let admin">
+                  <span class="strong">{{ admin.firstName }} {{ admin.lastName }}</span>
+                  <span class="chip chip-master" *ngIf="admin.isMaster">MASTER</span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="email">
+                <th mat-header-cell *matHeaderCellDef>Email</th>
+                <td mat-cell *matCellDef="let admin">{{ admin.email }}</td>
+              </ng-container>
+              <ng-container matColumnDef="lastLoginAt">
+                <th mat-header-cell *matHeaderCellDef>Last Login</th>
+                <td mat-cell *matCellDef="let admin">{{ admin.lastLoginAt ? (admin.lastLoginAt | date:'short') : '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>Status</th>
+                <td mat-cell *matCellDef="let admin">
+                  <span class="chip" [class.chip-active]="admin.isActive" [class.chip-paused]="!admin.isActive">
+                    {{ admin.isActive ? 'Active' : 'Paused' }}
+                  </span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef></th>
+                <td mat-cell *matCellDef="let admin" class="actions-cell">
+                  <button mat-stroked-button
+                          *ngIf="!admin.isMaster"
+                          [class.danger]="admin.isActive"
+                          (click)="toggleAdmin(admin)">
+                    {{ admin.isActive ? 'Pause' : 'Resume' }}
+                  </button>
+                  <span *ngIf="admin.isMaster" class="muted-text">You</span>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="adminColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: adminColumns;"></tr>
+            </table>
+
+            <div class="empty" *ngIf="!adminsSource.data.length">No platform admins found.</div>
+
+            <mat-paginator #adminPaginator
+                           [pageSize]="10"
+                           [pageSizeOptions]="[10, 25, 50]"
+                           showFirstLastButtons>
+            </mat-paginator>
+          </div>
+        </section>
+      </ng-container>
+    </div>
+  </main>
+</div>

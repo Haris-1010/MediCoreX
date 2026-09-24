@@ -44,9 +44,12 @@
         <small>{{ admin.email }}</small>
       </div>
       <span class="status-chip" [class.active]="admin.isActive" [class.inactive]="!admin.isActive">
-        {{ admin.isActive ? 'Active' : 'Suspended' }}
+        {{ admin.isMaster ? 'Master' : (admin.isActive ? (isSelf(admin) ? 'Active (You)' : 'Active') : 'Suspended') }}
       </span>
-      <button mat-icon-button [matTooltip]="admin.isActive ? 'Suspend' : 'Activate'" (click)="toggle(admin)">
+      <button mat-icon-button
+              [matTooltip]="isProtected(admin) ? 'You cannot suspend this admin' : (isSelf(admin) ? 'You cannot deactivate yourself' : (admin.isActive ? 'Suspend' : 'Activate'))"
+              [disabled]="(isSelf(admin) && admin.isActive) || (isProtected(admin) && admin.isActive)"
+              (click)="toggle(admin)">
         <mat-icon>{{ admin.isActive ? 'pause_circle' : 'play_circle' }}</mat-icon>
       </button>
     </div>

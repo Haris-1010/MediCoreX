@@ -3,8 +3,9 @@ using ClinIQ.Domain.Enums;
 namespace ClinIQ.Shared.DTOs.Patients;
 
 public record CreatePatientRequest(
-    string FirstName,
-    string LastName,
+    string? FirstName,
+    string? LastName,
+    string? FullName,
     string? MiddleName,
     string? Title,
     DateTime? DateOfBirth,

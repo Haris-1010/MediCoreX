@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, OnDestroy, TemplateRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
@@ -8,7 +8,7 @@ import { SignalRService } from '../../../core/services/signalr.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { AudioAnnouncementService } from '../token-generation/audio-announcement.service';
 import { TenantService } from '../../../core/services/tenant.service';
-import { MatDialog } from '@angular/material/dialog';
+import { PatientPickerComponent, PatientPickerValue } from '../../../shared/components/patient-picker/patient-picker.component';
 
 @Component({
   standalone: false,
@@ -31,33 +31,12 @@ import { MatDialog } from '@angular/material/dialog';
             <!-- Patient Search -->
             <div class="section">
               <label class="section-label">Patient</label>
-              <div class="patient-search-row">
-                <mat-form-field appearance="outline" class="flex-grow">
-                  <mat-label>Search Patient</mat-label>
-                  <input matInput formControlName="patientSearch"
-                    [matAutocomplete]="patientAuto"
-                    placeholder="Type name or phone..."
-                    (focus)="onPatientFocus()"
-                    (input)="onPatientSearchInput($event)">
-                  <mat-icon matPrefix>search</mat-icon>
-                  <mat-autocomplete #patientAuto="matAutocomplete"
-                    [displayWith]="displayPatient"
-                    (optionSelected)="onPatientSelected($event)">
-                    <mat-option *ngFor="let p of filteredPatients" [value]="p">
-                      <div class="patient-option">
-                        <span class="name">{{ p.fullName }} ({{ p.phone || 'No phone' }})</span>
-                      </div>
-                    </mat-option>
-                    <mat-option *ngIf="showQuickAdd" (click)="openQuickAddDialog()" class="quick-add-option">
-                      <mat-icon>person_add</mat-icon>
-                      <span>Quick Add New Patient: "{{ searchTerm }}"</span>
-                    </mat-option>
-                  </mat-autocomplete>
-                </mat-form-field>
-                <button mat-stroked-button type="button" class="quick-add-btn" (click)="openQuickAddDialog()">
-                  <mat-icon>person_add</mat-icon> Quick Add
-                </button>
-              </div>
+              <app-patient-picker
+                #patientPicker
+                label="Patient"
+                [required]="true"
+                (patientChange)="onPatientChange($event)">
+              </app-patient-picker>
 
               <!-- Selected Patient Card -->
               <div class="selected-patient-card" *ngIf="selectedPatient">
@@ -77,7 +56,7 @@ import { MatDialog } from '@angular/material/dialog';
                 <mat-label>Select Doctor</mat-label>
                 <mat-select formControlName="doctorId" (selectionChange)="onDoctorChange()">
                   <mat-option *ngFor="let d of doctors" [value]="d.id">
-                    Dr. {{ d.fullName }} - {{ d.specialization }}
+                    Dr. {{ d.fullName }}<span *ngIf="d.specialization"> - ({{ d.specialization }})</span>
                   </mat-option>
                 </mat-select>
                 <mat-error>Doctor is required</mat-error>
@@ -235,63 +214,6 @@ import { MatDialog } from '@angular/material/dialog';
         </div>
       </div>
     </app-main-layout>
-
-    <!-- Quick Add Patient Dialog -->
-    <ng-template #quickAddDialog>
-      <h2 mat-dialog-title>
-        <mat-icon>person_add</mat-icon> Quick Add Patient
-      </h2>
-      <mat-dialog-content>
-        <form [formGroup]="quickPatientForm">
-          <div class="dialog-form-row">
-            <mat-form-field appearance="outline" class="flex-grow">
-              <mat-label>First Name *</mat-label>
-              <input matInput formControlName="firstName" placeholder="First name">
-              <mat-error>Required</mat-error>
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="flex-grow">
-              <mat-label>Last Name</mat-label>
-              <input matInput formControlName="lastName" placeholder="Last name">
-            </mat-form-field>
-          </div>
-          <div class="dialog-form-row">
-            <mat-form-field appearance="outline" class="flex-grow">
-              <mat-label>Phone</mat-label>
-              <input matInput formControlName="phone" placeholder="Phone number">
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="flex-grow">
-              <mat-label>Gender</mat-label>
-              <mat-select formControlName="gender">
-                <mat-option value="Male">Male</mat-option>
-                <mat-option value="Female">Female</mat-option>
-                <mat-option value="Other">Other</mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
-          <div class="dialog-form-row">
-            <mat-form-field appearance="outline" class="flex-grow">
-              <mat-label>Age *</mat-label>
-              <input matInput type="number" formControlName="age" placeholder="Years" min="0" max="150" (input)="onAgeChange()">
-              <span matSuffix>years</span>
-              <mat-error>Required</mat-error>
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="flex-grow">
-              <mat-label>Date of Birth (auto)</mat-label>
-              <input matInput [matDatepicker]="dobPicker" formControlName="dateOfBirth" readonly placeholder="Auto-calculated">
-              <mat-datepicker-toggle matSuffix [for]="dobPicker"></mat-datepicker-toggle>
-              <mat-datepicker #dobPicker></mat-datepicker>
-            </mat-form-field>
-          </div>
-        </form>
-      </mat-dialog-content>
-      <mat-dialog-actions align="end">
-        <button mat-button mat-dialog-close>Cancel</button>
-        <button mat-raised-button color="primary" (click)="saveQuickPatient()" [disabled]="quickPatientForm.invalid || savingPatient">
-          <mat-spinner *ngIf="savingPatient" diameter="20"></mat-spinner>
-          Save & Select
-        </button>
-      </mat-dialog-actions>
-    </ng-template>
   `,
   styles: [`
     .token-form-container { max-width: 650px; margin: 0 auto; }
@@ -304,9 +226,6 @@ import { MatDialog } from '@angular/material/dialog';
     .section-label { display: block; font-weight: 600; font-size: 0.85rem; color: var(--text-secondary, #555); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
     .full-width { width: 100%; }
     .flex-grow { flex: 1; }
-
-    .patient-search-row { display: flex; gap: 0.75rem; align-items: flex-start; }
-    .quick-add-btn { height: 56px; white-space: nowrap; }
 
     .selected-patient-card { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: var(--bg-badge, #e8eaf6); border-radius: 8px; margin-top: 0.5rem; }
     .selected-patient-card mat-icon { color: var(--accent-primary, #3f51b5); }
@@ -329,8 +248,6 @@ import { MatDialog } from '@angular/material/dialog';
     :host ::ng-deep .patient-option { display: flex; flex-direction: column; padding: 4px 0; }
     :host ::ng-deep .patient-option .name { font-weight: 500; }
     :host ::ng-deep .patient-option .details { font-size: 0.75rem; color: var(--text-muted, #888); }
-    :host ::ng-deep .quick-add-option { color: var(--accent-primary, #3f51b5); font-weight: 500; }
-    :host ::ng-deep .quick-add-option mat-icon { margin-right: 8px; vertical-align: middle; }
 
     /* Receipt */
     .receipt-container { display: flex; flex-direction: column; align-items: center; padding: 1.5rem; }
@@ -362,10 +279,6 @@ import { MatDialog } from '@angular/material/dialog';
 
     .receipt-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
 
-    /* Dialog */
-    :host ::ng-deep .mat-mdc-dialog-title { display: flex; align-items: center; gap: 0.5rem; }
-    .dialog-form-row { display: flex; gap: 1rem; }
-
     /* Autocomplete dropdown styling */
     :host ::ng-deep .mat-mdc-autocomplete-panel { max-height: 300px !important; border-radius: 8px !important; border: 1px solid var(--border-color, #c5cae9) !important; box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important; }
     :host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option { padding: 10px 16px !important; line-height: 1.4 !important; }
@@ -378,29 +291,22 @@ import { MatDialog } from '@angular/material/dialog';
 })
 export class TokenGenerationComponent implements OnInit, OnDestroy {
   tokenForm: FormGroup;
-  quickPatientForm: FormGroup;
   step: 1 | 2 = 1;
   generating = false;
-  savingPatient = false;
 
   doctors: any[] = [];
-  filteredPatients: any[] = [];
-  searchTerm = '';
   selectedPatient: any = null;
   selectedDoctor: any = null;
   generatedToken: any;
-  showQuickAdd = false;
   selectedServiceIds: string[] = [];
   totalAmount = 0;
 
   @ViewChild('receipt') receiptRef!: ElementRef;
-  @ViewChild('quickAddDialog') quickAddDialog!: TemplateRef<any>;
+  @ViewChild('patientPicker') patientPicker!: PatientPickerComponent;
 
   tenant: any = null;
   currencySymbol = '';
   private destroy$ = new Subject<void>();
-
-  allPatients: any[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -408,23 +314,13 @@ export class TokenGenerationComponent implements OnInit, OnDestroy {
     private router: Router,
     private signalR: SignalRService,
     private notification: NotificationService,
-    private tenantService: TenantService,
-    private dialog: MatDialog
+    private tenantService: TenantService
   ) {
     this.tokenForm = this.fb.group({
-      patientSearch: ['', Validators.required],
+      patientId: [''],
       doctorId: ['', Validators.required],
       consultationFee: [0, [Validators.required, Validators.min(0)]],
       paymentMethod: ['Cash', Validators.required]
-    });
-
-    this.quickPatientForm = this.fb.group({
-      firstName: ['', Validators.required],
-      lastName: [''],
-      phone: [''],
-      gender: [''],
-      age: [null, [Validators.required, Validators.min(0), Validators.max(150)]],
-      dateOfBirth: [{ value: null, disabled: true }]
     });
   }
 
@@ -437,8 +333,6 @@ export class TokenGenerationComponent implements OnInit, OnDestroy {
       this.tenant = t;
       this.currencySymbol = this.tenantService.getCurrencySymbol();
     });
-
-    // Patient data loaded on focus
   }
 
   ngOnDestroy() {
@@ -446,47 +340,15 @@ export class TokenGenerationComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  onPatientFocus() {
-    if (this.allPatients.length === 0) {
-      this.api.get<any[]>('v1/patients/search', { limit: 1000 }).subscribe(r => {
-        this.allPatients = Array.isArray(r) ? r : ((r as any)?.data ?? []);
-        this.filteredPatients = this.allPatients;
-      });
-    }
-  }
-
-  onPatientSearchInput(event: any) {
-    this.searchTerm = event.target.value || '';
-    const term = this.searchTerm.toLowerCase();
-    if (!term) {
-      this.filteredPatients = this.allPatients;
-      this.showQuickAdd = false;
-      return;
-    }
-    this.filteredPatients = this.allPatients.filter(p =>
-      (p.fullName || '').toLowerCase().includes(term) ||
-      (p.phone || '').toLowerCase().includes(term) ||
-      (p.mrn || '').toLowerCase().includes(term)
-    );
-    this.showQuickAdd = this.searchTerm.length >= 2 && this.filteredPatients.length === 0;
-  }
-
-  displayPatient(p: any): string {
-    if (!p) return '';
-    if (typeof p === 'string') return p;
-    return `${p.fullName || ''} (${p.phone || 'No phone'})`;
-  }
-
-  onPatientSelected(event: any) {
-    const val = event.option.value;
-    this.selectedPatient = val;
-    this.tokenForm.patchValue({ patientSearch: val.fullName || val });
-    this.showQuickAdd = false;
+  onPatientChange(patient: PatientPickerValue | null) {
+    this.selectedPatient = patient;
+    this.tokenForm.patchValue({ patientId: patient?.id || '' });
   }
 
   clearPatient() {
     this.selectedPatient = null;
-    this.tokenForm.patchValue({ patientSearch: '' });
+    this.tokenForm.patchValue({ patientId: '' });
+    this.patientPicker?.clearSelection();
   }
 
   onDoctorChange() {
@@ -515,65 +377,18 @@ export class TokenGenerationComponent implements OnInit, OnDestroy {
     this.totalAmount = total;
   }
 
-  openQuickAddDialog() {
-    this.quickPatientForm.reset({ firstName: this.searchTerm, lastName: '', phone: '', gender: '', age: null, dateOfBirth: null });
-    this.dialog.open(this.quickAddDialog, { width: '550px', disableClose: true });
-  }
-
-  onAgeChange() {
-    const age = this.quickPatientForm.get('age')?.value;
-    if (age !== null && age !== undefined && age >= 0 && age <= 150) {
-      const today = new Date();
-      const dob = new Date(today.getFullYear() - age, today.getMonth(), today.getDate());
-      this.quickPatientForm.get('dateOfBirth')?.setValue(dob);
-    } else {
-      this.quickPatientForm.get('dateOfBirth')?.setValue(null);
+  async generateToken() {
+    if (this.generating) return;
+    const patient = await this.patientPicker?.ensurePatient();
+    if (!patient && !this.tokenForm.value.patientId) {
+      this.notification.error('Please select or create a patient');
+      return;
     }
-  }
-
-  saveQuickPatient() {
-    if (this.quickPatientForm.invalid) return;
-    this.savingPatient = true;
-
-    const formVal = this.quickPatientForm.getRawValue();
-
-    // Calculate DOB from age if not already set
-    let dob = formVal.dateOfBirth;
-    if (!dob && formVal.age >= 0) {
-      const today = new Date();
-      dob = new Date(today.getFullYear() - formVal.age, today.getMonth(), today.getDate());
+    if (patient) {
+      this.tokenForm.patchValue({ patientId: patient.id });
+      this.selectedPatient = patient;
     }
-
-    const payload = {
-      firstName: formVal.firstName,
-      lastName: formVal.lastName || '',
-      phone: formVal.phone || '',
-      gender: formVal.gender || '',
-      dateOfBirth: dob ? dob.toISOString() : null
-    };
-
-    this.api.post<any>('v1/opd/quick-patient', payload).subscribe({
-      next: (res) => {
-        this.savingPatient = false;
-        this.dialog.closeAll();
-
-        const patientData = {
-          id: res.id,
-          mrn: res.mrn,
-          fullName: res.fullName,
-          phone: res.phone
-        };
-        this.selectedPatient = patientData;
-        this.tokenForm.patchValue({ patientSearch: patientData.fullName });
-
-        this.notification.success(`Patient ${patientData.fullName} created successfully`);
-      },
-      error: () => this.savingPatient = false
-    });
-  }
-
-  generateToken() {
-    if (this.tokenForm.invalid || !this.selectedPatient) return;
+    if (this.tokenForm.invalid || (!this.selectedPatient && !patient)) return;
     this.generating = true;
 
     const additionalServices = this.selectedServiceIds.map(id => {
@@ -582,7 +397,7 @@ export class TokenGenerationComponent implements OnInit, OnDestroy {
     });
 
     const payload = {
-      patientId: this.selectedPatient.id,
+      patientId: this.tokenForm.value.patientId || this.selectedPatient?.id,
       doctorId: this.tokenForm.value.doctorId,
       consultationFee: this.tokenForm.value.consultationFee,
       paymentMethod: this.tokenForm.value.paymentMethod,
@@ -645,7 +460,8 @@ export class TokenGenerationComponent implements OnInit, OnDestroy {
     this.generatedToken = null;
     this.selectedServiceIds = [];
     this.totalAmount = 0;
-    this.tokenForm.reset({ patientSearch: '', doctorId: '', consultationFee: 0, paymentMethod: 'Cash' });
+    this.tokenForm.reset({ patientId: '', doctorId: '', consultationFee: 0, paymentMethod: 'Cash' });
+    this.patientPicker?.clearSelection();
   }
 
   openTokenDisplay() {

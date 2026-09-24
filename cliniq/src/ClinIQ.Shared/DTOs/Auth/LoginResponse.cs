@@ -14,6 +14,7 @@ public record UserDto(
     string LastName,
     string? ProfilePictureUrl,
     bool IsSuperAdmin,
+    bool IsMaster,
     IEnumerable<TenantMembershipDto> Tenants
 );
 

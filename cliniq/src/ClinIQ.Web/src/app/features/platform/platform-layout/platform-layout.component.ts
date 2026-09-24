@@ -34,16 +34,6 @@ import { AuthService } from '../../../core/services/auth.service';
             <mat-icon>shield_person</mat-icon>
             Platform Admins
           </a>
-          <a routerLink="/platform/roles"
-             routerLinkActive="active">
-            <mat-icon>admin_panel_settings</mat-icon>
-            Roles
-          </a>
-          <a routerLink="/platform/user-permissions"
-             routerLinkActive="active">
-            <mat-icon>lock</mat-icon>
-            User Permissions
-          </a>
         </nav>
 
         <div class="sidebar-foot">
@@ -119,8 +109,6 @@ export class PlatformLayoutComponent implements OnInit {
       if (url.includes('organizations/new')) this.pageTitle = 'New Organization';
       else if (url.includes('organizations/')) this.pageTitle = 'Organization Details';
       else if (url.includes('admins')) this.pageTitle = 'Platform Admins';
-      else if (url.includes('roles')) this.pageTitle = 'Role Management';
-      else if (url.includes('user-permissions')) this.pageTitle = 'User Permissions';
       else this.pageTitle = 'Organizations';
     });
   }

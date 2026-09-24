@@ -419,9 +419,20 @@ public class AppointmentsController : ControllerBase
         if (tenantId is null)
             return BadRequest(Result.Failure("Unable to resolve the current organization."));
 
-        var appointment = await _context.Appointments
+        // Soft-deleted rows require IgnoreQueryFilters — re-apply tenant + branch scope manually.
+        var query = _context.Appointments
             .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(a => a.Id == id && a.TenantId == tenantId);
+            .Where(a => a.Id == id && a.TenantId == tenantId);
+
+        if (!_tenantService.HasAllLocationAccess())
+        {
+            var branchId = _tenantService.GetCurrentBranchId();
+            if (branchId is null)
+                return NotFound(Result.Failure("Appointment not found"));
+            query = query.Where(a => a.BranchId == branchId);
+        }
+
+        var appointment = await query.FirstOrDefaultAsync();
 
         if (appointment == null)
             return NotFound(Result.Failure("Appointment not found"));

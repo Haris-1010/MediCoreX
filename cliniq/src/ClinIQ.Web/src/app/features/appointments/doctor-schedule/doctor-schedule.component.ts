@@ -17,7 +17,7 @@ import { TenantService } from '../../../core/services/tenant.service';
         <mat-form-field appearance="outline">
           <mat-label>Select Doctor</mat-label>
           <mat-select [(value)]="selectedDoctorId" (selectionChange)="loadSchedule()">
-            <mat-option *ngFor="let d of doctors" [value]="d.id">Dr. {{ d.fullName }}</mat-option>
+            <mat-option *ngFor="let d of doctors" [value]="d.id">Dr. {{ d.fullName }}<span *ngIf="d.specialization"> - ({{ d.specialization }})</span></mat-option>
           </mat-select>
         </mat-form-field>
 

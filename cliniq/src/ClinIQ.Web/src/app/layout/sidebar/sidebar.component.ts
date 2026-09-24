@@ -36,41 +36,91 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
 
       <!-- Navigation -->
       <nav class="sidebar-nav">
-        <ng-container *ngFor="let item of filteredMenuItems()">
-          <!-- Simple menu item -->
-          <a *ngIf="!item.children"
-             class="nav-item"
-             [routerLink]="item.route"
-             routerLinkActive="active"
-             [attr.title]="collapsed ? item.label : null"
-             (click)="onItemClick()">
-            <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
-            <span class="nav-label">{{ item.label }}</span>
-          </a>
+        <ng-container
+  *ngTemplateOutlet="navItems; context: { items: filteredMenuItems(), level: 0 }">
+</ng-container>
 
-          <!-- Menu item with children -->
-          <div *ngIf="item.children" class="nav-group">
-            <button class="nav-item nav-group-toggle" [attr.title]="collapsed ? item.label : null" (click)="toggleGroup(item)">
-              <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
-              <span class="nav-label">{{ item.label }}</span>
-              <mat-icon class="toggle-icon" [class.expanded]="item.expanded">chevron_right</mat-icon>
-            </button>
-            <div class="nav-group-items" [class.expanded]="item.expanded && !collapsed">
-              <!-- shown as a heading only inside the hover flyout (collapsed mode) -->
-              <div *ngIf="collapsed" class="flyout-title">{{ item.label }}</div>
-              <ng-container *ngFor="let child of item.children">
-                <a class="nav-item nav-child"
-                   [routerLink]="child.route"
-                   routerLinkActive="active"
-                   [attr.title]="collapsed ? child.label : null"
-                   (click)="onItemClick()">
-                  <mat-icon class="nav-icon child-icon">{{ child.icon }}</mat-icon>
-                  <span class="nav-label">{{ child.label }}</span>
-                </a>
-              </ng-container>
-            </div>
-          </div>
+<ng-template #navItems let-items="items" let-level="level">
+
+  <ng-container *ngFor="let item of items">
+
+    <!-- SIMPLE ITEM -->
+    <a *ngIf="!item.children"
+       class="nav-item"
+       [class.nav-child]="level > 0"
+       [routerLink]="item.route"
+       routerLinkActive="active"
+       [attr.title]="collapsed ? item.label : null"
+       (click)="onItemClick()">
+
+      <mat-icon class="nav-icon"
+                [class.child-icon]="level > 0">
+        {{ item.icon }}
+      </mat-icon>
+
+      <span class="nav-label">
+        {{ item.label }}
+      </span>
+
+    </a>
+
+
+    <!-- GROUP -->
+    <div *ngIf="item.children"
+         class="nav-group"
+         [class.nested-group]="level > 0">
+
+      <button
+        class="nav-item nav-group-toggle"
+        [class.nav-child]="level > 0"
+        [attr.title]="collapsed ? item.label : null"
+        (click)="toggleGroup(item)">
+
+        <mat-icon class="nav-icon"
+                  [class.child-icon]="level > 0">
+          {{ item.icon }}
+        </mat-icon>
+
+        <span class="nav-label">
+          {{ item.label }}
+        </span>
+
+        <mat-icon
+          class="toggle-icon"
+          [class.expanded]="item.expanded">
+          chevron_right
+        </mat-icon>
+
+      </button>
+
+
+      <!-- CHILDREN -->
+      <div
+        class="nav-group-items"
+        [class.expanded]="item.expanded && !collapsed">
+
+        <div *ngIf="collapsed"
+             class="flyout-title">
+          {{ item.label }}
+        </div>
+
+        <ng-container
+          *ngTemplateOutlet="
+            navItems;
+            context: {
+              items: item.children,
+              level: level + 1
+            }
+          ">
         </ng-container>
+
+      </div>
+
+    </div>
+
+  </ng-container>
+
+</ng-template>
       </nav>
 
       <!-- Footer -->
@@ -378,13 +428,7 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
     padding-right: 1rem;
     text-align: left;
   }
-
-  .sidebar.collapsed .nav-group:hover .nav-group-items,
-  .sidebar.collapsed .nav-group:focus-within .nav-group-items {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(0);
-  }
+ 
 
   .sidebar.collapsed .nav-group-items .nav-label {
     display: inline-block;
@@ -449,7 +493,118 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
     .copyright {
       font-size: 0.65rem;
       color: var(--text-muted, #888);
-    }
+    }/* ================================
+   COLLAPSED NESTED FLYOUT
+   ================================ */
+
+.sidebar.collapsed .nav-group {
+  position: relative;
+}
+
+/* First flyout - Laboratory */
+.sidebar.collapsed .nav-group-items {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: 8px;
+  min-width: 220px;
+  max-height: none;
+  overflow: visible;
+
+  background: var(--bg-sidebar, #ffffff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg, 6px 6px 24px rgba(0,0,0,0.14));
+
+  padding: 0.5rem 0;
+
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-6px);
+
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s;
+
+  z-index: 1200;
+}
+
+/* Show Laboratory children on Laboratory hover */
+.sidebar.collapsed .nav-group:hover > .nav-group-items,
+.sidebar.collapsed .nav-group:focus-within > .nav-group-items {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+
+/* ================================
+   PATHOLOGY / RADIOLOGY LEVEL
+   ================================ */
+
+.sidebar.collapsed .nav-group-items .nested-group {
+  position: relative;
+}
+
+
+/* Pathology/Radiology button */
+.sidebar.collapsed .nav-group-items .nested-group > .nav-group-toggle {
+  justify-content: flex-start;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+
+/* Pathology/Radiology submenu */
+.sidebar.collapsed .nav-group-items .nested-group > .nav-group-items {
+  top: -0.5rem;
+  left: 100%;
+  margin-left: 8px;
+
+  min-width: 220px;
+
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-6px);
+
+  z-index: 1300;
+}
+
+
+/* Show Pathology/Radiology submenu only when THAT item is hovered */
+.sidebar.collapsed
+.nav-group-items
+.nested-group:hover > .nav-group-items,
+.sidebar.collapsed
+.nav-group-items
+.nested-group:focus-within > .nav-group-items {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+
+/* Items inside flyouts */
+.sidebar.collapsed .nav-group-items .nav-item {
+  justify-content: flex-start;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  text-align: left;
+}
+
+
+/* Show labels inside collapsed flyouts */
+.sidebar.collapsed .nav-group-items .nav-label {
+  display: inline-block;
+}
+
+
+/* Don't hide nested arrow */
+.sidebar.collapsed .nav-group-items .toggle-icon {
+  display: block;
+  margin-left: auto;
+}
   `]
 })
 export class SidebarComponent implements OnInit, OnDestroy {

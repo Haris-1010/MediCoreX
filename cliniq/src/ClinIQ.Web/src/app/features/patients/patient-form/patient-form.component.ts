@@ -90,38 +90,35 @@ const STORAGE_KEY = 'patientFormFieldVisibility';
             <span class="required-badge">Required Fields</span>
           </div>
 
-          <div class="form-row">
-            <mat-form-field appearance="outline">
-              <mat-label>First Name</mat-label>
-              <input matInput formControlName="firstName" placeholder="Enter first name">
-              <mat-error>First name is required</mat-error>
-            </mat-form-field>
+          <div class="form-grid">
+            <div class="col-4">
+              <mat-form-field appearance="outline">
+                <mat-label>Full Name</mat-label>
+                <input matInput formControlName="fullName" placeholder="Enter full name">
+                <mat-error>Full name is required</mat-error>
+              </mat-form-field>
+            </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Last Name</mat-label>
-              <input matInput formControlName="lastName" placeholder="Enter last name">
-              <mat-error>Last name is required</mat-error>
-            </mat-form-field>
-          </div>
+            <div class="col-4">
+              <mat-form-field appearance="outline">
+                <mat-label>Phone Number</mat-label>
+                <input matInput formControlName="phone" placeholder="+92-300-1234567">
+                <mat-icon matPrefix>phone</mat-icon>
+                <mat-error>Phone number is required</mat-error>
+              </mat-form-field>
+            </div>
 
-          <div class="form-row">
-            <mat-form-field appearance="outline">
-              <mat-label>Phone Number</mat-label>
-              <input matInput formControlName="phone" placeholder="+92-300-1234567">
-              <mat-icon matPrefix>phone</mat-icon>
-              <mat-error>Phone number is required</mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Gender</mat-label>
-              <mat-select formControlName="gender">
-                <mat-option value="Male">Male</mat-option>
-                <mat-option value="Female">Female</mat-option>
-                <mat-option value="Other">Other</mat-option>
-              </mat-select>
-              <mat-icon matPrefix>wc</mat-icon>
-              <mat-error>Gender is required</mat-error>
-            </mat-form-field>
+            <div class="col-4">
+              <mat-form-field appearance="outline">
+                <mat-label>Gender</mat-label>
+                <mat-select formControlName="gender">
+                  <mat-option value="Male">Male</mat-option>
+                  <mat-option value="Female">Female</mat-option>
+                  <mat-option value="Other">Other</mat-option>
+                </mat-select>
+                <mat-icon matPrefix>wc</mat-icon>
+              </mat-form-field>
+            </div>
           </div>
         </div>
 
@@ -394,6 +391,21 @@ const STORAGE_KEY = 'patientFormFieldVisibility';
       flex: 1;
     }
 
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .col-4 {
+      grid-column: span 4;
+    }
+
+    .form-grid mat-form-field {
+      width: 100%;
+    }
+
     .full-width {
       width: 100%;
     }
@@ -459,6 +471,14 @@ const STORAGE_KEY = 'patientFormFieldVisibility';
     @media (max-width: 768px) {
       .form-row {
         flex-direction: column;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .col-4 {
+        grid-column: span 1;
       }
 
       .toolbar {
@@ -637,10 +657,9 @@ export class PatientFormComponent implements OnInit, OnDestroy {
 
   private initForm(): void {
     this.patientForm = this.fb.group({
-      firstName: ['', Validators.required],
-      lastName: ['', Validators.required],
+      fullName: ['', Validators.required],
       phone: ['', Validators.required],
-      gender: ['', Validators.required],
+      gender: [''],
       dateOfBirth: [''],
       age: [null],
       bloodGroup: [''],
@@ -683,8 +702,7 @@ export class PatientFormComponent implements OnInit, OnDestroy {
     this.api.getById<any>('v1/patients', id).subscribe({
       next: (patient) => {
         this.patientForm.patchValue({
-          firstName: patient.firstName,
-          lastName: patient.lastName,
+          fullName: patient.fullName || `${patient.firstName || ''} ${patient.lastName || ''}`.trim(),
           phone: patient.phone,
           gender: patient.gender,
           dateOfBirth: patient.dateOfBirth,
@@ -784,9 +802,14 @@ export class PatientFormComponent implements OnInit, OnDestroy {
     this.patientForm.disable();
     const formValue = this.patientForm.getRawValue();
 
+    const nameParts = (formValue.fullName || '').trim().split(/\s+/);
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ');
+
     const payload = {
-      firstName: formValue.firstName,
-      lastName: formValue.lastName,
+      fullName: formValue.fullName,
+      firstName,
+      lastName,
       phone: formValue.phone,
       gender: formValue.gender,
       dateOfBirth: formValue.dateOfBirth || null,

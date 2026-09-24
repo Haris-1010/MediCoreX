@@ -1,6 +1,7 @@
 using ClinIQ.API.Authorization;
 using ClinIQ.Application.Interfaces;
 using ClinIQ.Infrastructure.Data;
+using ClinIQ.Shared.Constants;
 using ClinIQ.Shared.DTOs.Platform;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -99,6 +100,32 @@ public class PlatformOrganizationsController : ControllerBase
         return result.Succeeded ? Ok(result.Data) : NotFound(new { message = result.Message });
     }
 
+    /// <summary>Read-only list of locations (branches) under this organization for platform admins.</summary>
+    [HttpGet("{id:guid}/locations")]
+    public async Task<IActionResult> GetLocations(Guid id, CancellationToken cancellationToken)
+    {
+        if (RequireSuperAdmin() is { } forbid) return forbid;
+
+        var locations = await _context.Branches.IgnoreQueryFilters().AsNoTracking()
+            .Where(b => b.TenantId == id && !b.IsDeleted)
+            .OrderByDescending(b => b.IsMainBranch)
+            .ThenBy(b => b.Name)
+            .Select(b => new
+            {
+                b.Id,
+                b.Name,
+                b.Code,
+                b.City,
+                b.Country,
+                b.Phone,
+                b.IsMainBranch,
+                b.IsActive
+            })
+            .ToListAsync(cancellationToken);
+
+        return Ok(locations);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody] CreateOrganizationRequest request,
@@ -169,8 +196,29 @@ public class PlatformOrganizationsController : ControllerBase
         owner.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
         owner.MustChangePassword = true;
         owner.PasswordChangedAt = null;
+        owner.PlainPassword = request.Password;
         await _context.SaveChangesAsync(cancellationToken);
 
         return Ok(new ResetPasswordResponse(owner.Id, owner.Email, request.Password, true));
+    }
+
+    /// <summary>Full permission catalogue for platform super-admins (not feature-gated).</summary>
+    [HttpGet("permission-catalog")]
+    public IActionResult GetPermissionCatalog()
+    {
+        if (RequireSuperAdmin() is { } forbid) return forbid;
+
+        var groups = PermissionCatalog.All
+            .GroupBy(p => p.Module)
+            .OrderBy(g => g.Key)
+            .Select(g => new
+            {
+                module = g.Key,
+                category = g.First().Category,
+                permissions = g.OrderBy(p => p.DisplayOrder)
+                    .Select(p => new { name = p.Name, displayName = p.DisplayName, displayOrder = p.DisplayOrder })
+            });
+
+        return Ok(groups);
     }
 }

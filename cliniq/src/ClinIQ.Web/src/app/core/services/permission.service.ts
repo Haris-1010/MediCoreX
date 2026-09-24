@@ -20,10 +20,11 @@ export interface CurrentUserContext {
   branchName: string | null;
   isSuperAdmin: boolean;
   isOwner: boolean;
+  hasAllLocationAccess?: boolean;
   roles: string[];
   permissions: string[];
   enabledModules: string[];
-  accessibleBranches: Array<{ id: string; name: string }>;
+  accessibleBranches: Array<{ branchId: string; branchName: string; isPrimary?: boolean }>;
 }
 
 /**
@@ -92,10 +93,11 @@ export class PermissionService {
       branchName: 'Development Branch',
       isSuperAdmin: false,
       isOwner: true,
+      hasAllLocationAccess: true,
       roles: ['Admin', 'SuperAdmin'],
       permissions,
       enabledModules,
-      accessibleBranches: [{ id: 'dev-branch', name: 'Development Branch' }]
+      accessibleBranches: [{ branchId: 'dev-branch', branchName: 'Development Branch', isPrimary: true }]
     };
   }
 

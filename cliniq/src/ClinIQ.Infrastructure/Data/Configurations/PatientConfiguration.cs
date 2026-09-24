@@ -93,5 +93,6 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.HasIndex(p => new { p.TenantId, p.Email });
         builder.HasIndex(p => new { p.TenantId, p.IsActive });
         builder.HasIndex(p => new { p.TenantId, p.LastVisitDate });
+        builder.HasIndex(p => new { p.TenantId, p.BranchId });
     }
 }

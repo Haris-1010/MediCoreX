@@ -15,7 +15,7 @@ import { AudioAnnouncementService } from '../token-generation/audio-announcement
         <mat-form-field appearance="outline" class="doctor-select">
           <mat-label>Select Doctor</mat-label>
           <mat-select [(value)]="selectedDoctorId" (selectionChange)="loadQueue()">
-            <mat-option *ngFor="let d of doctors" [value]="d.id">Dr. {{ d.fullName }}</mat-option>
+            <mat-option *ngFor="let d of doctors" [value]="d.id">Dr. {{ d.fullName }}<span *ngIf="d.specialization"> - ({{ d.specialization }})</span></mat-option>
           </mat-select>
         </mat-form-field>
       </app-page-header>

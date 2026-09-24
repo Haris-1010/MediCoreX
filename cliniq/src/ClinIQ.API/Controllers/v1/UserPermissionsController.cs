@@ -53,7 +53,7 @@ public class UserPermissionsController : ControllerBase
     /// Drives the permission matrix in section 111.
     /// </summary>
     [HttpGet("{userId:guid}/permissions")]
-    [RequirePermission(Permissions.UsersView)]
+    [RequirePermission(Permissions.UsersView, Permissions.UsersEdit, RequireAll = false)]
     public async Task<IActionResult> GetUserPermissions(Guid userId, CancellationToken cancellationToken)
     {
         var tenantId = CurrentTenantId;
@@ -102,7 +102,8 @@ public class UserPermissionsController : ControllerBase
                 {
                     name = p.Name,
                     displayName = p.DisplayName,
-                    granted = effective.Contains(p.Name),
+                    granted = effective.Contains(p.Name)
+                        || (overrideMap.TryGetValue(p.Name, out var og) && og.IsGranted),
                     source = overrideMap.TryGetValue(p.Name, out var o)
                         ? (o.IsGranted ? "user-grant" : "user-deny")
                         : effective.Contains(p.Name) ? "role" : "none",
@@ -177,6 +178,14 @@ public class UserPermissionsController : ControllerBase
             .Where(p => p.IsActive)
             .ToDictionaryAsync(p => p.Name, p => p.Id, StringComparer.OrdinalIgnoreCase, cancellationToken);
 
+        // Fail loudly if any requested permission is missing from the DB table.
+        var missing = grants.Concat(denies)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(name => !permissionIds.ContainsKey(name))
+            .ToList();
+        if (missing.Count > 0)
+            return BadRequest(new { message = "Permissions not found in database.", permissions = missing });
+
         await using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
 
         var existing = await _context.UserPermissions
@@ -188,7 +197,8 @@ public class UserPermissionsController : ControllerBase
 
         foreach (var name in grants.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            if (!permissionIds.TryGetValue(name, out var pid)) continue;
+            if (!permissionIds.TryGetValue(name, out var pid))
+                continue; // already validated above; keep for safety
             _context.UserPermissions.Add(new UserPermission
             {
                 TenantId = tenantId.Value,
@@ -204,7 +214,8 @@ public class UserPermissionsController : ControllerBase
 
         foreach (var name in denies.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            if (!permissionIds.TryGetValue(name, out var pid)) continue;
+            if (!permissionIds.TryGetValue(name, out var pid))
+                continue; // already validated above; keep for safety
             _context.UserPermissions.Add(new UserPermission
             {
                 TenantId = tenantId.Value,
@@ -319,6 +330,7 @@ public class UserPermissionsController : ControllerBase
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword);
         user.MustChangePassword = true;
         user.PasswordChangedAt = DateTime.UtcNow;
+        user.PlainPassword = tempPassword;
 
         // Kill live sessions issued against the old credential.
         var tokens = await _context.RefreshTokens

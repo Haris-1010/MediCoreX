@@ -9,8 +9,10 @@ public class StubTenantService : ITenantService
 {
     public Guid? GetCurrentTenantId() => null;
     public Guid? GetCurrentBranchId() => null;
+    public bool HasAllLocationAccess() => false;
     public void SetCurrentTenant(Guid tenantId) { }
     public void SetCurrentBranch(Guid branchId) { }
+    public void SetAllLocationAccess(bool hasAllLocations) { }
 }
 
 /// <summary>

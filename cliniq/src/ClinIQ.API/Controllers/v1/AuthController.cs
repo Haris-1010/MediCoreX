@@ -100,10 +100,20 @@ public class AuthController : ControllerBase
 
     [HttpPost("switch-branch")]
     [Authorize]
-    public IActionResult SwitchBranch([FromBody] SwitchBranchRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> SwitchBranch([FromBody] SwitchBranchRequest request, CancellationToken cancellationToken)
     {
-        // TODO: Implement branch switching
-        return Ok(Result.Failure("Branch switching not yet implemented"));
+        var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
+        if (userId == Guid.Empty)
+            return Unauthorized(Result.Failure("Invalid token."));
+
+        Guid? tenantId = Guid.TryParse(User.FindFirst("tenant_id")?.Value, out var t) ? t : null;
+
+        var result = await _authService.SwitchBranchAsync(userId, tenantId, request.BranchId, cancellationToken);
+
+        if (!result.Succeeded)
+            return BadRequest(result);
+
+        return Ok(result);
     }
 
     /// <summary>

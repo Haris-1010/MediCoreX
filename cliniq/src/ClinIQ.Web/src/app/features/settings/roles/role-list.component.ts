@@ -94,7 +94,7 @@ export class RoleListComponent implements OnInit {
   loadRoles() {
     this.api.get<any[]>('v1/roles').subscribe({
       next: (res: any) => {
-        this.roles = Array.isArray(res) ? res.filter(role => !role.isSystemRole) : [];
+        this.roles = Array.isArray(res) ? res.filter(role => !(role.isSystemRole && ['SuperAdmin', 'OrganizationOwner'].includes(role.name))) : [];
       },
       error: (err) => console.error('Failed to load roles', err)
     });

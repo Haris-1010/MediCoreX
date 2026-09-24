@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { PatientPickerComponent, PatientPickerValue } from '../../../shared/components/patient-picker/patient-picker.component';
 
 @Component({
   standalone: false,
@@ -14,17 +15,14 @@ import { NotificationService } from '../../../core/services/notification.service
         <form [formGroup]="orderForm" (ngSubmit)="onSubmit()">
           <div class="form-grid">
             <!-- Patient -->
-            <mat-form-field appearance="outline">
-              <mat-label>Patient *</mat-label>
-              <input matInput [matAutocomplete]="patientAuto" formControlName="patientSearch" placeholder="Search by name, phone, or MRN..." (focus)="onPatientFocus()" (input)="onPatientSearchInput($event)">
-              <mat-icon matPrefix>search</mat-icon>
-              <mat-autocomplete #patientAuto="matAutocomplete" [displayWith]="displayPatient" (optionSelected)="onPatientSelected($event)">
-                <mat-option *ngFor="let p of filteredPatients" [value]="p">
-                  <span>{{ p.fullName }} ({{ p.phone || 'No phone' }})</span>
-                </mat-option>
-              </mat-autocomplete>
-              <mat-error>Patient is required</mat-error>
-            </mat-form-field>
+            <div class="patient-field">
+              <app-patient-picker
+                #patientPicker
+                label="Patient"
+                [required]="true"
+                (patientChange)="onPatientChange($event)">
+              </app-patient-picker>
+            </div>
 
             <!-- Doctor -->
             <mat-form-field appearance="outline">
@@ -34,7 +32,7 @@ import { NotificationService } from '../../../core/services/notification.service
               <mat-autocomplete #doctorAuto="matAutocomplete" [displayWith]="displayDoctor" (optionSelected)="onDoctorSelected($event)">
                 <mat-option *ngFor="let d of filteredDoctors" [value]="d">
                   <div class="autocomplete-option">
-                    <span class="name">Dr. {{ d.fullName }} - {{ d.specialization || 'General' }}</span>
+                    <span class="name">Dr. {{ d.fullName }}<span *ngIf="d.specialization"> - ({{ d.specialization }})</span></span>
                   </div>
                 </mat-option>
               </mat-autocomplete>
@@ -57,16 +55,6 @@ import { NotificationService } from '../../../core/services/notification.service
               <textarea matInput formControlName="clinicalIndication" rows="2" placeholder="Reason for imaging study..."></textarea>
               <mat-error>Clinical indication is required</mat-error>
             </mat-form-field>
-          </div>
-
-          <!-- Selected Patient Card -->
-          <div class="selected-patient-card" *ngIf="selectedPatient">
-            <mat-icon>person</mat-icon>
-            <div class="patient-info">
-              <strong>{{ selectedPatient.fullName }}</strong>
-              <span>MRN: {{ selectedPatient.mrn }} | Phone: {{ selectedPatient.phone || 'N/A' }}</span>
-            </div>
-            <button mat-icon-button type="button" (click)="clearPatient()"><mat-icon>close</mat-icon></button>
           </div>
 
           <!-- Service Selection -->
@@ -217,11 +205,11 @@ import { NotificationService } from '../../../core/services/notification.service
   `]
 })
 export class RadiologyOrderFormComponent implements OnInit {
+  @ViewChild('patientPicker') patientPicker!: PatientPickerComponent;
+
   orderForm!: FormGroup;
   selectedPatient: any = null;
   saving = false;
-  filteredPatients: any[] = [];
-  allPatients: any[] = [];
   filteredDoctors: any[] = [];
   allDoctors: any[] = [];
   radiologyServices: any[] = [];
@@ -236,8 +224,7 @@ export class RadiologyOrderFormComponent implements OnInit {
 
   ngOnInit() {
     this.orderForm = this.fb.group({
-      patientSearch: ['', Validators.required],
-      patientId: ['', Validators.required],
+      patientId: [''],
       doctorId: ['', Validators.required],
       doctorSearch: [''],
       priority: ['Routine'],
@@ -261,43 +248,9 @@ export class RadiologyOrderFormComponent implements OnInit {
     return [];
   }
 
-  onPatientFocus() {
-    if (this.allPatients.length === 0) {
-      this.api.get<any[]>('v1/patients/search', { limit: 1000 }).subscribe({
-        next: r => {
-          this.allPatients = this.normalizeList(r);
-          this.filteredPatients = this.allPatients;
-        },
-        error: () => this.notification.error('Failed to load patients')
-      });
-    }
-  }
-
-  onPatientSearchInput(event: any) {
-    const term = (event.target.value || '').toLowerCase();
-    if (!term) { this.filteredPatients = this.allPatients; return; }
-    this.filteredPatients = this.allPatients.filter(p =>
-      (p.fullName || '').toLowerCase().includes(term) ||
-      (p.phone || '').toLowerCase().includes(term) ||
-      (p.mrn || '').toLowerCase().includes(term)
-    );
-  }
-
-  clearPatient() {
-    this.selectedPatient = null;
-    this.orderForm.patchValue({ patientId: '', patientSearch: '' });
-  }
-
-  displayPatient(p: any): string {
-    if (!p) return '';
-    if (typeof p === 'string') return p;
-    return `${p.fullName || ''} (${p.phone || 'No phone'})`;
-  }
-
-  onPatientSelected(event: any) {
-    const patient = event.option.value;
+  onPatientChange(patient: PatientPickerValue | null) {
     this.selectedPatient = patient;
-    this.orderForm.patchValue({ patientId: patient.id, patientSearch: patient });
+    this.orderForm.patchValue({ patientId: patient?.id || '' });
   }
 
   onDoctorFocus() {
@@ -324,7 +277,8 @@ export class RadiologyOrderFormComponent implements OnInit {
   displayDoctor(d: any): string {
     if (!d) return '';
     if (typeof d === 'string') return d;
-    return `Dr. ${d.fullName || ''} - ${d.specialization || 'General'}`;
+    const spec = d.specialization ? ` - (${d.specialization})` : '';
+    return `Dr. ${d.fullName || ''}${spec}`;
   }
 
   onDoctorSelected(e: any) {
@@ -349,8 +303,18 @@ export class RadiologyOrderFormComponent implements OnInit {
     return this.selectedServiceItems.reduce((sum, s) => sum + (s._price || 0), 0);
   }
 
-  onSubmit() {
-    if (this.orderForm.invalid || this.selectedServiceItems.length === 0) return;
+  async onSubmit() {
+    if (this.saving) return;
+    const patient = await this.patientPicker?.ensurePatient();
+    if (patient) this.orderForm.patchValue({ patientId: patient.id });
+    if (!this.orderForm.value.patientId) {
+      this.notification.error('Please select or create a patient');
+      return;
+    }
+    if (this.orderForm.invalid || this.selectedServiceItems.length === 0) {
+      if (this.selectedServiceItems.length === 0) this.notification.error('Please select at least one service');
+      return;
+    }
     this.saving = true;
     const fv = this.orderForm.value;
     const items = this.selectedServiceItems.map(s => ({

@@ -26,6 +26,7 @@ public static class PermissionCatalog
         new(Permissions.PatientsDelete, "Delete", "Patients", "Clinical", 40),
         new(Permissions.PatientsMerge,  "Merge",  "Patients", "Clinical", 50),
         new(Permissions.PatientsExport, "Export", "Patients", "Clinical", 60),
+        new(Permissions.PatientsPrint,  "Print",  "Patients", "Clinical", 70),
 
         // ---- OPD ----
         new(Permissions.OpdView, "View", "OPD", "Clinical", 10),
@@ -44,6 +45,7 @@ public static class PermissionCatalog
         new(Permissions.AppointmentsConfirm, "Confirm",  "Appointments", "Clinical", 50),
         new(Permissions.AppointmentsCheckIn, "Check In", "Appointments", "Clinical", 60),
         new(Permissions.AppointmentsDelete,  "Delete",   "Appointments", "Clinical", 70),
+        new(Permissions.AppointmentsPrint,   "Print",    "Appointments", "Clinical", 80),
 
         // ---- Visits ----
         new(Permissions.VisitsView,   "View",   "Visits", "Clinical", 10),
@@ -191,6 +193,12 @@ public static class PermissionCatalog
         new(Permissions.OrganizationBranding, "Branding", "Organization", "Administration", 25),
         new(Permissions.AuditView,    "View", "Audit",    "Administration", 10),
 
+        // ---- Locations (Branch) ----
+        new(Permissions.LocationsView,   "View",   "Locations", "Administration", 10),
+        new(Permissions.LocationsCreate, "Create", "Locations", "Administration", 20),
+        new(Permissions.LocationsEdit,   "Edit",   "Locations", "Administration", 30),
+        new(Permissions.LocationsDelete, "Delete", "Locations", "Administration", 40),
+
         // ---- Doctors ----
         new(Permissions.DoctorsView,   "View",   "Doctors", "Administration", 10),
         new(Permissions.DoctorsCreate, "Create", "Doctors", "Administration", 20),
@@ -246,5 +254,5 @@ public static class PermissionCatalog
 
     /// <summary>Prefixes that are never gated by the subscription.</summary>
     public static IReadOnlySet<string> UngatedPrefixes { get; } =
-        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "users", "roles", "settings", "audit", "doctors", "staff", "departments", "dashboard", "suppliers", "purchase_orders" };
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "users", "roles", "settings", "audit", "doctors", "staff", "departments", "dashboard", "suppliers", "purchase_orders", "organization" };
 }

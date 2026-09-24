@@ -15,6 +15,7 @@ public static class Permissions
     public const string PatientsDelete = "patients.delete";
     public const string PatientsMerge = "patients.merge";
     public const string PatientsExport = "patients.export";
+    public const string PatientsPrint = "patients.print";
 
     // OPD
     public const string OpdView = "opd.view";
@@ -33,6 +34,7 @@ public static class Permissions
     public const string AppointmentsConfirm = "appointments.confirm";
     public const string AppointmentsCheckIn = "appointments.checkin";
     public const string AppointmentsDelete = "appointments.delete";
+    public const string AppointmentsPrint = "appointments.print";
 
     // Visits
     public const string VisitsView = "visits.view";
@@ -178,6 +180,12 @@ public static class Permissions
     public const string SettingsView = "settings.view";
     public const string SettingsEdit = "settings.edit";
     public const string OrganizationBranding = "organization.branding";
+
+    // Locations (Branch = Location under the organization)
+    public const string LocationsView = "organization.locations.view";
+    public const string LocationsCreate = "organization.locations.create";
+    public const string LocationsEdit = "organization.locations.edit";
+    public const string LocationsDelete = "organization.locations.delete";
 
     // Doctors
     public const string DoctorsView = "doctors.view";

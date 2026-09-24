@@ -49,6 +49,7 @@ public static class RolePermissionDefaults
                 Permissions.UsersView, Permissions.UsersCreate, Permissions.UsersEdit, Permissions.UsersDelete,
                 Permissions.RolesView, Permissions.RolesCreate, Permissions.RolesEdit, Permissions.RolesDelete,
                 Permissions.SettingsView, Permissions.SettingsEdit, Permissions.OrganizationBranding,
+                Permissions.LocationsView, Permissions.LocationsCreate, Permissions.LocationsEdit, Permissions.LocationsDelete,
                 Permissions.DoctorsView, Permissions.DoctorsCreate, Permissions.DoctorsEdit, Permissions.DoctorsDelete,
                 Permissions.StaffView, Permissions.StaffCreate, Permissions.StaffEdit, Permissions.StaffDelete,
                 Permissions.DepartmentsView, Permissions.DepartmentsCreate, Permissions.DepartmentsEdit, Permissions.DepartmentsDelete,
@@ -72,6 +73,7 @@ public static class RolePermissionDefaults
                 Permissions.UsersView, Permissions.UsersCreate, Permissions.UsersEdit,
                 Permissions.RolesView, Permissions.SettingsView, Permissions.SettingsEdit,
                 Permissions.OrganizationBranding,
+                Permissions.LocationsView, Permissions.LocationsCreate, Permissions.LocationsEdit, Permissions.LocationsDelete,
                 Permissions.DoctorsView, Permissions.DoctorsCreate, Permissions.DoctorsEdit,
                 Permissions.StaffView, Permissions.StaffCreate, Permissions.StaffEdit,
                 Permissions.DepartmentsView, Permissions.DepartmentsCreate, Permissions.DepartmentsEdit,
@@ -90,7 +92,8 @@ public static class RolePermissionDefaults
                 Permissions.ReportsView, Permissions.ReportsExport,
                 Permissions.UsersView, Permissions.UsersCreate, Permissions.UsersEdit,
                 Permissions.DoctorsView, Permissions.StaffView, Permissions.DepartmentsView,
-                Permissions.SettingsView
+                Permissions.SettingsView,
+                Permissions.LocationsView
             },
 
             [Roles.Doctor] = new[]

@@ -26,8 +26,8 @@ public class PermissionSeeder
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
         await SeedPermissionsAsync(cancellationToken);
-        await SeedSystemRolesAsync(cancellationToken);
-        await SeedRolePermissionsAsync(cancellationToken);
+        // System role seeding intentionally disabled: access is assigned
+        // per-user from the Permissions dialog on the users list.
     }
 
     private async Task SeedPermissionsAsync(CancellationToken cancellationToken)

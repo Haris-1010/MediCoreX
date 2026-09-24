@@ -1,6 +1,5 @@
 using ClinIQ.Domain.Entities.Clinical;
 using ClinIQ.Domain.Enums;
-using ClinIQ.Domain.Enums;
 
 namespace ClinIQ.Domain.Tests.Entities;
 

@@ -157,7 +157,8 @@ public class OrganizationProvisioningService : IOrganizationProvisioningService
                 IsActive = true,
                 IsSuperAdmin = false,
                 MustChangePassword = true,
-                PasswordChangedAt = null
+                PasswordChangedAt = null,
+                PlainPassword = tempPassword
             };
             _context.Users.Add(masterUser);
 
@@ -261,7 +262,7 @@ public class OrganizationProvisioningService : IOrganizationProvisioningService
         var users = await _context.TenantUsers.IgnoreQueryFilters().AsNoTracking()
             .Where(tu => tu.TenantId == tenantId)
             .Join(_context.Users.IgnoreQueryFilters(), tu => tu.UserId, u => u.Id,
-                  (tu, u) => new { u.Id, u.FirstName, u.LastName, u.Email, tu.IsOwner, u.IsActive })
+                  (tu, u) => new { u.Id, u.FirstName, u.LastName, u.Email, tu.IsOwner, u.IsActive, u.PlainPassword })
             .ToListAsync(cancellationToken);
 
         var roleMap = await _context.UserRoles.IgnoreQueryFilters().AsNoTracking()
@@ -276,7 +277,8 @@ public class OrganizationProvisioningService : IOrganizationProvisioningService
             u.Email,
             u.IsOwner,
             u.IsActive,
-            roleMap.Where(r => r.UserId == u.Id).Select(r => r.Name).ToList()
+            roleMap.Where(r => r.UserId == u.Id).Select(r => r.Name).ToList(),
+            u.IsOwner ? u.PlainPassword : null
         )).ToList();
 
         return Result<OrganizationDetailDto>.Success(new OrganizationDetailDto(

@@ -177,7 +177,7 @@ interface PrescriptionItem {
 
         <!-- Medicines Table -->
         <div class="card medicines-card">
-          <h3>Medicines ({{ prescription.items?.length || 0 }})</h3>
+          <h3>Medicines ({{ prescription.items.length || 0 }})</h3>
 
           <div *ngIf="prescription.items?.length" class="medicines-table">
             <table mat-table [dataSource]="prescription.items" class="full-width-table">

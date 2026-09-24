@@ -406,6 +406,7 @@ public class DoctorsController : ControllerBase
                 NormalizedEmail = normalizedEmail,
                 EmailConfirmed = true,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("Doctor@123"),
+                PlainPassword = "Doctor@123",
                 FirstName = request.FirstName.Trim(),
                 LastName = request.LastName.Trim(),
                 PhoneNumber = request.PhoneNumber?.Trim(),

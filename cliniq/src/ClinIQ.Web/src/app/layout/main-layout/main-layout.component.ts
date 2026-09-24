@@ -13,6 +13,7 @@ import { LayoutService } from '../../core/services/layout.service';
       <div class="content-area" [class.collapsed]="layout.collapsed()">
         <app-header (menuToggle)="layout.toggle()"></app-header>
         <main class="main-content">
+          <app-location-context></app-location-context>
           <ng-content></ng-content>
         </main>
         <app-footer></app-footer>

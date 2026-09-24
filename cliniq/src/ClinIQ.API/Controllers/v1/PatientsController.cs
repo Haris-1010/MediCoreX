@@ -199,6 +199,9 @@ public class PatientsController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.PatientsCreate)]
     public async Task<IActionResult> CreatePatient([FromBody] CreatePatientRequest request)
     {
+        if (!TryResolveNames(request, out var firstName, out var lastName))
+            return BadRequest(Result.Failure("Full name is required."));
+
         // The tenant MUST come from the signed-in context. Falling back to the
         // first tenant in the database would mis-assign records to the wrong
         // organization, which is exactly how data leaked across orgs before.
@@ -226,8 +229,8 @@ public class PatientsController : ControllerBase
         {
             MRN = mrn,
             PatientNumber = patNumber,
-            FirstName = request.FirstName.Trim(),
-            LastName = request.LastName.Trim(),
+            FirstName = firstName,
+            LastName = lastName,
             DateOfBirth = ResolveDateOfBirth(request.DateOfBirth, request.Age),
             Gender = ParseGender(request.Gender),
             BloodGroup = ParseBloodGroup(request.BloodGroup),
@@ -263,12 +266,15 @@ public class PatientsController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.PatientsEdit)]
     public async Task<IActionResult> UpdatePatient(Guid id, [FromBody] CreatePatientRequest request)
     {
+        if (!TryResolveNames(request, out var firstName, out var lastName))
+            return BadRequest(Result.Failure("Full name is required."));
+
         var patient = await _context.Patients.FindAsync(id);
         if (patient == null || patient.IsDeleted)
             return NotFound(Result.Failure("Patient not found"));
 
-        patient.FirstName = request.FirstName.Trim();
-        patient.LastName = request.LastName.Trim();
+        patient.FirstName = firstName;
+        patient.LastName = lastName;
         patient.DateOfBirth = ResolveDateOfBirth(request.DateOfBirth, request.Age);
         patient.Gender = ParseGender(request.Gender);
         patient.BloodGroup = ParseBloodGroup(request.BloodGroup);
@@ -294,6 +300,25 @@ public class PatientsController : ControllerBase
 
         await _context.SaveChangesAsync();
         return Ok(Result.Success("Patient updated successfully"));
+    }
+
+    [HttpPatch("{id:guid}/phone")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.PatientsEdit)]
+    public async Task<IActionResult> UpdatePatientPhone(Guid id, [FromBody] UpdatePatientPhoneRequest request)
+    {
+        var phone = request.Phone?.Trim();
+        if (string.IsNullOrWhiteSpace(phone))
+            return BadRequest(Result.Failure("Phone is required."));
+
+        var patient = await _context.Patients.FindAsync(id);
+        if (patient == null || patient.IsDeleted)
+            return NotFound(Result.Failure("Patient not found"));
+
+        patient.Phone = phone;
+        patient.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(Result<object>.Success(new { id = patient.Id, phone = patient.Phone }, "Phone updated successfully"));
     }
 
     [HttpDelete("{id:guid}")]
@@ -508,11 +533,30 @@ public class PatientsController : ControllerBase
             return json.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         }
     }
+
+    private static bool TryResolveNames(CreatePatientRequest request, out string firstName, out string lastName)
+    {
+        firstName = string.Empty;
+        lastName = string.Empty;
+
+        var fullName = !string.IsNullOrWhiteSpace(request.FullName)
+            ? request.FullName.Trim()
+            : $"{request.FirstName} {request.LastName}".Trim();
+
+        if (string.IsNullOrWhiteSpace(fullName))
+            return false;
+
+        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        firstName = parts[0];
+        lastName = parts.Length > 1 ? string.Join(' ', parts.Skip(1)) : string.Empty;
+        return true;
+    }
 }
 
 public record CreatePatientRequest(
-    string FirstName,
-    string LastName,
+    string? FirstName,
+    string? LastName,
+    string? FullName,
     DateTime? DateOfBirth,
     int? Age,
     string? Gender,
@@ -537,3 +581,5 @@ public record CreatePatientRequest(
     string? InsurancePolicyNumber,
     string? NationalId
 );
+
+public record UpdatePatientPhoneRequest(string? Phone);

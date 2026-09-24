@@ -78,7 +78,8 @@ public record OrganizationUserDto(
     string Email,
     bool IsOwner,
     bool IsActive,
-    IReadOnlyList<string> Roles
+    IReadOnlyList<string> Roles,
+    string? PlainPassword = null
 );
 
 public record UpdateOrganizationRequest(

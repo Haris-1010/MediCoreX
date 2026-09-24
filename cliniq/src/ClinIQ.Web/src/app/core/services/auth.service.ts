@@ -29,6 +29,7 @@ export interface User {
   lastName: string;
   profilePictureUrl: string | null;
   isSuperAdmin: boolean;
+  isMaster: boolean;
   tenants: TenantMembership[];
 }
 
@@ -103,6 +104,7 @@ export class AuthService {
         lastName: 'Admin',
         profilePictureUrl: null,
         isSuperAdmin: true,
+        isMaster: false,
         tenants: [
           {
             tenantId: 'dev-tenant',
@@ -265,22 +267,29 @@ export class AuthService {
     return this.http.post<{ succeeded: boolean; data: LoginResponse }>(`${this.baseUrl}/switch-branch`, { branchId })
       .pipe(
         map(response => response.data),
-        tap(response => this.handleAuthentication(response))
+        tap(response => this.handleAuthentication(response, branchId))
       );
   }
 
-  private handleAuthentication(response: LoginResponse): void {
+  private handleAuthentication(response: LoginResponse, preferredBranchId?: string): void {
     this.storage.setItem(environment.tokenKey, response.accessToken);
     this.storage.setItem(environment.refreshTokenKey, response.refreshToken);
     this.storage.setItem(environment.userKey, response.user);
 
-    // Store first tenant/branch if available
+    // Store first tenant / selected branch if available
     const firstTenant = response.user.tenants?.[0];
     if (firstTenant) {
       this.storage.setItem(environment.tenantKey, firstTenant.tenantId);
-      const primaryBranch = firstTenant.branches?.find(b => b.isPrimary) || firstTenant.branches?.[0];
-      if (primaryBranch) {
-        this.storage.setItem(environment.branchKey, primaryBranch.branchId);
+
+      if (preferredBranchId === 'all') {
+        this.storage.setItem(environment.branchKey, 'all');
+      } else if (preferredBranchId) {
+        this.storage.setItem(environment.branchKey, preferredBranchId);
+      } else {
+        const primaryBranch = firstTenant.branches?.find(b => b.isPrimary) || firstTenant.branches?.[0];
+        if (primaryBranch) {
+          this.storage.setItem(environment.branchKey, primaryBranch.branchId);
+        }
       }
     }
 

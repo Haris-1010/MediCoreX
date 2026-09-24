@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { NotificationService } from '../../../core/services/notification.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 interface PlatformAdmin {
   id: string;
@@ -10,6 +11,7 @@ interface PlatformAdmin {
   lastName: string;
   email: string;
   isActive: boolean;
+  isMaster?: boolean;
 }
 
 @Component({
@@ -43,14 +45,18 @@ export class PlatformAdminsComponent implements OnInit {
   form!: FormGroup;
   saving = false;
   loading = true;
+  currentUserId = '';
 
   constructor(
     private fb: FormBuilder,
     private http: HttpClient,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private auth: AuthService
   ) {}
 
   ngOnInit(): void {
+    const me: any = this.auth.getCurrentUser();
+    this.currentUserId = me?.id || '';
     this.form = this.fb.group({
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
@@ -59,6 +65,14 @@ export class PlatformAdminsComponent implements OnInit {
       phone: ['']
     });
     this.loadAdmins();
+  }
+
+  isSelf(admin: PlatformAdmin): boolean {
+    return !!this.currentUserId && admin.id === this.currentUserId;
+  }
+
+  isProtected(admin: PlatformAdmin): boolean {
+    return !!admin.isMaster;
   }
 
   loadAdmins(): void {
@@ -87,6 +101,14 @@ export class PlatformAdminsComponent implements OnInit {
   }
 
   toggle(admin: PlatformAdmin): void {
+    if (admin.isMaster && admin.isActive) {
+      this.notification.error('You cannot suspend this admin.');
+      return;
+    }
+    if (admin.isActive && this.isSelf(admin)) {
+      this.notification.warning('You cannot deactivate your own account.');
+      return;
+    }
     const action = admin.isActive ? 'suspend' : 'activate';
     this.http.post(`${environment.apiUrl}/v1/platform/admins/${admin.id}/${action}`, {}).subscribe({
       next: () => {

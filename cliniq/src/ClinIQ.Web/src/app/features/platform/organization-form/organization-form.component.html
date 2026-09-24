@@ -8,11 +8,11 @@
     <mat-card class="credential-panel" *ngIf="createdCredentials">
       <h3>Save these credentials now</h3>
       <p>The password is shown once only and cannot be recovered later.</p>
-      <div>
+      <div class="cred-row">
         <strong>Email:</strong>
         <span class="cred">{{ createdCredentials.email }}</span>
       </div>
-      <div>
+      <div class="cred-row">
         <strong>Temporary password:</strong>
         <span class="cred">{{ createdCredentials.password }}</span>
       </div>
@@ -22,7 +22,8 @@
     </mat-card>
 
     <form [formGroup]="form" (ngSubmit)="submit()">
-      <mat-card style="padding:28px;">
+      <mat-card style="padding:32px;">
+        <!-- Organization details -->
         <div class="section-title">
           <mat-icon>corporate_fare</mat-icon>
           <div>
@@ -31,42 +32,44 @@
           </div>
         </div>
 
-        <div class="grid">
-          <mat-form-field appearance="outline">
-            <mat-label>Organization name</mat-label>
-            <input matInput formControlName="name" placeholder="e.g. CarePoint Hospital">
-            <mat-error *ngIf="form.get('name')?.hasError('required')">Name is required</mat-error>
-          </mat-form-field>
+        <div class="section-body">
+          <div class="grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Organization name</mat-label>
+              <input matInput formControlName="name" placeholder="e.g. CarePoint Hospital">
+              <mat-error *ngIf="form.get('name')?.hasError('required')">Name is required</mat-error>
+            </mat-form-field>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Organization code</mat-label>
-            <input matInput formControlName="code" placeholder="e.g. CAREPOINT">
-          </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Organization code</mat-label>
+              <input matInput formControlName="code" placeholder="e.g. CAREPOINT">
+            </mat-form-field>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Contact person</mat-label>
-            <input matInput formControlName="contactPersonName" placeholder="Full name">
-          </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Contact person</mat-label>
+              <input matInput formControlName="contactPersonName" placeholder="Full name">
+            </mat-form-field>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Contact email</mat-label>
-            <input matInput type="email" formControlName="contactEmail">
-          </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Contact email</mat-label>
+              <input matInput type="email" formControlName="contactEmail">
+            </mat-form-field>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Contact phone</mat-label>
-            <input matInput formControlName="contactPhone">
-          </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Contact phone</mat-label>
+              <input matInput formControlName="contactPhone">
+            </mat-form-field>
 
-          <mat-form-field appearance="outline" *ngIf="!isEdit">
-            <mat-label>Initial branch name</mat-label>
-            <input matInput formControlName="initialBranchName">
-          </mat-form-field>
+            <mat-form-field appearance="outline" *ngIf="!isEdit">
+              <mat-label>Initial branch name</mat-label>
+              <input matInput formControlName="initialBranchName">
+            </mat-form-field>
 
-          <mat-form-field appearance="outline" class="full">
-            <mat-label>Address</mat-label>
-            <textarea matInput rows="2" formControlName="address"></textarea>
-          </mat-form-field>
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Address</mat-label>
+              <textarea matInput rows="2" formControlName="address"></textarea>
+            </mat-form-field>
+          </div>
         </div>
 
         <!-- Master admin (create only) -->
@@ -78,25 +81,26 @@
               <p>This person receives an email with the temporary password. They can then invite their staff.</p>
             </div>
           </div>
-
-          <div class="grid">
-            <mat-form-field appearance="outline">
-              <mat-label>First name</mat-label>
-              <input matInput formControlName="firstName">
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Last name</mat-label>
-              <input matInput formControlName="lastName">
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Admin email</mat-label>
-              <input matInput type="email" formControlName="masterEmail">
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Temporary password</mat-label>
-              <input matInput type="text" formControlName="temporaryPassword">
-              <mat-hint>Min 8 characters. The org admin must change it on first login.</mat-hint>
-            </mat-form-field>
+          <div class="section-body">
+            <div class="grid">
+              <mat-form-field appearance="outline">
+                <mat-label>First name</mat-label>
+                <input matInput formControlName="firstName">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Last name</mat-label>
+                <input matInput formControlName="lastName">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Admin email</mat-label>
+                <input matInput type="email" formControlName="masterEmail">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Temporary password</mat-label>
+                <input matInput type="text" formControlName="temporaryPassword">
+                <mat-hint>Min 8 characters. The org admin must change it on first login.</mat-hint>
+              </mat-form-field>
+            </div>
           </div>
         </ng-container>
 
@@ -109,20 +113,69 @@
               <p>Master user account for this organization. Use "Reset admin password" below to generate a new temporary password.</p>
             </div>
           </div>
+          <div class="section-body">
+            <div class="grid">
+              <mat-form-field appearance="outline">
+                <mat-label>First name</mat-label>
+                <input matInput formControlName="firstName">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Last name</mat-label>
+                <input matInput formControlName="lastName">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Admin email</mat-label>
+                <input matInput type="email" formControlName="masterEmail">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Current password</mat-label>
+                <input matInput [value]="currentPassword" readonly>
+                <mat-hint>Readonly. Use "Reset admin password" below to change it.</mat-hint>
+              </mat-form-field>
+            </div>
+          </div>
+        </ng-container>
 
-          <div class="grid">
-            <mat-form-field appearance="outline">
-              <mat-label>First name</mat-label>
-              <input matInput formControlName="firstName">
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Last name</mat-label>
-              <input matInput formControlName="lastName">
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Admin email</mat-label>
-              <input matInput type="email" formControlName="masterEmail">
-            </mat-form-field>
+        <!-- Locations (edit only, read-only for platform) -->
+        <ng-container *ngIf="isEdit">
+          <div class="section-title">
+            <mat-icon>location_on</mat-icon>
+            <div>
+              <h3>Locations</h3>
+              <p>Branches and sites managed by this organization. Managed from the organization's Settings.</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="locations-loading" *ngIf="locationsLoading">Loading locations...</div>
+            <div class="locations-empty" *ngIf="!locationsLoading && locations.length === 0">No locations found.</div>
+            <table class="locations-table" *ngIf="!locationsLoading && locations.length > 0">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Code</th>
+                  <th>City</th>
+                  <th>Phone</th>
+                  <th>Status</th>
+                  <th>Main</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let loc of locations">
+                  <td>{{ loc.name }}</td>
+                  <td>{{ loc.code }}</td>
+                  <td>{{ loc.city || '—' }}</td>
+                  <td>{{ loc.phone || '—' }}</td>
+                  <td>
+                    <span class="loc-chip" [class.active]="loc.isActive" [class.inactive]="!loc.isActive">
+                      {{ loc.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="loc-chip main" *ngIf="loc.isMainBranch">Main</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </ng-container>
 
@@ -135,48 +188,55 @@
           </div>
         </div>
 
-        <div class="give-all-bar">
-          <div class="give-all-text">
-            <strong>Give All Permissions</strong>
-            <span>Enable every module for this organization at once.</span>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" [checked]="hasAllFeatures()" (change)="toggleAllFeatures()">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-
-        <div class="features-grid">
-          <div class="feature-card"
-               *ngFor="let feature of availableFeatures"
-               [class.selected]="isModuleSelected(feature.key)"
-               (click)="toggleModule(feature.key, !isModuleSelected(feature.key))">
-            <mat-icon class="ficon">{{ feature.icon }}</mat-icon>
-            <div class="ftext">
-              <strong>{{ feature.label }}</strong>
-              <small>{{ feature.description }}</small>
+        <div class="section-body">
+          <div class="give-all-bar">
+            <div class="give-all-text">
+              <strong>Give All Permissions</strong>
+              <span>Enable every module for this organization at once.</span>
             </div>
-            <mat-icon class="checkmark" *ngIf="isModuleSelected(feature.key)">check_circle</mat-icon>
+            <label class="toggle-switch">
+              <input type="checkbox" [checked]="hasAllFeatures()" (change)="toggleAllFeatures()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="features-grid">
+            <div class="feature-card"
+                 *ngFor="let feature of availableFeatures"
+                 [class.selected]="isModuleSelected(feature.key)"
+                 (click)="toggleModule(feature.key, !isModuleSelected(feature.key))">
+              <mat-icon class="ficon">{{ feature.icon }}</mat-icon>
+              <div class="ftext">
+                <strong>{{ feature.label }}</strong>
+                <small>{{ feature.description }}</small>
+              </div>
+              <mat-icon class="checkmark" *ngIf="isModuleSelected(feature.key)">check_circle</mat-icon>
+            </div>
           </div>
         </div>
 
         <!-- Password reset (edit only) -->
-        <div class="section-title" *ngIf="isEdit">
-          <mat-icon>vpn_key</mat-icon>
-          <div>
-            <h3>Reset admin password</h3>
-            <p>Generate a new temporary password for the organization's master user.</p>
+        <ng-container *ngIf="isEdit">
+          <div class="section-title">
+            <mat-icon>vpn_key</mat-icon>
+            <div>
+              <h3>Reset admin password</h3>
+              <p>Generate a new temporary password for the organization's master user.</p>
+            </div>
           </div>
-        </div>
-        <div style="display:flex;gap:12px;margin-top:12px;" *ngIf="isEdit">
-          <mat-form-field appearance="outline" style="min-width:300px;">
-            <mat-label>New master-user temporary password</mat-label>
-            <input matInput type="text" formControlName="temporaryPassword">
-          </mat-form-field>
-          <button mat-stroked-button type="button" (click)="resetMasterPassword()" [disabled]="saving">
-            Reset password
-          </button>
-        </div>
+          <div class="section-body">
+            <div class="password-row">
+              <mat-form-field appearance="outline">
+                <mat-label>New master-user temporary password</mat-label>
+                <input matInput type="text" formControlName="temporaryPassword" placeholder="Min 8 characters">
+              </mat-form-field>
+              <button mat-stroked-button type="button" (click)="resetMasterPassword()" [disabled]="saving" style="margin-top:6px;height:56px;">
+                <mat-icon>restart_alt</mat-icon>
+                Reset password
+              </button>
+            </div>
+          </div>
+        </ng-container>
 
         <div class="actions-bar">
           <button mat-button type="button" (click)="loadOrganizationsList()">Cancel</button>

@@ -35,9 +35,8 @@ public class AdmissionsController : ControllerBase
         [FromQuery] Guid? wardId = null,
         [FromQuery] string? searchTerm = null)
     {
-        var tenantId = _tenantService.GetCurrentTenantId();
-        var query = _context.Admissions.IgnoreQueryFilters()
-            .Where(a => !a.IsDeleted && (!tenantId.HasValue || a.TenantId == tenantId.Value));
+        var query = _context.Admissions
+            .Where(a => !a.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<AdmissionStatus>(status, true, out var statusEnum))
             query = query.Where(a => a.Status == statusEnum);
@@ -74,9 +73,9 @@ public class AdmissionsController : ControllerBase
                 Status = a.Status.ToString(),
                 a.AdmissionReason,
                 a.ProvisionalDiagnosis,
-                WardName = _context.Wards.IgnoreQueryFilters().Where(w => w.Id == a.CurrentWardId).Select(w => w.Name).FirstOrDefault(),
-                BedNumber = _context.Beds.IgnoreQueryFilters().Where(b => b.Id == a.CurrentBedId).Select(b => b.BedNumber).FirstOrDefault(),
-                RoomNumber = _context.Rooms.IgnoreQueryFilters().Where(r => r.Id == a.CurrentRoomId).Select(r => r.RoomNumber).FirstOrDefault(),
+                WardName = _context.Wards.Where(w => w.Id == a.CurrentWardId).Select(w => w.Name).FirstOrDefault(),
+                BedNumber = _context.Beds.Where(b => b.Id == a.CurrentBedId).Select(b => b.BedNumber).FirstOrDefault(),
+                RoomNumber = _context.Rooms.Where(r => r.Id == a.CurrentRoomId).Select(r => r.RoomNumber).FirstOrDefault(),
                 DaysAdmitted = a.DischargeDate.HasValue
                     ? (int)(a.DischargeDate.Value - a.AdmissionDate).TotalDays
                     : (int)(DateTime.UtcNow - a.AdmissionDate).TotalDays,
@@ -100,7 +99,7 @@ public class AdmissionsController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsView)]
     public async Task<IActionResult> GetAdmission(Guid id)
     {
-        var admission = await _context.Admissions.IgnoreQueryFilters()
+        var admission = await _context.Admissions
             .Where(a => a.Id == id && !a.IsDeleted)
             .Select(a => new
             {
@@ -120,11 +119,11 @@ public class AdmissionsController : ControllerBase
                 a.FinalDiagnosis,
                 a.DischargeSummary,
                 a.DischargeInstructions,
-                WardName = _context.Wards.IgnoreQueryFilters().Where(w => w.Id == a.CurrentWardId).Select(w => w.Name).FirstOrDefault(),
+                WardName = _context.Wards.Where(w => w.Id == a.CurrentWardId).Select(w => w.Name).FirstOrDefault(),
                 WardId = a.CurrentWardId,
-                BedNumber = _context.Beds.IgnoreQueryFilters().Where(b => b.Id == a.CurrentBedId).Select(b => b.BedNumber).FirstOrDefault(),
+                BedNumber = _context.Beds.Where(b => b.Id == a.CurrentBedId).Select(b => b.BedNumber).FirstOrDefault(),
                 BedId = a.CurrentBedId,
-                RoomNumber = _context.Rooms.IgnoreQueryFilters().Where(r => r.Id == a.CurrentRoomId).Select(r => r.RoomNumber).FirstOrDefault(),
+                RoomNumber = _context.Rooms.Where(r => r.Id == a.CurrentRoomId).Select(r => r.RoomNumber).FirstOrDefault(),
                 RoomId = a.CurrentRoomId,
                 DaysAdmitted = a.DischargeDate.HasValue
                     ? (int)(a.DischargeDate.Value - a.AdmissionDate).TotalDays
@@ -210,10 +209,8 @@ public class AdmissionsController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsEdit)]
     public async Task<IActionResult> UpdateAdmission(Guid id, [FromBody] CreateAdmissionRequest request)
     {
-        var tenantId = _tenantService.GetCurrentTenantId();
-        var admission = await _context.Admissions.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted
-                && (!tenantId.HasValue || a.TenantId == tenantId.Value));
+        var admission = await _context.Admissions
+            .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
         if (admission == null)
             return NotFound(Result.Failure("Admission not found"));
 
@@ -232,10 +229,8 @@ public class AdmissionsController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.AdmissionsEdit)]
     public async Task<IActionResult> DeleteAdmission(Guid id)
     {
-        var tenantId = _tenantService.GetCurrentTenantId();
-        var admission = await _context.Admissions.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted
-                && (!tenantId.HasValue || a.TenantId == tenantId.Value));
+        var admission = await _context.Admissions
+            .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
         if (admission == null)
             return NotFound(Result.Failure("Admission not found"));
 
@@ -376,8 +371,8 @@ public class AdmissionsController : ControllerBase
             .Select(ba => new
             {
                 ba.Id,
-                Bed = _context.Beds.IgnoreQueryFilters().Where(b => b.Id == ba.BedId).Select(b => b.BedNumber).FirstOrDefault(),
-                Ward = _context.Wards.IgnoreQueryFilters().Where(w => w.Id == _context.Rooms.IgnoreQueryFilters().Where(r => r.Id == _context.Beds.IgnoreQueryFilters().Where(b => b.Id == ba.BedId).Select(b => b.RoomId).FirstOrDefault()).Select(r => r.WardId).FirstOrDefault()).Select(w => w.Name).FirstOrDefault(),
+                Bed = _context.Beds.Where(b => b.Id == ba.BedId).Select(b => b.BedNumber).FirstOrDefault(),
+                Ward = _context.Wards.Where(w => w.Id == _context.Rooms.Where(r => r.Id == _context.Beds.Where(b => b.Id == ba.BedId).Select(b => b.RoomId).FirstOrDefault()).Select(r => r.WardId).FirstOrDefault()).Select(w => w.Name).FirstOrDefault(),
                 ba.AllocatedAt,
                 ba.ReleasedAt,
                 Duration = ba.ReleasedAt.HasValue
@@ -579,9 +574,10 @@ public class AdmissionsController : ControllerBase
             }
         }
 
-        // Generate invoice number
+        // Generate invoice number (org-wide uniqueness — include other locations / soft-deleted)
         var invoicePrefix = "INV-";
         var lastNumbers = await _context.Invoices
+            .IgnoreQueryFilters()
             .Where(i => i.TenantId == tenantId && i.InvoiceNumber.StartsWith(invoicePrefix))
             .Select(i => i.InvoiceNumber)
             .ToListAsync();

@@ -84,6 +84,7 @@ public class AuthService : IAuthService
             NormalizedEmail = request.Email.ToUpper(),
             EmailConfirmed = true,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            PlainPassword = request.Password,
             FirstName = request.FirstName,
             LastName = request.LastName,
             PhoneNumber = request.Phone,
@@ -182,6 +183,7 @@ public class AuthService : IAuthService
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         user.MustChangePassword = false;
         user.PasswordChangedAt = DateTime.UtcNow;
+        user.PlainPassword = null;
 
         // Any outstanding refresh token was issued against the old credential.
         var activeTokens = await _context.RefreshTokens
@@ -237,7 +239,7 @@ public class AuthService : IAuthService
             .IgnoreQueryFilters()
             .Where(tu => tu.UserId == user.Id && tu.IsActive)
             .Join(_context.Tenants.IgnoreQueryFilters(), tu => tu.TenantId, t => t.Id,
-                  (tu, t) => new { tu.TenantId, tu.IsOwner, TenantName = t.Name, t.IsActive })
+                  (tu, t) => new { tu.TenantId, tu.IsOwner, tu.HasAllLocations, TenantName = t.Name, t.IsActive })
             .Where(x => x.IsActive)
             .ToListAsync(cancellationToken);
 
@@ -257,6 +259,7 @@ public class AuthService : IAuthService
 
         // ---- resolve branch the same way ----
         Guid? branchId = null;
+        var hasAllLocations = membership?.HasAllLocations == true;
         if (tenantId.HasValue)
         {
             var branchIds = await _context.BranchUsers
@@ -266,7 +269,7 @@ public class AuthService : IAuthService
                 .Select(bu => bu.BranchId)
                 .ToListAsync(cancellationToken);
 
-            if (requestedBranchId.HasValue && branchIds.Contains(requestedBranchId.Value))
+            if (requestedBranchId.HasValue && (branchIds.Contains(requestedBranchId.Value) || hasAllLocations))
                 branchId = requestedBranchId.Value;
             else if (branchIds.Count > 0)
                 branchId = branchIds[0];
@@ -280,6 +283,7 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.Surname, user.LastName),
             new Claim("full_name", user.FullName),
             new Claim("is_super_admin", user.IsSuperAdmin.ToString().ToLower()),
+            new Claim("is_master", user.IsMaster.ToString().ToLower()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
@@ -291,6 +295,9 @@ public class AuthService : IAuthService
 
         if (membership?.IsOwner == true)
             claims.Add(new Claim("is_owner", "true"));
+
+        if (hasAllLocations)
+            claims.Add(new Claim("all_locations", "true"));
 
         // Roles scoped to the tenant we just resolved.
         var userRoles = await _context.UserRoles
@@ -352,7 +359,8 @@ public class AuthService : IAuthService
                 user.FirstName,
                 user.LastName,
                 user.ProfilePictureUrl,
-                user.IsSuperAdmin,
+            user.IsSuperAdmin,
+            user.IsMaster,
                 tenantDtos
             )
         );
@@ -410,6 +418,7 @@ public class AuthService : IAuthService
 
         Guid? effectiveTenantId = tenantId;
         bool isOwner = false;
+        bool hasAllLocations = user.IsSuperAdmin;
         string? tenantName = null;
         IReadOnlySet<string> enabledFeatures = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -423,8 +432,10 @@ public class AuthService : IAuthService
                 {
                     tenantName = ambTenant.Name;
                     enabledFeatures = await _entitlementService.GetEnabledFeaturesAsync(ambTenant.Id, cancellationToken);
-                    isOwner = await _context.TenantUsers.IgnoreQueryFilters()
-                        .AnyAsync(tu => tu.TenantId == ambTenant.Id && tu.UserId == userId && tu.IsOwner, cancellationToken);
+                    var ambMembership = await _context.TenantUsers.IgnoreQueryFilters()
+                        .FirstOrDefaultAsync(tu => tu.TenantId == ambTenant.Id && tu.UserId == userId, cancellationToken);
+                    isOwner = ambMembership?.IsOwner == true;
+                    hasAllLocations = true;
                 }
             }
         }
@@ -433,7 +444,7 @@ public class AuthService : IAuthService
             var membership = effectiveTenantId.HasValue
                 ? await _context.TenantUsers.IgnoreQueryFilters().AsNoTracking()
                     .Where(tu => tu.UserId == userId && tu.TenantId == effectiveTenantId.Value && tu.IsActive)
-                    .Select(tu => new { tu.TenantId, tu.IsOwner })
+                    .Select(tu => new { tu.TenantId, tu.IsOwner, tu.HasAllLocations })
                     .FirstOrDefaultAsync(cancellationToken)
                 : null;
 
@@ -442,7 +453,7 @@ public class AuthService : IAuthService
                 membership = await _context.TenantUsers.IgnoreQueryFilters().AsNoTracking()
                     .Where(tu => tu.UserId == userId && tu.IsActive)
                     .Join(_context.Tenants.IgnoreQueryFilters().Where(t => t.IsActive), tu => tu.TenantId, t => t.Id,
-                          (tu, t) => new { tu.TenantId, tu.IsOwner })
+                          (tu, t) => new { tu.TenantId, tu.IsOwner, tu.HasAllLocations })
                     .FirstOrDefaultAsync(cancellationToken);
             }
 
@@ -451,6 +462,7 @@ public class AuthService : IAuthService
 
             effectiveTenantId = membership.TenantId;
             isOwner = membership.IsOwner;
+            hasAllLocations = membership.HasAllLocations;
 
             var tenant = await _context.Tenants.IgnoreQueryFilters().AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == effectiveTenantId.Value, cancellationToken);
@@ -492,13 +504,41 @@ public class AuthService : IAuthService
         List<BranchAccessDto> branches = new();
         if (effectiveTenantId.HasValue)
         {
-            branches = await _context.BranchUsers.IgnoreQueryFilters().AsNoTracking()
-                .Where(bu => bu.UserId == userId && bu.TenantId == effectiveTenantId.Value && bu.IsActive)
-                .Join(_context.Branches.IgnoreQueryFilters().Where(b => b.IsActive && !b.IsDeleted),
-                      bu => bu.BranchId, b => b.Id,
-                      (bu, b) => new { b.Id, b.Name, bu.IsPrimary })
-                .Select(x => new BranchAccessDto(x.Id, x.Name, x.IsPrimary))
-                .ToListAsync(cancellationToken);
+            if (hasAllLocations)
+            {
+                // All Locations / super admin: every active location in the org,
+                // not just BranchUser assignments.
+                var allBranches = await _context.Branches.IgnoreQueryFilters().AsNoTracking()
+                    .Where(b => b.TenantId == effectiveTenantId.Value && b.IsActive && !b.IsDeleted)
+                    .OrderByDescending(b => b.IsMainBranch)
+                    .ThenBy(b => b.Name)
+                    .Select(b => new { b.Id, b.Name })
+                    .ToListAsync(cancellationToken);
+
+                var primaryIdList = await _context.BranchUsers.IgnoreQueryFilters().AsNoTracking()
+     .Where(bu => bu.UserId == userId
+               && bu.TenantId == effectiveTenantId.Value
+               && bu.IsActive
+               && bu.IsPrimary)
+     .Select(bu => bu.BranchId)
+     .ToListAsync(cancellationToken);
+
+                var primaryIds = new HashSet<Guid>(primaryIdList);
+
+                branches = allBranches
+                    .Select(b => new BranchAccessDto(b.Id, b.Name, primaryIds.Contains(b.Id)))
+                    .ToList();
+            }
+            else
+            {
+                branches = await _context.BranchUsers.IgnoreQueryFilters().AsNoTracking()
+                    .Where(bu => bu.UserId == userId && bu.TenantId == effectiveTenantId.Value && bu.IsActive)
+                    .Join(_context.Branches.IgnoreQueryFilters().Where(b => b.IsActive && !b.IsDeleted),
+                          bu => bu.BranchId, b => b.Id,
+                          (bu, b) => new { b.Id, b.Name, bu.IsPrimary })
+                    .Select(x => new BranchAccessDto(x.Id, x.Name, x.IsPrimary))
+                    .ToListAsync(cancellationToken);
+            }
         }
 
         Guid? effectiveBranchId = branchId;
@@ -521,12 +561,89 @@ public class AuthService : IAuthService
             effectiveBranchId,
             branchName,
             user.IsSuperAdmin,
+            user.IsMaster,
             isOwner,
+            hasAllLocations,
             roles,
             permissions.ToList(),
             branches,
             modules);
 
         return Result<CurrentUserContextDto>.Success(dto);
+    }
+
+    public async Task<Result<LoginResponse>> SwitchBranchAsync(
+        Guid userId, Guid? tenantId, string branchIdOrAll, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(branchIdOrAll))
+            return Result<LoginResponse>.Failure("A location is required.");
+
+        var user = await _context.Users.IgnoreQueryFilters().AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, cancellationToken);
+        if (user is null)
+            return Result<LoginResponse>.Failure("User not found.");
+
+        var membership = tenantId.HasValue
+            ? await _context.TenantUsers.IgnoreQueryFilters().AsNoTracking()
+                .FirstOrDefaultAsync(tu => tu.UserId == userId
+                                        && tu.TenantId == tenantId.Value
+                                        && tu.IsActive, cancellationToken)
+            : await _context.TenantUsers.IgnoreQueryFilters().AsNoTracking()
+                .Where(tu => tu.UserId == userId && tu.IsActive)
+                .Join(_context.Tenants.IgnoreQueryFilters().Where(t => t.IsActive),
+                      tu => tu.TenantId, t => t.Id, (tu, t) => tu)
+                .FirstOrDefaultAsync(cancellationToken);
+
+        if (membership is null && !user.IsSuperAdmin)
+            return Result<LoginResponse>.Failure("You do not have access to that organization.");
+
+        var effectiveTenantId = membership?.TenantId ?? tenantId;
+        var hasAllLocations = membership?.HasAllLocations == true || user.IsSuperAdmin;
+
+        Guid? requestedBranchId = null;
+
+        if (branchIdOrAll.Equals("all", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!hasAllLocations)
+                return Result<LoginResponse>.Failure("You do not have All Locations access.");
+
+            // Keep a concrete write target: primary assigned branch.
+            if (effectiveTenantId.HasValue)
+            {
+                requestedBranchId = await _context.BranchUsers
+                    .IgnoreQueryFilters().AsNoTracking()
+                    .Where(bu => bu.UserId == userId
+                              && bu.TenantId == effectiveTenantId.Value
+                              && bu.IsActive)
+                    .OrderByDescending(bu => bu.IsPrimary)
+                    .Select(bu => (Guid?)bu.BranchId)
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+        }
+        else
+        {
+            if (!Guid.TryParse(branchIdOrAll, out var parsed))
+                return Result<LoginResponse>.Failure("Invalid location id.");
+
+            if (effectiveTenantId.HasValue)
+            {
+                var allowed = await _context.BranchUsers
+                    .IgnoreQueryFilters().AsNoTracking()
+                    .AnyAsync(bu => bu.UserId == userId
+                                  && bu.TenantId == effectiveTenantId.Value
+                                  && bu.BranchId == parsed
+                                  && bu.IsActive, cancellationToken);
+
+                if (!allowed && !hasAllLocations)
+                    return Result<LoginResponse>.Failure("You do not have access to that location.");
+            }
+
+            requestedBranchId = parsed;
+        }
+
+        return await GenerateJwtTokenAsync(
+            user, cancellationToken,
+            requestedTenantId: effectiveTenantId,
+            requestedBranchId: requestedBranchId);
     }
 }

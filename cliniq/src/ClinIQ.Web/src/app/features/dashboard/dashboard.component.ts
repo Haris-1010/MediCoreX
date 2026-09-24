@@ -5,6 +5,9 @@ import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SignalRService } from '../../core/services/signalr.service';
 import { PermissionService } from '../../core/services/permission.service';
+import { TenantService } from '../../core/services/tenant.service';
+import { StorageService } from '../../core/services/storage.service';
+import { environment } from '../../../environments/environment';
 
 interface DashboardStats {
   totalPatients: number;
@@ -27,6 +30,18 @@ interface TodayAppointment {
   selector: 'app-dashboard',
   template: `
     <app-main-layout>
+      <!-- Location-aware page header -->
+      <div class="dashboard-heading">
+        <div class="heading-text">
+          <h1>Dashboard</h1>
+          <p class="heading-sub">{{ locationSubtitle }}</p>
+        </div>
+        <div class="location-chip" *ngIf="showLocationChip" [class.all-locations]="isAllLocations">
+          <mat-icon>{{ isAllLocations ? 'public' : 'location_on' }}</mat-icon>
+          <span>{{ locationLabel }}</span>
+        </div>
+      </div>
+
       <!-- Stats Cards -->
       <div class="stats-grid">
         <app-stats-card
@@ -34,7 +49,7 @@ interface TodayAppointment {
           [value]="stats.totalPatients"
           icon="person"
           color="primary"
-          subtitle="Patients cared for since day one">
+          [subtitle]="statsScopeSuffix('Patients cared for since day one')">
         </app-stats-card>
 
         <app-stats-card
@@ -42,7 +57,7 @@ interface TodayAppointment {
           [value]="stats.totalAppointments"
           icon="event"
           color="accent"
-          subtitle="Appointments scheduled today">
+          [subtitle]="statsScopeSuffix('Appointments scheduled today')">
         </app-stats-card>
 
         <app-stats-card
@@ -59,7 +74,7 @@ interface TodayAppointment {
           [isCurrency]="true"
           icon="account_balance"
           color="success"
-          subtitle="Keep Record of your balance payments">
+          [subtitle]="statsScopeSuffix('Keep Record of your balance payments')">
         </app-stats-card>
       </div>
 
@@ -115,6 +130,58 @@ interface TodayAppointment {
     </app-main-layout>
   `,
   styles: [`
+    .dashboard-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .heading-text h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-primary, #333);
+    }
+
+    .heading-sub {
+      margin: 0.25rem 0 0;
+      color: var(--text-muted, #666);
+      font-size: 0.875rem;
+    }
+
+    .location-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.75rem;
+      background: var(--bg-badge, #eef2ff);
+      border: 1px solid var(--border-color, #e0e7ff);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-primary, #334155);
+    }
+
+    .location-chip.all-locations {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+      color: #065f46;
+    }
+
+    .location-chip mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: var(--accent-primary, #667eea);
+    }
+
+    .location-chip.all-locations mat-icon {
+      color: #059669;
+    }
+
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -238,16 +305,33 @@ export class DashboardComponent implements OnInit, OnDestroy {
   canViewInventory = false;
   permissionsReady = false;
 
+  showLocationChip = false;
+  isAllLocations = false;
+  locationLabel = '';
+  locationSubtitle = 'Organization overview';
+
   private destroy$ = new Subject<void>();
 
   constructor(
     private api: ApiService,
     private authService: AuthService,
     private signalR: SignalRService,
-    private permissions: PermissionService
+    private permissions: PermissionService,
+    private tenantService: TenantService,
+    private storage: StorageService
   ) {}
 
   ngOnInit(): void {
+    this.refreshLocationContext();
+
+    this.tenantService.currentBranch$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.refreshLocationContext());
+
+    this.tenantService.branches$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.refreshLocationContext());
+
     if (this.permissions.isLoaded()) {
       this.checkPermissions();
       this.loadDashboardData();
@@ -270,12 +354,44 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.setupRealtimeUpdates();
   }
 
+  private refreshLocationContext(): void {
+    const stored = this.storage.getItem<string>(environment.branchKey);
+    this.isAllLocations = stored === 'all';
+
+    const ctx = this.permissions.current();
+    const hasAll = !!(ctx?.hasAllLocationAccess || ctx?.isSuperAdmin);
+    const branchCount = ctx?.accessibleBranches?.length
+      ?? 0;
+
+    this.showLocationChip = branchCount > 1 || (hasAll && branchCount > 0);
+
+    if (this.isAllLocations) {
+      this.locationLabel = 'All Locations';
+      this.locationSubtitle = 'Organization-wide metrics across all locations';
+      return;
+    }
+
+    const current = this.tenantService.getCurrentBranch();
+    this.locationLabel = current?.name || ctx?.branchName || '';
+    this.locationSubtitle = this.showLocationChip && this.locationLabel
+      ? `Metrics for ${this.locationLabel}`
+      : 'Organization overview';
+  }
+
   private checkPermissions(): void {
     this.canViewPatients = this.permissions.has('patients.view');
     this.canViewAppointments = this.permissions.has('appointments.view');
     this.canViewReports = this.permissions.has('reports.view') || this.permissions.has('dashboard.view');
     this.canViewInventory = this.permissions.has('inventory.view');
     this.permissionsReady = true;
+    this.refreshLocationContext();
+  }
+
+  statsScopeSuffix(base: string): string {
+    if (!this.showLocationChip) return base;
+    if (this.isAllLocations) return `${base} · All Locations`;
+    if (this.locationLabel) return `${base} · ${this.locationLabel}`;
+    return base;
   }
 
   ngOnDestroy(): void {

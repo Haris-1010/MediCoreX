@@ -1,10 +1,23 @@
 <div class="org-list">
   <div class="filter-bar">
-    <mat-form-field appearance="outline" class="search">
-      <mat-icon matPrefix>search</mat-icon>
-      <mat-label>Search organizations</mat-label>
-      <input matInput [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()">
-    </mat-form-field>
+    <div class="filters">
+      <mat-form-field appearance="outline" class="search">
+        <mat-icon matPrefix>search</mat-icon>
+        <mat-label>Search organizations</mat-label>
+        <input matInput [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()"
+               placeholder="Name, code, or email">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="status-filter">
+        <mat-label>Status</mat-label>
+        <mat-select [(ngModel)]="statusFilter" (ngModelChange)="applyFilter()">
+          <mat-option value="all">All</mat-option>
+          <mat-option value="active">Active</mat-option>
+          <mat-option value="inactive">Inactive</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
     <button mat-raised-button color="primary" (click)="createNew()">
       <mat-icon>add_business</mat-icon>
       New organization
@@ -15,45 +28,82 @@
     <mat-spinner diameter="36"></mat-spinner>
   </div>
 
-  <div class="empty" *ngIf="!loading && !filtered.length">
-    <mat-icon>corporate_fare</mat-icon>
-    <h3>No organizations found</h3>
-    <p>Create your first customer organization to get started.</p>
-    <button mat-stroked-button color="primary" (click)="createNew()">Create organization</button>
-  </div>
-
-  <div class="org-tile" *ngFor="let org of filtered" (click)="openDetail(org)">
-    <div class="org-avatar">
+  <div class="table-card" *ngIf="!loading">
+    <div class="empty" *ngIf="!dataSource.data.length">
       <mat-icon>corporate_fare</mat-icon>
-    </div>
-    <div class="org-info">
-      <h3>{{ org.name }}</h3>
-      <div class="meta">
-        <span>{{ org.code || '—' }}</span>
-        <span><mat-icon>mail</mat-icon> {{ org.contactEmail || 'No email' }}</span>
-      </div>
-    </div>
-    <div class="stat-cell">
-      <strong>{{ org.userCount }}</strong>
-      <small>Users</small>
-    </div>
-    <div class="stat-cell">
-      <strong>{{ org.branchCount }}</strong>
-      <small>Branches</small>
-    </div>
-    <div>
-      <span class="status-chip" [class.active]="org.isActive" [class.inactive]="!org.isActive">
-        {{ org.isActive ? 'Active' : 'Inactive' }}
-      </span>
-    </div>
-    <div class="tile-actions" (click)="$event.stopPropagation()">
-      <button mat-icon-button matTooltip="Activate / Deactivate" (click)="toggleActive(org)">
-        <mat-icon>{{ org.isActive ? 'pause_circle' : 'play_circle' }}</mat-icon>
+      <h3>No organizations found</h3>
+      <p *ngIf="searchTerm || statusFilter !== 'all'">Try changing your search or status filter.</p>
+      <p *ngIf="!searchTerm && statusFilter === 'all'">Create your first customer organization to get started.</p>
+      <button mat-stroked-button color="primary" (click)="createNew()" *ngIf="!searchTerm && statusFilter === 'all'">
+        Create organization
       </button>
-      <button mat-button color="primary" (click)="openDetail(org)">
-        Manage
-        <mat-icon>chevron_right</mat-icon>
-      </button>
+    </div>
+
+    <div style="overflow-x:auto;" *ngIf="dataSource.data.length">
+      <table mat-table [dataSource]="dataSource" class="org-table">
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Organization</th>
+          <td mat-cell *matCellDef="let org">
+            <span class="strong">{{ org.name }}</span>
+            <span class="sub">{{ org.createdAt | date:'mediumDate' }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="code">
+          <th mat-header-cell *matHeaderCellDef>Code</th>
+          <td mat-cell *matCellDef="let org">{{ org.code || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef>Email</th>
+          <td mat-cell *matCellDef="let org">{{ org.contactEmail || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="users">
+          <th mat-header-cell *matHeaderCellDef>Users</th>
+          <td mat-cell *matCellDef="let org" class="stat-cell">{{ org.userCount }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="branches">
+          <th mat-header-cell *matHeaderCellDef>Branches</th>
+          <td mat-cell *matCellDef="let org" class="stat-cell">{{ org.branchCount }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let org">
+            <span class="status-chip" [class.active]="org.isActive" [class.inactive]="!org.isActive">
+              {{ org.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef>Created</th>
+          <td mat-cell *matCellDef="let org">{{ org.createdAt | date:'mediumDate' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let org" class="actions-cell" (click)="$event.stopPropagation()">
+            <button mat-icon-button matTooltip="Activate / Deactivate" (click)="toggleActive(org, $event)">
+              <mat-icon>{{ org.isActive ? 'pause_circle' : 'play_circle' }}</mat-icon>
+            </button>
+            <button mat-button color="primary" (click)="openDetail(org)">
+              Manage
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="openDetail(row)"></tr>
+      </table>
+
+      <mat-paginator [pageSize]="10"
+                     [pageSizeOptions]="[10, 25, 50]"
+                     showFirstLastButtons>
+      </mat-paginator>
     </div>
   </div>
 </div>

@@ -17,11 +17,18 @@ namespace ClinIQ.Infrastructure.Services;
 /// exactly one case — a platform super admin impersonating an organization —
 /// and TenantResolutionMiddleware re-verifies super-admin status server-side
 /// before setting it.
+///
+/// Branch (location) scope:
+///   - branch_id claim = specific location for write stamping and scoped reads
+///   - all_locations claim (or super-admin) = read every location in the tenant
+///   - X-Branch-Id header is validated by middleware (membership / all-locations)
+///     and only then applied as an override
 /// </summary>
 public class TenantService : ITenantService
 {
     public const string TenantHeader = "X-Tenant-Id";
     public const string BranchHeader = "X-Branch-Id";
+    public const string AllLocationsHeaderValue = "all";
 
     private readonly IHttpContextAccessor _httpContextAccessor;
 
@@ -29,6 +36,7 @@ public class TenantService : ITenantService
     // Never set from untrusted input.
     private Guid? _tenantOverride;
     private Guid? _branchOverride;
+    private bool? _allLocationsOverride;
 
     public TenantService(IHttpContextAccessor httpContextAccessor)
         => _httpContextAccessor = httpContextAccessor;
@@ -59,6 +67,22 @@ public class TenantService : ITenantService
         return Guid.TryParse(claim, out var branchId) ? branchId : null;
     }
 
+    public bool HasAllLocationAccess()
+    {
+        if (_allLocationsOverride.HasValue)
+            return _allLocationsOverride.Value;
+
+        var user = _httpContextAccessor.HttpContext?.User;
+        if (user is null)
+            return false;
+
+        // Platform super admins operate across locations inside a tenant.
+        if (user.FindFirst("is_super_admin")?.Value == "true")
+            return true;
+
+        return user.FindFirst("all_locations")?.Value == "true";
+    }
+
     /// <summary>
     /// Sets the tenant for the remainder of the scope. The caller is
     /// responsible for having authorised the switch — this performs no checks
@@ -68,4 +92,6 @@ public class TenantService : ITenantService
     public void SetCurrentTenant(Guid tenantId) => _tenantOverride = tenantId;
 
     public void SetCurrentBranch(Guid branchId) => _branchOverride = branchId;
+
+    public void SetAllLocationAccess(bool hasAllLocations) => _allLocationsOverride = hasAllLocations;
 }

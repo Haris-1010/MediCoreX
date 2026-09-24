@@ -15,6 +15,7 @@ public record PlatformAdminListItem(
     string Email,
     string? Phone,
     bool IsActive,
+    bool IsMaster,
     DateTime? LastLoginAt,
     DateTime CreatedAt
 );

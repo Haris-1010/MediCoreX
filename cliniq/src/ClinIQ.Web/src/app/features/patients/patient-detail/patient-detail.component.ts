@@ -450,7 +450,12 @@ export class PatientDetailComponent implements OnInit {
 
   getInitials(): string {
     if (!this.patient) return '';
-    return (this.patient.firstName.charAt(0) + this.patient.lastName.charAt(0)).toUpperCase();
+    const name = (this.patient.fullName
+      || `${this.patient.firstName || ''} ${this.patient.lastName || ''}`.trim()).trim();
+    if (!name) return '';
+    const parts = name.split(/\s+/);
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   }
 
   printPatient(): void {

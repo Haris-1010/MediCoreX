@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { PatientPickerComponent, PatientPickerValue } from '../../../shared/components/patient-picker/patient-picker.component';
 
 @Component({
   standalone: false,
@@ -15,17 +16,14 @@ import { NotificationService } from '../../../core/services/notification.service
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
           <div class="form-grid">
             <!-- Patient -->
-            <mat-form-field appearance="outline">
-              <mat-label>Patient *</mat-label>
-              <input matInput [matAutocomplete]="patientAuto" formControlName="patientSearch" placeholder="Search by name, phone, or MRN..." (focus)="onPatientFocus()" (input)="onPatientSearchInput($event)">
-              <mat-icon matPrefix>search</mat-icon>
-              <mat-autocomplete #patientAuto="matAutocomplete" [displayWith]="displayPatient" (optionSelected)="onPatientSelected($event)">
-                <mat-option *ngFor="let p of filteredPatients" [value]="p">
-                  <span>{{ p.fullName }} ({{ p.phone || 'No phone' }})</span>
-                </mat-option>
-              </mat-autocomplete>
-              <mat-error>Patient is required</mat-error>
-            </mat-form-field>
+            <div class="patient-field">
+              <app-patient-picker
+                #patientPicker
+                label="Patient"
+                [required]="true"
+                (patientChange)="onPatientChange($event)">
+              </app-patient-picker>
+            </div>
 
             <!-- Doctor -->
             <mat-form-field appearance="outline">
@@ -35,7 +33,7 @@ import { NotificationService } from '../../../core/services/notification.service
               <mat-autocomplete #doctorAuto="matAutocomplete" [displayWith]="displayDoctor" (optionSelected)="onDoctorSelected($event)">
                 <mat-option *ngFor="let d of filteredDoctors" [value]="d">
                   <div class="autocomplete-option">
-                    <span class="name">Dr. {{ d.fullName }} - {{ d.specialization || 'General' }}</span>
+                    <span class="name">Dr. {{ d.fullName }}<span *ngIf="d.specialization"> - ({{ d.specialization }})</span></span>
                   </div>
                 </mat-option>
               </mat-autocomplete>
@@ -57,16 +55,6 @@ import { NotificationService } from '../../../core/services/notification.service
               <mat-label>Clinical Indication</mat-label>
               <textarea matInput formControlName="clinicalIndication" rows="2" placeholder="Reason for ordering these tests..."></textarea>
             </mat-form-field>
-          </div>
-
-          <!-- Selected Patient Card -->
-          <div class="selected-patient-card" *ngIf="selectedPatient">
-            <mat-icon>person</mat-icon>
-            <div class="patient-info">
-              <strong>{{ selectedPatient.fullName }}</strong>
-              <span>MRN: {{ selectedPatient.mrn }} | Phone: {{ selectedPatient.phone || 'N/A' }}</span>
-            </div>
-            <button mat-icon-button type="button" (click)="clearPatient()"><mat-icon>close</mat-icon></button>
           </div>
 
           <!-- Service Selection -->
@@ -180,11 +168,11 @@ import { NotificationService } from '../../../core/services/notification.service
   `]
 })
 export class LabOrderFormComponent implements OnInit {
+  @ViewChild('patientPicker') patientPicker!: PatientPickerComponent;
+
   form!: FormGroup;
   saving = false;
   selectedPatient: any = null;
-  filteredPatients: any[] = [];
-  allPatients: any[] = [];
   filteredDoctors: any[] = [];
   allDoctors: any[] = [];
   labServices: any[] = [];
@@ -200,8 +188,7 @@ export class LabOrderFormComponent implements OnInit {
 
   ngOnInit() {
     this.form = this.fb.group({
-      patientId: ['', Validators.required],
-      patientSearch: [''],
+      patientId: [''],
       doctorId: ['', Validators.required],
       doctorSearch: [''],
       priority: ['Routine'],
@@ -212,14 +199,14 @@ export class LabOrderFormComponent implements OnInit {
 
     const patientId = this.route.snapshot.queryParamMap.get('patientId');
     if (patientId) {
-      this.api.get<any[]>('v1/patients/search', { limit: 1000 }).subscribe({
-        next: r => {
-          const patients = this.normalizeList<any>(r);
-          const patient = patients.find((p: any) => p.id === patientId);
-          if (patient) {
-            this.selectedPatient = patient;
-            this.form.patchValue({ patientId: patient.id, patientSearch: patient });
-          }
+      this.api.getById<any>('v1/patients', patientId).subscribe({
+        next: (p) => {
+          this.patientPicker?.setPatient({
+            id: p.id,
+            mrn: p.mrn,
+            fullName: p.fullName || `${p.firstName || ''} ${p.lastName || ''}`.trim(),
+            phone: p.phone
+          });
         },
         error: () => this.notification.error('Failed to load patient')
       });
@@ -240,43 +227,9 @@ export class LabOrderFormComponent implements OnInit {
     return [];
   }
 
-  onPatientFocus() {
-    if (this.allPatients.length === 0) {
-      this.api.get<any[]>('v1/patients/search', { limit: 1000 }).subscribe({
-        next: r => {
-          this.allPatients = this.normalizeList(r);
-          this.filteredPatients = this.allPatients;
-        },
-        error: () => this.notification.error('Failed to load patients')
-      });
-    }
-  }
-
-  onPatientSearchInput(event: any) {
-    const term = (event.target.value || '').toLowerCase();
-    if (!term) { this.filteredPatients = this.allPatients; return; }
-    this.filteredPatients = this.allPatients.filter(p =>
-      (p.fullName || '').toLowerCase().includes(term) ||
-      (p.phone || '').toLowerCase().includes(term) ||
-      (p.mrn || '').toLowerCase().includes(term)
-    );
-  }
-
-  displayPatient(p: any): string {
-    if (!p) return '';
-    if (typeof p === 'string') return p;
-    return `${p.fullName || ''} (${p.phone || 'No phone'})`;
-  }
-
-  onPatientSelected(e: any) {
-    const patient = e.option.value;
+  onPatientChange(patient: PatientPickerValue | null) {
     this.selectedPatient = patient;
-    this.form.patchValue({ patientId: patient.id, patientSearch: patient });
-  }
-
-  clearPatient() {
-    this.selectedPatient = null;
-    this.form.patchValue({ patientId: '', patientSearch: '' });
+    this.form.patchValue({ patientId: patient?.id || '' });
   }
 
   onDoctorFocus() {
@@ -303,7 +256,8 @@ export class LabOrderFormComponent implements OnInit {
   displayDoctor(d: any): string {
     if (!d) return '';
     if (typeof d === 'string') return d;
-    return `Dr. ${d.fullName || ''} - ${d.specialization || 'General'}`;
+    const spec = d.specialization ? ` - (${d.specialization})` : '';
+    return `Dr. ${d.fullName || ''}${spec}`;
   }
 
   onDoctorSelected(e: any) {
@@ -326,8 +280,18 @@ export class LabOrderFormComponent implements OnInit {
     return this.selectedServiceItems.reduce((sum, s) => sum + (s.price || 0), 0);
   }
 
-  onSubmit() {
-    if (this.form.invalid || this.selectedServiceItems.length === 0) return;
+  async onSubmit() {
+    if (this.saving) return;
+    const patient = await this.patientPicker?.ensurePatient();
+    if (patient) this.form.patchValue({ patientId: patient.id });
+    if (!this.form.value.patientId) {
+      this.notification.error('Please select or create a patient');
+      return;
+    }
+    if (this.form.invalid || this.selectedServiceItems.length === 0) {
+      if (this.selectedServiceItems.length === 0) this.notification.error('Please select at least one test');
+      return;
+    }
     this.saving = true;
 
     const items = this.selectedServiceItems.map(s => ({

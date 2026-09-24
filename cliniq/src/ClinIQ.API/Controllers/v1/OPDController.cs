@@ -475,8 +475,16 @@ public class OPDController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.PatientsView)]
     public async Task<IActionResult> QuickAddPatient([FromBody] QuickPatientRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.FirstName))
-            return BadRequest(Result.Failure("First name is required"));
+        var fullName = !string.IsNullOrWhiteSpace(request.FullName)
+            ? request.FullName.Trim()
+            : $"{request.FirstName} {request.LastName}".Trim();
+
+        if (string.IsNullOrWhiteSpace(fullName))
+            return BadRequest(Result.Failure("Full name is required"));
+
+        var nameParts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var firstName = nameParts[0];
+        var lastName = nameParts.Length > 1 ? string.Join(' ', nameParts.Skip(1)) : string.Empty;
 
         // Generate MRN
         var patientCount = await _context.Patients.CountAsync() + 1;
@@ -488,8 +496,8 @@ public class OPDController : ControllerBase
         {
             PatientNumber = patientNumber,
             MRN = mrn,
-            FirstName = request.FirstName.Trim(),
-            LastName = string.IsNullOrWhiteSpace(request.LastName) ? "" : request.LastName.Trim(),
+            FirstName = firstName,
+            LastName = lastName,
             Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim(),
             Gender = Enum.TryParse<Gender>(request.Gender, true, out var g) ? g : null,
             DateOfBirth = request.DateOfBirth,
@@ -883,8 +891,9 @@ public class OPDController : ControllerBase
 
     public class QuickPatientRequest
     {
-        public string FirstName { get; set; } = string.Empty;
+        public string? FirstName { get; set; }
         public string? LastName { get; set; }
+        public string? FullName { get; set; }
         public string? Phone { get; set; }
         public string? Gender { get; set; }
         public DateTime? DateOfBirth { get; set; }

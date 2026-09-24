@@ -27,10 +27,8 @@ public class FacilityController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.BedsView)]
     public async Task<IActionResult> GetBuildings()
     {
-        var tenantId = _tenantService.GetCurrentTenantId();
-
-        var buildingIds = await _context.Buildings.IgnoreQueryFilters()
-            .Where(b => !b.IsDeleted && b.IsActive && (!tenantId.HasValue || b.TenantId == tenantId.Value))
+        var buildingIds = await _context.Buildings
+            .Where(b => !b.IsDeleted && b.IsActive)
             .OrderBy(b => b.DisplayOrder)
             .Select(b => b.Id)
             .ToListAsync();
@@ -38,19 +36,19 @@ public class FacilityController : ControllerBase
         var buildings = new List<object>();
         foreach (var bid in buildingIds)
         {
-            var b = await _context.Buildings.IgnoreQueryFilters().FirstAsync(x => x.Id == bid);
-            var floorCount = await _context.Floors.IgnoreQueryFilters().CountAsync(f => f.BuildingId == bid && !f.IsDeleted);
-            var fIds = await _context.Floors.IgnoreQueryFilters()
+            var b = await _context.Buildings.FirstAsync(x => x.Id == bid);
+            var floorCount = await _context.Floors.CountAsync(f => f.BuildingId == bid && !f.IsDeleted);
+            var fIds = await _context.Floors
                 .Where(f => f.BuildingId == bid && !f.IsDeleted).Select(f => f.Id).ToListAsync();
-            var wIds = await _context.Wards.IgnoreQueryFilters()
+            var wIds = await _context.Wards
                .Where(w => w.FloorId.HasValue
          && fIds.Contains(w.FloorId.Value)
          && !w.IsDeleted)
 .Select(w => w.Id)
 .ToListAsync();
-            var rIds = await _context.Rooms.IgnoreQueryFilters()
+            var rIds = await _context.Rooms
                 .Where(r => wIds.Contains(r.WardId) && !r.IsDeleted).Select(r => r.Id).ToListAsync();
-            var bedCount = await _context.Beds.IgnoreQueryFilters()
+            var bedCount = await _context.Beds
                 .CountAsync(bed => rIds.Contains(bed.RoomId) && !bed.IsDeleted);
 
             buildings.Add(new
@@ -73,13 +71,13 @@ public class FacilityController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.BedsView)]
     public async Task<IActionResult> GetBuilding(Guid id)
     {
-        var b = await _context.Buildings.IgnoreQueryFilters()
+        var b = await _context.Buildings
             .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
 
         if (b == null)
             return NotFound(Result.Failure("Building not found"));
 
-        var floors = await _context.Floors.IgnoreQueryFilters()
+        var floors = await _context.Floors
             .Where(f => f.BuildingId == id && !f.IsDeleted)
             .OrderBy(f => f.FloorNumber)
             .Select(f => new
@@ -88,7 +86,7 @@ public class FacilityController : ControllerBase
                 f.Name,
                 f.Code,
                 f.FloorNumber,
-                WardCount = _context.Wards.IgnoreQueryFilters().Count(w => w.FloorId == f.Id && !w.IsDeleted)
+                WardCount = _context.Wards.Count(w => w.FloorId == f.Id && !w.IsDeleted)
             })
             .ToListAsync();
 
@@ -139,9 +137,8 @@ public class FacilityController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.BedsView)]
     public async Task<IActionResult> GetFloors([FromQuery] Guid? buildingId = null)
     {
-        var tenantId = _tenantService.GetCurrentTenantId();
-        var query = _context.Floors.IgnoreQueryFilters()
-            .Where(f => !f.IsDeleted && f.IsActive && (!tenantId.HasValue || f.TenantId == tenantId.Value));
+        var query = _context.Floors
+            .Where(f => !f.IsDeleted && f.IsActive);
 
         if (buildingId.HasValue)
             query = query.Where(f => f.BuildingId == buildingId.Value);
@@ -152,10 +149,10 @@ public class FacilityController : ControllerBase
         var floors = new List<object>();
         foreach (var fid in floorIds)
         {
-            var f = await _context.Floors.IgnoreQueryFilters().FirstAsync(x => x.Id == fid);
-            var building = await _context.Buildings.IgnoreQueryFilters()
+            var f = await _context.Floors.FirstAsync(x => x.Id == fid);
+            var building = await _context.Buildings
                 .FirstOrDefaultAsync(b => b.Id == f.BuildingId);
-            var wardCount = await _context.Wards.IgnoreQueryFilters().CountAsync(w => w.FloorId == fid && !w.IsDeleted);
+            var wardCount = await _context.Wards.CountAsync(w => w.FloorId == fid && !w.IsDeleted);
 
             floors.Add(new
             {
@@ -176,9 +173,8 @@ public class FacilityController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.BedsView)]
     public async Task<IActionResult> GetRooms([FromQuery] Guid? wardId = null)
     {
-        var tenantId = _tenantService.GetCurrentTenantId();
-        var query = _context.Rooms.IgnoreQueryFilters()
-            .Where(r => !r.IsDeleted && r.IsActive && (!tenantId.HasValue || r.TenantId == tenantId.Value));
+        var query = _context.Rooms
+            .Where(r => !r.IsDeleted && r.IsActive);
 
         if (wardId.HasValue)
             query = query.Where(r => r.WardId == wardId.Value);
@@ -189,10 +185,10 @@ public class FacilityController : ControllerBase
         var rooms = new List<object>();
         foreach (var rid in roomIds)
         {
-            var r = await _context.Rooms.IgnoreQueryFilters().FirstAsync(x => x.Id == rid);
-            var bedCount = await _context.Beds.IgnoreQueryFilters().CountAsync(b => b.RoomId == rid && !b.IsDeleted);
-            var avail = await _context.Beds.IgnoreQueryFilters().CountAsync(b => b.RoomId == rid && !b.IsDeleted && b.Status == BedStatus.Available);
-            var occ = await _context.Beds.IgnoreQueryFilters().CountAsync(b => b.RoomId == rid && !b.IsDeleted && b.Status == BedStatus.Occupied);
+            var r = await _context.Rooms.FirstAsync(x => x.Id == rid);
+            var bedCount = await _context.Beds.CountAsync(b => b.RoomId == rid && !b.IsDeleted);
+            var avail = await _context.Beds.CountAsync(b => b.RoomId == rid && !b.IsDeleted && b.Status == BedStatus.Available);
+            var occ = await _context.Beds.CountAsync(b => b.RoomId == rid && !b.IsDeleted && b.Status == BedStatus.Occupied);
 
             rooms.Add(new
             {

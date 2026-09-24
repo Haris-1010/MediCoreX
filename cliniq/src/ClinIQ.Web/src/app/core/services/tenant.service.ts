@@ -83,6 +83,10 @@ export class TenantService {
     this.storage.setItem(environment.branchKey, branch.id);
   }
 
+  setBranches(branches: Branch[]): void {
+    this.branchesSubject.next(branches);
+  }
+
   getCurrentTenant(): Tenant | null {
     return this.currentTenantSubject.value;
   }

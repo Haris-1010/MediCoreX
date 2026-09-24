@@ -57,34 +57,144 @@ const NAV: NavItem[] = [
   },
 
   { label: 'Pharmacy', icon: 'local_pharmacy', route: '/pharmacy', module: 'pharmacy', permission: 'pharmacy.view' },
-
   {
-    label: 'Laboratory', icon: 'science', module: 'laboratory', permission: 'laboratory.view',
+    label: 'Laboratory',
+    icon: 'science',
+    module: 'laboratory',
+    permission: 'laboratory.view',
     children: [
-      { label: 'Dashboard', icon: 'dashboard', route: '/laboratory', module: 'laboratory', permission: 'laboratory.view' },
-      { label: 'New Order', icon: 'add_circle', route: '/laboratory/orders/new', module: 'laboratory', permission: 'laboratory.create' },
-      { label: 'Orders', icon: 'list', route: '/laboratory/orders', module: 'laboratory', permission: 'laboratory.orders.view' },
-      { label: 'Sample Collection', icon: 'science', route: '/laboratory/sample-collection', module: 'laboratory', permission: 'laboratory.sample' },
-      { label: 'Result Entry', icon: 'edit_note', route: '/laboratory/result-entry', module: 'laboratory', permission: 'laboratory.results.edit' },
-      { label: 'Verification', icon: 'verified', route: '/laboratory/verification', module: 'laboratory', permission: 'laboratory.verify' },
-      { label: 'Reports', icon: 'description', route: '/laboratory/reports', module: 'laboratory', permission: 'laboratory.reports' },
-    ],
-  },
 
-  {
-    label: 'Radiology', icon: 'medical_information', module: 'radiology', permission: 'radiology.view',
-    children: [
-      { label: 'Dashboard', icon: 'dashboard', route: '/radiology', module: 'radiology', permission: 'radiology.view' },
-      { label: 'New Order', icon: 'add_circle', route: '/radiology/orders/new', module: 'radiology', permission: 'radiology.create' },
-      { label: 'Orders', icon: 'list', route: '/radiology/orders', module: 'radiology', permission: 'radiology.orders.view' },
-      { label: 'Schedule', icon: 'calendar_month', route: '/radiology/schedule', module: 'radiology', permission: 'radiology.schedule' },
-      { label: 'Procedure', icon: 'biotech', route: '/radiology/procedure', module: 'radiology', permission: 'radiology.procedure' },
-      { label: 'Reporting', icon: 'edit_note', route: '/radiology/reporting', module: 'radiology', permission: 'radiology.report' },
-      { label: 'Verification', icon: 'verified', route: '/radiology/verification', module: 'radiology', permission: 'radiology.verify' },
-      { label: 'Reports', icon: 'description', route: '/radiology/reports', module: 'radiology', permission: 'radiology.reports' },
-    ],
-  },
+      // =========================
+      // PATHOLOGY
+      // =========================
+      {
+        label: 'Pathology',
+        icon: 'biotech',
+        module: 'laboratory',
+        permission: 'laboratory.view',
+        children: [
+          {
+            label: 'Dashboard',
+            icon: 'dashboard',
+            route: '/laboratory',
+            module: 'laboratory',
+            permission: 'laboratory.view'
+          },
+          {
+            label: 'New Order',
+            icon: 'add_circle',
+            route: '/laboratory/orders/new',
+            module: 'laboratory',
+            permission: 'laboratory.create'
+          },
+          {
+            label: 'Orders',
+            icon: 'list',
+            route: '/laboratory/orders',
+            module: 'laboratory',
+            permission: 'laboratory.orders.view'
+          },
+          {
+            label: 'Sample Collection',
+            icon: 'science',
+            route: '/laboratory/sample-collection',
+            module: 'laboratory',
+            permission: 'laboratory.sample'
+          },
+          {
+            label: 'Result Entry',
+            icon: 'edit_note',
+            route: '/laboratory/result-entry',
+            module: 'laboratory',
+            permission: 'laboratory.results.edit'
+          },
+          {
+            label: 'Verification',
+            icon: 'verified',
+            route: '/laboratory/verification',
+            module: 'laboratory',
+            permission: 'laboratory.verify'
+          },
+          {
+            label: 'Reports',
+            icon: 'description',
+            route: '/laboratory/reports',
+            module: 'laboratory',
+            permission: 'laboratory.reports'
+          }
+        ]
+      },
 
+      // =========================
+      // RADIOLOGY
+      // =========================
+      {
+        label: 'Radiology',
+        icon: 'medical_information',
+        module: 'radiology',
+        permission: 'radiology.view',
+        children: [
+          {
+            label: 'Dashboard',
+            icon: 'dashboard',
+            route: '/radiology',
+            module: 'radiology',
+            permission: 'radiology.view'
+          },
+          {
+            label: 'New Order',
+            icon: 'add_circle',
+            route: '/radiology/orders/new',
+            module: 'radiology',
+            permission: 'radiology.create'
+          },
+          {
+            label: 'Orders',
+            icon: 'list',
+            route: '/radiology/orders',
+            module: 'radiology',
+            permission: 'radiology.orders.view'
+          },
+          {
+            label: 'Schedule',
+            icon: 'calendar_month',
+            route: '/radiology/schedule',
+            module: 'radiology',
+            permission: 'radiology.schedule'
+          },
+          {
+            label: 'Procedure',
+            icon: 'biotech',
+            route: '/radiology/procedure',
+            module: 'radiology',
+            permission: 'radiology.procedure'
+          },
+          {
+            label: 'Reporting',
+            icon: 'edit_note',
+            route: '/radiology/reporting',
+            module: 'radiology',
+            permission: 'radiology.report'
+          },
+          {
+            label: 'Verification',
+            icon: 'verified',
+            route: '/radiology/verification',
+            module: 'radiology',
+            permission: 'radiology.verify'
+          },
+          {
+            label: 'Reports',
+            icon: 'description',
+            route: '/radiology/reports',
+            module: 'radiology',
+            permission: 'radiology.reports'
+          }
+        ]
+      }
+
+    ]
+  },
   {
     label: 'Billing', icon: 'payments', module: 'billing', permission: 'billing.view',
     children: [
@@ -114,7 +224,6 @@ const NAV: NavItem[] = [
       { label: 'Doctors', icon: 'medical_services', route: '/doctors' },
       { label: 'Departments', icon: 'apartment', route: '/departments' },
       { label: 'Users', icon: 'manage_accounts', route: '/settings/users', permission: 'users.view' },
-      { label: 'Roles', icon: 'badge', route: '/settings/roles', permission: 'roles.view' },
       { label: 'Settings', icon: 'settings', route: '/settings', permission: 'settings.view' },
     ],
   },
