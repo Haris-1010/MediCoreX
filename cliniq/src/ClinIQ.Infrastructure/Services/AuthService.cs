@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using ClinIQ.Application.Interfaces;
+using ClinIQ.Domain.Common;
 using ClinIQ.Domain.Entities.Identity;
 using ClinIQ.Domain.Entities.Tenancy;
 using ClinIQ.Domain.Enums;
@@ -23,17 +24,20 @@ public class AuthService : IAuthService
     private readonly IConfiguration _configuration;
     private readonly IPermissionService _permissionService;
     private readonly IEntitlementService _entitlementService;
+    private readonly IAuditService _auditService;
 
     public AuthService(
         ApplicationDbContext context,
         IConfiguration configuration,
         IPermissionService permissionService,
-        IEntitlementService entitlementService)
+        IEntitlementService entitlementService,
+        IAuditService auditService)
     {
         _context = context;
         _configuration = configuration;
         _permissionService = permissionService;
         _entitlementService = entitlementService;
+        _auditService = auditService;
     }
 
     public async Task<Result<LoginResponse>> LoginAsync(LoginRequest request, string ipAddress, CancellationToken cancellationToken = default)
@@ -42,7 +46,37 @@ public class AuthService : IAuthService
             .FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive, cancellationToken);
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        {
+            // Authentication audit: never records the password, only who/what/when/why.
+            Guid? membershipTenantId = null;
+            if (user is not null)
+            {
+                membershipTenantId = await _context.TenantUsers
+                    .IgnoreQueryFilters()
+                    .Where(tu => tu.UserId == user.Id && tu.IsActive)
+                    .Select(tu => tu.TenantId)
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+
+            await _auditService.LogAsync(new AuditEvent
+            {
+                Action = "LOGIN_FAILED",
+                Module = "Authentication",
+                EntityName = "Authentication",
+                EntityId = user?.Id.ToString(),
+                Description = $"Failed login attempt for {request.Email}",
+                TenantId = membershipTenantId,
+                BranchSpecified = true,
+                BranchId = null,
+                UserId = user?.Id,
+                UserName = request.Email,
+                UserEmail = request.Email,
+                Success = false,
+                FailureReason = user is null ? "Unknown email" : "Invalid password",
+            }, cancellationToken);
+
             return Result<LoginResponse>.Failure("Invalid email or password");
+        }
 
         // Update last login
         user.LastLoginAt = DateTime.UtcNow;
@@ -54,7 +88,28 @@ public class AuthService : IAuthService
         if (!tokenResult.Succeeded)
             return Result<LoginResponse>.Failure(tokenResult.Message ?? "Token generation failed");
 
-        return Result<LoginResponse>.Success(tokenResult.Data!);
+        var response = tokenResult.Data!;
+        var membership = response.User.Tenants.FirstOrDefault();
+        var primaryBranch = membership?.Branches.FirstOrDefault(b => b.IsPrimary) ?? membership?.Branches.FirstOrDefault();
+
+        await _auditService.LogAsync(new AuditEvent
+        {
+            Action = "LOGIN",
+            Module = "Authentication",
+            EntityName = "Authentication",
+            EntityId = user.Id.ToString(),
+            Description = $"{user.FullName} logged in",
+            TenantId = membership?.TenantId,
+            BranchSpecified = true,
+            BranchId = primaryBranch?.BranchId,
+            LocationName = primaryBranch?.BranchName,
+            UserId = user.Id,
+            UserName = user.FullName,
+            UserEmail = user.Email,
+            Success = true,
+        }, cancellationToken);
+
+        return Result<LoginResponse>.Success(response);
     }
 
     public async Task<Result> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
@@ -150,6 +205,15 @@ public class AuthService : IAuthService
             await _context.SaveChangesAsync(cancellationToken);
         }
 
+        await _auditService.LogAsync(new AuditEvent
+        {
+            Action = "LOGOUT",
+            Module = "Authentication",
+            EntityName = "Authentication",
+            Description = "User logged out",
+            Success = true,
+        }, cancellationToken);
+
         return Result.Success("Logged out successfully");
     }
 
@@ -195,7 +259,24 @@ public class AuthService : IAuthService
             t.RevokedByIp = "password-change";
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        using (AuditCapture.Suppress())
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        await _auditService.LogAsync(new AuditEvent
+        {
+            Action = "PASSWORD_CHANGE",
+            Module = "Authentication",
+            EntityName = "Authentication",
+            EntityId = userId.ToString(),
+            Description = $"{user.FullName} changed their password",
+            UserId = user.Id,
+            UserName = user.FullName,
+            UserEmail = user.Email,
+            Success = true,
+        }, cancellationToken);
+
         return Result.Success("Password changed successfully");
     }
 

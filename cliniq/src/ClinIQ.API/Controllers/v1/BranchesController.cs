@@ -28,10 +28,15 @@ public class BranchesController : ControllerBase
     /// Locations the current user may see in this organization.
     /// Non–All-Locations users only get their assigned BranchUser rows.
     /// Super admins and All Locations users get every active location.
+    ///
+    /// Pass <c>all=true</c> from management screens (assigning locations to a
+    /// user, the Locations tab) to get every active location in the org — the
+    /// default scoped list only drives the header switcher, which must stay
+    /// limited to locations the caller can actually switch into.
     /// </summary>
     [HttpGet]
     [RequirePermission(Permissions.LocationsView, Permissions.SettingsView, RequireAll = false)]
-    public async Task<IActionResult> GetBranches()
+    public async Task<IActionResult> GetBranches([FromQuery] bool all = false)
     {
         var tenantId = _tenantService.GetCurrentTenantId();
         if (tenantId is null)
@@ -43,7 +48,7 @@ public class BranchesController : ControllerBase
 
         IQueryable<Branch> query = _context.Branches;
 
-        if (!_tenantService.HasAllLocationAccess() && userId.Value != Guid.Empty)
+        if (!all && !_tenantService.HasAllLocationAccess() && userId.Value != Guid.Empty)
         {
             var accessible = await _context.BranchUsers
                 .IgnoreQueryFilters().AsNoTracking()
@@ -156,6 +161,26 @@ public class BranchesController : ControllerBase
 
         _context.Branches.Add(branch);
         await _context.SaveChangesAsync();
+
+        // Link the creator to the location they just made. Without this row the
+        // new location is invisible to them everywhere: header switcher, user
+        // assignment and their own accessible-location list (both of which read
+        // BranchUser, not the org-wide branch table).
+        var creatorId = GetCurrentUserId();
+        if (creatorId.HasValue
+            && await _context.TenantUsers.IgnoreQueryFilters().AnyAsync(tu =>
+                tu.TenantId == tenantId.Value && tu.UserId == creatorId.Value && tu.IsActive))
+        {
+            _context.BranchUsers.Add(new BranchUser
+            {
+                TenantId = tenantId.Value,
+                UserId = creatorId.Value,
+                BranchId = branch.Id,
+                IsPrimary = false,
+                IsActive = true
+            });
+            await _context.SaveChangesAsync();
+        }
 
         return Ok(Result<object>.Success(new { id = branch.Id }));
     }

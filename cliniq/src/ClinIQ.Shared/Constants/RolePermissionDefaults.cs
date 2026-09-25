@@ -53,7 +53,7 @@ public static class RolePermissionDefaults
                 Permissions.DoctorsView, Permissions.DoctorsCreate, Permissions.DoctorsEdit, Permissions.DoctorsDelete,
                 Permissions.StaffView, Permissions.StaffCreate, Permissions.StaffEdit, Permissions.StaffDelete,
                 Permissions.DepartmentsView, Permissions.DepartmentsCreate, Permissions.DepartmentsEdit, Permissions.DepartmentsDelete,
-                Permissions.AuditView
+                Permissions.AuditView, Permissions.AuditExport
             },
 
             [Roles.HospitalAdministrator] = new[]
@@ -77,7 +77,7 @@ public static class RolePermissionDefaults
                 Permissions.DoctorsView, Permissions.DoctorsCreate, Permissions.DoctorsEdit,
                 Permissions.StaffView, Permissions.StaffCreate, Permissions.StaffEdit,
                 Permissions.DepartmentsView, Permissions.DepartmentsCreate, Permissions.DepartmentsEdit,
-                Permissions.AuditView
+                Permissions.AuditView, Permissions.AuditExport
             },
 
             [Roles.ClinicManager] = new[]

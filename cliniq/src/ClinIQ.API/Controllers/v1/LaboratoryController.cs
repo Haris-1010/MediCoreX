@@ -617,6 +617,8 @@ public class LaboratoryController : ControllerBase
         return Ok(Result<object>.Success(order));
     }
 
+    [HttpPut("orders/{id:guid}")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.LaboratoryOrdersEdit)]
     public async Task<IActionResult> UpdateOrder(Guid id, [FromBody] UpdateLabOrderRequest request)
     {
         var order = await _context.MedicalOrders.FirstOrDefaultAsync(o => o.Id == id && o.OrderType == MedicalOrderType.Lab && !o.IsDeleted);

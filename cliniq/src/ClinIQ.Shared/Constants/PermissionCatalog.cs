@@ -192,6 +192,7 @@ public static class PermissionCatalog
         new(Permissions.SettingsEdit, "Edit", "Settings", "Administration", 20),
         new(Permissions.OrganizationBranding, "Branding", "Organization", "Administration", 25),
         new(Permissions.AuditView,    "View", "Audit",    "Administration", 10),
+        new(Permissions.AuditExport,  "Export", "Audit",  "Administration", 20),
 
         // ---- Locations (Branch) ----
         new(Permissions.LocationsView,   "View",   "Locations", "Administration", 10),

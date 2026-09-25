@@ -38,6 +38,7 @@ var app = builder.Build();
 // Configure middleware pipeline
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<AuditContextMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

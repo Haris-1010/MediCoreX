@@ -207,4 +207,5 @@ public static class Permissions
 
     // Audit
     public const string AuditView = "audit.view";
+    public const string AuditExport = "audit.export";
 }

@@ -38,6 +38,19 @@ public class TenantResolutionMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<TenantResolutionMiddleware> _logger;
 
+    private static readonly string[] AuthExemptPaths =
+    {
+        "/api/v1/auth/login",
+        "/api/v1/auth/register",
+        "/api/v1/auth/refresh-token",
+        "/api/v1/auth/forgot-password",
+        "/api/v1/auth/reset-password",
+    };
+
+    // ------------------------------------------------------------------
+    // TenantResolutionMiddleware
+    // ------------------------------------------------------------------
+
     public TenantResolutionMiddleware(RequestDelegate next, ILogger<TenantResolutionMiddleware> logger)
     {
         _next = next;

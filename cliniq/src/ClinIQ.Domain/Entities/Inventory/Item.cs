@@ -4,8 +4,15 @@ namespace ClinIQ.Domain.Entities.Inventory;
 
 /// <summary>
 /// Inventory item (medicine, consumable, equipment, etc.)
+///
+/// BranchEntity (not plain TenantEntity): stock lives at a location, so every
+/// item row belongs to one Branch. The combined query filter in
+/// ApplicationDbContext then scopes reads to the caller's location automatically
+/// (All Locations callers still see every location), and SaveChanges stamps
+/// BranchId on insert. Requires Items.BranchId — see migration
+/// 20260929000000_AddItemsBranchScope.
 /// </summary>
-public class Item : TenantEntity
+public class Item : BranchEntity
 {
     public string Name { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;

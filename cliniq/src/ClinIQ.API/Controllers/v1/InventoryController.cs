@@ -28,8 +28,12 @@ public class InventoryController : ControllerBase
         var tenantId = _tenantService.GetCurrentTenantId();
         if (tenantId is null) throw new InvalidOperationException("Unable to resolve the current organization.");
 
+        // Prefer the caller's current location so stock movements land in the
+        // warehouse of the location they are actually working in.
+        var branchId = _tenantService.GetCurrentBranchId();
         var warehouse = await _context.Warehouses
-            .FirstOrDefaultAsync(w => !w.IsDeleted && w.IsActive && w.TenantId == tenantId.Value);
+            .FirstOrDefaultAsync(w => !w.IsDeleted && w.IsActive && w.TenantId == tenantId.Value
+                && (branchId == null || w.BranchId == branchId));
         if (warehouse != null) return warehouse.Id;
 
         warehouse = new Domain.Entities.Inventory.Warehouse

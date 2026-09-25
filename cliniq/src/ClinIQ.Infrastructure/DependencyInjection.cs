@@ -36,6 +36,7 @@ public static class DependencyInjection
         services.AddScoped<IEntitlementService, EntitlementService>();
         services.AddScoped<IOrganizationProvisioningService, OrganizationProvisioningService>();
         services.AddScoped<IServiceService, ServiceService>();
+        services.AddScoped<IAuditService, AuditService>();
 
         // Seeding
         services.AddScoped<Data.Seeding.PermissionSeeder>();

@@ -14,7 +14,7 @@ import { environment } from '../../../environments/environment';
   standalone: false,
   selector: 'app-header',
   template: `
-    <mat-toolbar class="header-toolbar" color="primary">
+    <mat-toolbar class="header-toolbar">
       <!-- Menu Button -->
       <button mat-icon-button (click)="menuToggle.emit()" class="menu-btn">
         <mat-icon>menu</mat-icon>
@@ -28,11 +28,16 @@ import { environment } from '../../../environments/environment';
       <span class="spacer"></span>
 
       <!-- Location Selector -->
-      <button mat-button [matMenuTriggerFor]="branchMenu" class="branch-selector" *ngIf="showLocationSelector">
+      <button mat-button [matMenuTriggerFor]="branchMenu" class="branch-selector" *ngIf="showLocationSelector && canSwitchLocation">
         <mat-icon>location_on</mat-icon>
         <span>{{ currentLocationLabel }}</span>
         <mat-icon>arrow_drop_down</mat-icon>
       </button>
+      <!-- Read-only chip: single-location users still need to SEE where they are -->
+      <div class="branch-selector branch-readonly" *ngIf="showLocationSelector && !canSwitchLocation">
+        <mat-icon>location_on</mat-icon>
+        <span>{{ currentLocationLabel }}</span>
+      </div>
       <mat-menu #branchMenu="matMenu">
         <button mat-menu-item *ngIf="hasAllLocationAccess" (click)="switchToAllLocations()">
           <mat-icon *ngIf="isAllLocationsMode">check</mat-icon>
@@ -134,18 +139,46 @@ import { environment } from '../../../environments/environment';
     }
 
     .branch-selector {
-      color: var(--text-secondary, #475569);
+      color: var(--text-primary, #1e293b);
       margin-right: 16px;
-      background: var(--bg-badge, #f8fafc);
+      background: var(--bg-card, #ffffff);
       border-radius: 10px;
       padding: 4px 12px;
       min-height: 36px;
       transition: all 0.2s ease;
-      border: 1px solid var(--border-color, #e2e8f0);
+      border: 1px solid var(--border-color, #cbd5e1);
+      box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.06));
+    }
+
+    /* Material paints the label/icon with its own theme tokens, which are
+       unrelated to ours — force them back to the theme variables so the
+       location stays readable on the header in both light and dark mode. */
+    .branch-selector .mat-mdc-button-label,
+    .branch-selector .mdc-button__label {
+      color: inherit;
+    }
+
+    .branch-selector mat-icon {
+      color: var(--accent-primary, #667eea);
     }
 
     .branch-selector:hover {
       background: var(--bg-hover, #f1f5f9);
+      border-color: var(--accent-primary, #667eea);
+    }
+
+    /* Read-only location: no menu, no hover affordance. */
+    .branch-selector.branch-readonly {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: default;
+      user-select: none;
+      font-weight: 600;
+    }
+
+    .branch-selector.branch-readonly:hover {
+      background: var(--bg-card, #ffffff);
       border-color: var(--border-color, #cbd5e1);
     }
 
@@ -294,6 +327,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe(branches => {
       this.branches = branches;
+      // The list can arrive after (or change independently of) the permission
+      // context — re-resolve the selected location every time it moves,
+      // otherwise the header keeps showing "Select Location".
+      this.reconcileCurrentBranch();
     });
 
     this.signalRService.notification$.pipe(
@@ -320,13 +357,21 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  /** Dropdown only when the caller can actually move between locations. */
+  get canSwitchLocation(): boolean {
+    return this.hasAllLocationAccess || this.branches.length > 1;
+  }
+
   get showLocationSelector(): boolean {
-    return this.branches.length > 1 || (this.hasAllLocationAccess && this.branches.length > 0);
+    // A single-location user has no menu, but still must see where they are.
+    if (this.isAllLocationsMode) return true;
+    if (this.currentBranch || this.branches.length > 0) return true;
+    return !!(this.permissions.current()?.branchId);
   }
 
   get currentLocationLabel(): string {
     if (this.isAllLocationsMode) return 'All Locations';
-    return this.currentBranch?.name || 'Select Location';
+    return this.currentBranch?.name || this.permissions.current()?.branchName || 'Select Location';
   }
 
   getUserInitials(): string {
@@ -390,7 +435,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   private applyPermissionContext(ctx: CurrentUserContext | null): void {
     this.hasAllLocationAccess = !!(ctx?.hasAllLocationAccess || ctx?.isSuperAdmin);
-    this.syncAllLocationsFlag();
 
     if (ctx?.accessibleBranches?.length) {
       const mapped: Branch[] = ctx.accessibleBranches.map(b => ({
@@ -406,24 +450,44 @@ export class HeaderComponent implements OnInit, OnDestroy {
       this.tenantService.setBranches(mapped);
     }
 
-    // Never stamp a concrete branch while the user is in All Locations mode —
-    // JWT still carries a write target, but storage must stay 'all'.
+    this.reconcileCurrentBranch();
+  }
+
+  /**
+   * Derives the selected location from the stored id + current list.
+   *
+   * Never stamps a concrete location while the user is in All Locations mode —
+   * the JWT still carries a write target, but storage must stay 'all' — and
+   * never guesses a different location than the one already chosen, because
+   * that would silently move data scope.
+   */
+  private reconcileCurrentBranch(): void {
+    this.syncAllLocationsFlag();
+
     const stored = this.getStoredBranchId();
-    if (stored === 'all') {
+    if (stored === 'all' || !this.branches.length) {
       return;
     }
 
-    if (stored) {
-      const match = this.branches.find(b => b.id === stored);
-      if (match && this.currentBranch?.id !== match.id) {
+    const match = this.branches.find(b => b.id === stored);
+    if (match) {
+      if (this.currentBranch?.id !== match.id) {
         this.tenantService.setCurrentBranch(match);
       }
       return;
     }
 
-    if (ctx?.branchId) {
-      const match = this.branches.find(b => b.id === ctx.branchId);
-      if (match) this.tenantService.setCurrentBranch(match);
+    // Keep the current selection unless it disappeared from the list
+    // (location deleted or assignment revoked) — a location that is no longer
+    // listed can no longer be switched into.
+    if (this.currentBranch && this.branches.some(b => b.id === this.currentBranch!.id)) {
+      return;
+    }
+
+    const ctxBranchId = this.permissions.current()?.branchId;
+    const fromCtx = ctxBranchId ? this.branches.find(b => b.id === ctxBranchId) : undefined;
+    if (fromCtx) {
+      this.tenantService.setCurrentBranch(fromCtx);
     }
   }
 

@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { TenantService } from '../../core/services/tenant.service';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
@@ -127,7 +128,7 @@ export class SettingsComponent implements OnInit {
   ];
   filteredCurrencies = [...this.currencies];
 
-  constructor(private fb: FormBuilder, private api: ApiService, private notification: NotificationService, private dialog: MatDialog) {}
+  constructor(private fb: FormBuilder, private api: ApiService, private notification: NotificationService, private dialog: MatDialog, private tenantService: TenantService) {}
 
   ngOnInit() {
     this.generalForm = this.fb.group({ organizationName: [''], phone: [''], email: [''], address: [''], currency: ['USD'], dateFormat: ['MM/dd/yyyy'] });
@@ -323,9 +324,10 @@ export class SettingsComponent implements OnInit {
 
   loadLocations() {
     this.locationsLoading = true;
-    this.api.get<any[]>('v1/branches').subscribe({
+    this.api.get<any[]>('v1/branches', { all: true }).subscribe({
       next: (res) => {
-        this.locations = Array.isArray(res) ? res : [];
+        const body: any = res;
+        this.locations = Array.isArray(body) ? body : (Array.isArray(body?.items) ? body.items : []);
         this.locationsLoading = false;
       },
       error: (err) => {
@@ -333,6 +335,11 @@ export class SettingsComponent implements OnInit {
         this.notification.error(this.extractError(err));
       }
     });
+  }
+
+  /** Keeps the header switcher in sync after a location is created/edited/removed. */
+  private refreshSharedBranches() {
+    this.tenantService.loadBranches().subscribe({ error: () => {} });
   }
 
   addLocation() {
@@ -404,6 +411,7 @@ export class SettingsComponent implements OnInit {
         this.locationSaving = false;
         this.cancelLocation();
         this.loadLocations();
+        this.refreshSharedBranches();
       },
       error: (err) => {
         this.locationSaving = false;
@@ -428,6 +436,7 @@ export class SettingsComponent implements OnInit {
           next: () => {
             this.notification.success('Location deleted');
             this.loadLocations();
+            this.refreshSharedBranches();
           },
           error: (err) => this.notification.error(this.extractError(err))
         });

@@ -74,6 +74,30 @@ public class UsersController : ControllerBase
                     && !role.IsDeleted));
     }
 
+    /// <summary>
+    /// Who sees the whole organization's user list: All Locations / super admin
+    /// callers, the organization owner and anyone holding the OrganizationAdmin
+    /// role. Everyone else is limited to the users of their own location.
+    /// </summary>
+    private async Task<bool> CanSeeAllUsersAsync(Guid tenantId)
+    {
+        if (_tenantService.HasAllLocationAccess())
+            return true;
+
+        if (await _context.TenantUsers.AnyAsync(tu => tu.TenantId == tenantId
+            && tu.UserId == CurrentUserId
+            && tu.IsOwner
+            && tu.IsActive))
+            return true;
+
+        var adminRoleName = ClinIQ.Shared.Constants.Roles.OrganizationAdmin.ToUpperInvariant();
+        return await _context.UserRoles.AnyAsync(ur => ur.TenantId == tenantId
+            && ur.UserId == CurrentUserId
+            && _context.Roles.Any(role => role.Id == ur.RoleId
+                && role.NormalizedName == adminRoleName
+                && !role.IsDeleted));
+    }
+
     [HttpGet]
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.UsersView)]
     public async Task<IActionResult> GetUsers(
@@ -96,6 +120,23 @@ public class UsersController : ControllerBase
 
         var query = _context.Users.Where(u => !u.IsDeleted
             && userIds.Contains(u.Id));
+
+        // Location scope: anyone who is not an org-wide caller (owner,
+        // OrganizationAdmin, All Locations, super admin) only sees the users of
+        // the location they are currently working in.
+        if (tenantId.HasValue && !await CanSeeAllUsersAsync(tenantId.Value))
+        {
+            var branchId = _tenantService.GetCurrentBranchId();
+            var locationUserIds = await _context.BranchUsers
+                .Where(bu => bu.TenantId == tenantId.Value
+                          && bu.IsActive
+                          && (branchId == null || bu.BranchId == branchId))
+                .Select(bu => bu.UserId)
+                .Distinct()
+                .ToListAsync();
+
+            query = query.Where(u => locationUserIds.Contains(u.Id));
+        }
 
         if (!canManageOwners && tenantId.HasValue)
         {

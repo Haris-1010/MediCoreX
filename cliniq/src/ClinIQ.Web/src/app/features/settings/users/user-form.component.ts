@@ -320,9 +320,17 @@ export class UserFormComponent implements OnInit {
   }
 
   loadLocations() {
-    this.api.get<any[]>('v1/branches').subscribe({
-      next: (res) => { this.locations = Array.isArray(res) ? res : []; },
-      error: () => { this.locations = []; }
+    // all=true: the assignment list must contain every location in the org,
+    // not just the ones this account happens to be linked to.
+    this.api.get<any[]>('v1/branches', { all: true }).subscribe({
+      next: (res) => {
+        const body: any = res;
+        this.locations = Array.isArray(body) ? body : (Array.isArray(body?.items) ? body.items : []);
+      },
+      error: () => {
+        this.locations = [];
+        this.notification.error('Failed to load locations');
+      }
     });
   }
 

@@ -24,6 +24,14 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
+            try
+            {
+                var errorText = "===== FULL EXCEPTION =====\n" + ex.ToString() + "\n===== END =====";
+                System.IO.File.WriteAllText(@"C:\temp\swagger-error.txt", errorText);
+            }
+            catch { }
+
+            Console.WriteLine(ex.ToString());
             await HandleExceptionAsync(context, ex);
         }
     }

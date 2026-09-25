@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ClinIQ.Domain.Common;
 using ClinIQ.Domain.Entities;
 using ClinIQ.Domain.Entities.Billing;
@@ -290,6 +291,198 @@ public class ApplicationDbContext : DbContext
             }
         }
 
+        // Business audit capture. Runs after tenant/location stamping so every
+        // row carries the final TenantId/BranchId of the entity it describes.
+        CaptureAuditEntries();
+
         return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    private static readonly JsonSerializerOptions AuditJsonOptions = new();
+
+    /// <summary>
+    /// Turns changes to audited entity types (see <see cref="AuditPolicy"/>)
+    /// into AuditLog rows in the SAME SaveChanges transaction.
+    ///
+    /// Deliberate constraints:
+    ///   - no audit when there is no HTTP request and no user (startup seeding),
+    ///   - secrets and clinical free text never serialised (AuditPolicy),
+    ///   - UPDATE rows are skipped when only bookkeeping columns changed,
+    ///   - AuditLog itself is not in the policy map, so this can never recurse.
+    /// </summary>
+    private void CaptureAuditEntries()
+    {
+        if (AuditCapture.Suppressed) return;
+
+        var info = AuditContext.Info;
+        var currentUserId = _currentUserService.UserId;
+        if (info is null && currentUserId is null) return;
+
+        List<AuditLog>? rows = null;
+        Dictionary<Guid, string>? branchNames = null;
+        var now = _dateTimeService.UtcNow;
+
+        // Entries() runs DetectChanges, so IsModified is populated below.
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted))
+                continue;
+
+            var entityType = entry.Entity.GetType();
+            var policy = AuditPolicy.For(entityType);
+            if (policy is null) continue;
+
+            var oldValues = new Dictionary<string, object?>();
+            var newValues = new Dictionary<string, object?>();
+            var changedFields = new List<string>();
+            string action;
+
+            if (entry.State == EntityState.Added)
+            {
+                action = "CREATE";
+                foreach (var prop in entry.Properties)
+                {
+                    if (!IsCapturable(prop.Metadata.Name, prop.Metadata.ClrType)) continue;
+                    var value = NormalizeAuditValue(prop.CurrentValue);
+                    if (value is null) continue;
+                    newValues[prop.Metadata.Name] = value;
+                }
+            }
+            else if (entry.State == EntityState.Deleted)
+            {
+                action = "DELETE";
+                foreach (var prop in entry.Properties)
+                {
+                    if (!IsCapturable(prop.Metadata.Name, prop.Metadata.ClrType)) continue;
+                    var value = NormalizeAuditValue(prop.OriginalValue);
+                    if (value is null) continue;
+                    oldValues[prop.Metadata.Name] = value;
+                }
+            }
+            else
+            {
+                action = "UPDATE";
+                var isDeletedProp = entry.Properties.FirstOrDefault(p =>
+                    p.Metadata.Name == nameof(BaseAuditableEntity.IsDeleted));
+
+                if (isDeletedProp is { IsModified: true })
+                {
+                    var nowDeleted = isDeletedProp.CurrentValue is true;
+                    var wasDeleted = isDeletedProp.OriginalValue is true;
+                    if (nowDeleted && !wasDeleted) action = "SOFT_DELETE";
+                    else if (!nowDeleted && wasDeleted) action = "RESTORE";
+                }
+
+                foreach (var prop in entry.Properties)
+                {
+                    if (!IsCapturable(prop.Metadata.Name, prop.Metadata.ClrType)) continue;
+                    if (!prop.IsModified && Equals(prop.OriginalValue, prop.CurrentValue)) continue;
+
+                    var before = NormalizeAuditValue(prop.OriginalValue);
+                    var after = NormalizeAuditValue(prop.CurrentValue);
+                    changedFields.Add(prop.Metadata.Name);
+                    oldValues[prop.Metadata.Name] = before;
+                    newValues[prop.Metadata.Name] = after;
+                }
+
+                // Nothing worth recording (e.g. only UpdatedAt/RowVersion moved).
+                if (changedFields.Count == 0) continue;
+            }
+
+            // ---- who / where ----
+            var tenantId = (entry.Entity as ITenantEntity)?.TenantId
+                           ?? _tenantService.GetCurrentTenantId();
+
+            Guid? branchId = policy.Location switch
+            {
+                AuditLocationScope.Organization => null,
+                AuditLocationScope.Ambient => _tenantService.GetCurrentBranchId(),
+                _ => entry.Entity is IBranchEntity branchEntity
+                    ? branchEntity.BranchId
+                    : _tenantService.GetCurrentBranchId(),
+            };
+
+            string? locationName = null;
+            if (branchId.HasValue)
+            {
+                branchNames ??= new Dictionary<Guid, string>();
+                if (!branchNames.TryGetValue(branchId.Value, out locationName))
+                {
+                    locationName = Branches.IgnoreQueryFilters()
+                        .Where(b => b.Id == branchId.Value)
+                        .Select(b => b.Name)
+                        .FirstOrDefault();
+                    branchNames[branchId.Value] = locationName ?? string.Empty;
+                }
+                if (locationName == string.Empty) locationName = null;
+            }
+
+            var label = AuditPolicy.DescribeEntity(entry.Entity, newValues.Count > 0 ? newValues : oldValues);
+            var entityId = entry.Entity is BaseEntity keyed ? keyed.Id.ToString() : null;
+
+            rows ??= new List<AuditLog>();
+            rows.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                CreatedAt = now,
+                CreatedBy = currentUserId,
+                RowVersion = Array.Empty<byte>(),
+                Timestamp = now,
+                TenantId = tenantId,
+                BranchId = branchId,
+                LocationName = locationName,
+                UserId = currentUserId,
+                UserName = _currentUserService.FullName,
+                UserEmail = _currentUserService.Email,
+                Action = action,
+                Module = policy.Module,
+                EntityType = policy.EntityLabel,
+                EntityId = entityId,
+                EntityName = label ?? policy.EntityLabel,
+                Description = BuildAuditDescription(action, policy.EntityLabel, label, changedFields.Count),
+                OldValues = oldValues.Count > 0 ? JsonSerializer.Serialize(oldValues, AuditJsonOptions) : null,
+                NewValues = newValues.Count > 0 ? JsonSerializer.Serialize(newValues, AuditJsonOptions) : null,
+                AffectedColumns = changedFields.Count > 0 ? JsonSerializer.Serialize(changedFields) : null,
+                Success = true,
+                IpAddress = info?.IpAddress,
+                UserAgent = info?.UserAgent,
+                RequestPath = info?.RequestPath,
+                RequestMethod = info?.RequestMethod,
+                CorrelationId = info?.CorrelationId,
+            });
+        }
+
+        if (rows is { Count: > 0 })
+            AuditLogs.AddRange(rows);
+    }
+
+    private static bool IsCapturable(string fieldName, Type clrType) =>
+        clrType != typeof(byte[]) && AuditPolicy.IsAuditableField(fieldName);
+
+    private static object? NormalizeAuditValue(object? value) => value switch
+    {
+        null => null,
+        bool or byte or sbyte or short or ushort or int or uint or long or ulong
+            or float or double or decimal or string => value,
+        Guid guid => guid.ToString(),
+        DateTime dateTime => dateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+        DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("yyyy-MM-dd HH:mm:ss zzz"),
+        TimeSpan timeSpan => timeSpan.ToString(),
+        Enum enumValue => enumValue.ToString(),
+        _ => value.ToString(),
+    };
+
+    private static string BuildAuditDescription(string action, string entityLabel, string? label, int changeCount)
+    {
+        var subject = label ?? entityLabel;
+        return action switch
+        {
+            "CREATE" => $"{entityLabel} created: {subject}",
+            "UPDATE" => $"{entityLabel} updated: {subject} ({changeCount} field{(changeCount == 1 ? "" : "s")})",
+            "SOFT_DELETE" => $"{entityLabel} deleted: {subject}",
+            "RESTORE" => $"{entityLabel} restored: {subject}",
+            "DELETE" => $"{entityLabel} permanently deleted: {subject}",
+            _ => $"{entityLabel}: {action}",
+        };
     }
 }

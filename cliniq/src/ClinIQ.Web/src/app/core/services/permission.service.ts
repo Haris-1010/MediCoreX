@@ -115,8 +115,19 @@ export class PermissionService {
             ? (null as unknown as CurrentUserContext)
             : (response.data ?? response) as CurrentUserContext
         ),
-        tap((ctx: CurrentUserContext) => this.context.set(ctx)),
+        tap((ctx: CurrentUserContext) => {
+          if (ctx) {
+            this.context.set(ctx);
+            return;
+          }
+          // /me answered but returned nothing usable. Drop the cached in-flight
+          // observable so the next load() issues a fresh request — otherwise the
+          // replayed null would keep every permission check false for the rest
+          // of the session (guards would send a fully permitted user to /forbidden).
+          this.inflight$ = undefined;
+        }),
         catchError(() => {
+          this.inflight$ = undefined;
           if (!environment.production) {
             const fallback = this.getDevFallbackContext();
             this.context.set(fallback);

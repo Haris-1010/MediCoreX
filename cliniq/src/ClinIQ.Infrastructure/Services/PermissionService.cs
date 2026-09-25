@@ -39,7 +39,13 @@ public class PermissionService : IPermissionService
     // for that tenant, which is how a memory cache with no key enumeration can
     // still be invalidated wholesale. In-process scope is fine (IMemoryCache is
     // already per-process); move this to a shared store only for multi-node.
-    private readonly ConcurrentDictionary<Guid, int> _generations = new();
+    //
+    // STATIC — this service is registered scoped, so an instance field would die
+    // with the request that called InvalidateUser/InvalidateTenant. The bump would
+    // land in a dictionary nobody else can see, every request would compute
+    // generation 0, and a saved permission change would stay invisible until the
+    // 5-minute TTL expired. IMemoryCache is a singleton, so the stamp must be too.
+    private static readonly ConcurrentDictionary<Guid, int> _generations = new();
 
     public PermissionService(
         ApplicationDbContext context,
