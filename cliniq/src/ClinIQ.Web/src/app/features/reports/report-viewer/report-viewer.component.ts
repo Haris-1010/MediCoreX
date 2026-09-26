@@ -66,7 +66,64 @@ export class ReportViewerComponent implements OnInit, OnDestroy {
     { key: 'custom', label: 'Custom' },
   ];
 
+  showMoreFilters = false;
+
   trendGroups: { format: string; series: SeriesData[] }[] = [];
+
+  /** Plain-language explanations for the figures people ask about most. */
+  private static readonly KPI_HINTS: Record<string, string> = {
+    revenue: 'Total of non-cancelled invoices dated in this period.',
+    collected: 'Money actually received (payments, excluding refunds) in this period.',
+    net: 'Collected minus refunds.',
+    outstanding: 'Unpaid balance on invoices dated in this period.',
+    receivables: 'Everything still owed across all open invoices, regardless of date.',
+    refunds: 'Money returned to patients in this period.',
+    refunded: 'Refunded amounts on invoices dated in this period.',
+    discounts: 'Discounts given on invoices dated in this period.',
+    occupancy: 'Occupied beds as a share of all beds right now.',
+    avgLos: 'Average days between admission and discharge, for patients discharged in this period.',
+    tat: 'Average hours from order to completion, for orders completed in this period.',
+    returning: 'Patients registered before this period who had a visit during it.',
+    completionRate: 'Completed appointments as a share of all appointments in this period.',
+    dispenseRate: 'Dispensed prescriptions as a share of all prescriptions in this period.',
+    stockValue: 'Current stock × purchase price.',
+    retailValue: 'Current stock × selling price.',
+    atRiskValue: 'Stock value in batches that expire within 90 days.',
+    linkedRevenue: 'Invoices linked to the doctor through a visit or appointment.',
+    revenueLinked: 'Invoices linked to the doctor through a visit or appointment.',
+    activeUsers: 'Different people who did something recorded in the audit trail.',
+  };
+
+  kpiHint(key: string): string { return ReportViewerComponent.KPI_HINTS[key] ?? ''; }
+
+  get selectFilterCount(): number {
+    return (this.def?.filters ?? []).filter(f => f.key !== 'search').length;
+  }
+
+  get activeSelectFilters(): number {
+    const f = this.filters;
+    return [f.doctorId, f.departmentId, f.status, f.gender].filter(Boolean).length;
+  }
+
+  get related() {
+    return (this.category?.reports ?? []).filter(r => r.id !== this.def?.id).slice(0, 4);
+  }
+
+  /** e.g. "Showing 12 invoices for All Locations, 01 Sept – 26 Sept 2026 · Status: Paid." */
+  get story(): string {
+    if (!this.data || !this.def) return '';
+    const n = this.data.totalCount;
+    const noun = n === 1 ? 'record' : 'records';
+    const period = this.def.usesDateRange ? `, ${this.periodLabel}` : ' as of now';
+    const parts: string[] = [];
+    if (this.filters.doctorId) parts.push(`Doctor: ${this.doctorName(this.filters.doctorId)}`);
+    if (this.filters.departmentId) parts.push(`Department: ${this.departmentName(this.filters.departmentId)}`);
+    if (this.filters.status) parts.push(`${this.statusFilter?.label ?? 'Status'}: ${this.statusLabel(this.filters.status)}`);
+    if (this.filters.gender) parts.push(`Gender: ${this.filters.gender}`);
+    if (this.filters.search.trim()) parts.push(`matching "${this.filters.search.trim()}"`);
+    return `Showing ${n.toLocaleString()} ${noun} for ${this.data.locationScope.name}${period}` +
+      (parts.length ? ` · ${parts.join(' · ')}` : '') + '.';
+  }
   breakdowns: SeriesData[] = [];
 
   private readonly search$ = new Subject<string>();
@@ -122,6 +179,8 @@ export class ReportViewerComponent implements OnInit, OnDestroy {
             return;
           }
           this.readUrl(this.route.snapshot.queryParams);
+          this.showMoreFilters = this.activeSelectFilters > 0;
+          this.rememberRecent(this.reportId);
           this.load();
         },
         error: (e: Error) => { this.fail(e); },
@@ -224,6 +283,15 @@ export class ReportViewerComponent implements OnInit, OnDestroy {
   }
 
   print(): void { window.print(); }
+
+  /** Per-browser convenience for the Report Center's "Recently viewed" row. */
+  private rememberRecent(id: string): void {
+    try {
+      const key = 'medicorex.reports.recent';
+      const list: string[] = JSON.parse(localStorage.getItem(key) || '[]');
+      localStorage.setItem(key, JSON.stringify([id, ...list.filter(x => x !== id)].slice(0, 6)));
+    } catch { /* storage unavailable — nothing to remember */ }
+  }
 
   // ------------------------------------------------------------------ data
 

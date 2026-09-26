@@ -47,6 +47,70 @@ public class UsersController : ControllerBase
         return null;
     }
 
+    /// <summary>Default role per user type, applied when the client sends no roles.</summary>
+    private static readonly Dictionary<string, string> DefaultRoleByUserType = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Admin"] = ClinIQ.Shared.Constants.Roles.OrganizationAdmin,
+        ["Doctor"] = ClinIQ.Shared.Constants.Roles.Doctor,
+        ["PharmacyManager"] = ClinIQ.Shared.Constants.Roles.Pharmacist,
+        ["LabManager"] = ClinIQ.Shared.Constants.Roles.LabStaff,
+        ["Receptionist"] = ClinIQ.Shared.Constants.Roles.Receptionist,
+        ["Nurse"] = ClinIQ.Shared.Constants.Roles.Nurse,
+    };
+
+    /// <summary>
+    /// Roles a caller may assign in this organization: the organization's own
+    /// roles plus the global system role templates. Never SuperAdmin, and
+    /// OrganizationOwner only for someone who may manage owners. Returns the
+    /// validated ids, or an error when any requested id is not assignable.
+    /// With no request, the user type's default role is used so a new account
+    /// is never created without permissions.
+    /// </summary>
+    private async Task<(List<Guid> RoleIds, string? Error)> ResolveRoleIdsAsync(
+        Guid tenantId, IReadOnlyCollection<Guid>? requested, string? userType, bool canManageOwners, bool applyDefault)
+    {
+        var superAdmin = ClinIQ.Shared.Constants.Roles.SuperAdmin.ToUpperInvariant();
+        var owner = ClinIQ.Shared.Constants.Roles.OrganizationOwner.ToUpperInvariant();
+
+        var assignable = _context.Roles.IgnoreQueryFilters()
+            .Where(r => !r.IsDeleted && r.IsActive
+                && (r.TenantId == tenantId || (r.TenantId == null && r.IsSystemRole))
+                && r.NormalizedName != superAdmin
+                && (canManageOwners || r.NormalizedName != owner));
+
+        var ids = (requested ?? Array.Empty<Guid>()).Distinct().ToList();
+        if (ids.Count > 0)
+        {
+            var valid = await assignable.Where(r => ids.Contains(r.Id)).Select(r => r.Id).ToListAsync();
+            if (valid.Count != ids.Count)
+                return (new List<Guid>(), "One or more selected roles cannot be assigned in this organization.");
+            return (valid, null);
+        }
+
+        if (!applyDefault || userType is null || !DefaultRoleByUserType.TryGetValue(userType, out var roleName))
+            return (new List<Guid>(), null);
+
+        var normalized = roleName.ToUpperInvariant();
+        var defaultRole = await assignable
+            .Where(r => r.NormalizedName == normalized)
+            .OrderByDescending(r => r.TenantId == tenantId) // an org-specific role of that name wins
+            .ThenByDescending(r => r.IsSystemRole)
+            .Select(r => (Guid?)r.Id)
+            .FirstOrDefaultAsync();
+
+        return (defaultRole.HasValue ? new List<Guid> { defaultRole.Value } : new List<Guid>(), null);
+    }
+
+    /// <summary>Only a caller who can already see every location may grant All Locations.</summary>
+    private async Task<bool> CanGrantAllLocationsAsync(Guid tenantId)
+    {
+        if (User.FindFirst("is_super_admin")?.Value?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+
+        return await _context.TenantUsers.IgnoreQueryFilters().AnyAsync(tu => tu.TenantId == tenantId
+            && tu.UserId == CurrentUserId && tu.IsActive && (tu.HasAllLocations || tu.IsOwner));
+    }
+
     private async Task<bool> CanManageOwnersAsync(Guid tenantId)
     {
         if (User.FindFirst("is_super_admin")?.Value?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)
@@ -153,6 +217,9 @@ public class UsersController : ControllerBase
                         && !role.IsDeleted)));
         }
 
+        // Visible population before the list filters — drives the summary cards.
+        var visible = query;
+
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             var term = searchTerm.ToLower();
@@ -209,6 +276,15 @@ public class UsersController : ControllerBase
                 IsDoctor = u.UserType == "Doctor" || u.Specialization != null,
                 u.IsActive,
                 u.LastLoginAt,
+                u.CreatedAt,
+                IsOwner = tenantId.HasValue && _context.TenantUsers
+                    .Any(tu => tu.UserId == u.Id && tu.TenantId == tenantId.Value && tu.IsOwner),
+                HasAllLocations = tenantId.HasValue && _context.TenantUsers
+                    .Any(tu => tu.UserId == u.Id && tu.TenantId == tenantId.Value && (tu.HasAllLocations || tu.IsOwner)),
+                Locations = _context.BranchUsers
+                    .Where(bu => bu.UserId == u.Id && bu.IsActive && (!tenantId.HasValue || bu.TenantId == tenantId.Value))
+                    .Join(_context.Branches, bu => bu.BranchId, b => b.Id, (bu, b) => b.Name)
+                    .ToList(),
                 Roles = _context.UserRoles
                     .Where(ur => ur.UserId == u.Id && (!tenantId.HasValue || ur.TenantId == tenantId.Value))
                     .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name)
@@ -216,9 +292,19 @@ public class UsersController : ControllerBase
             })
             .ToListAsync();
 
+        var stats = new
+        {
+            total = await visible.CountAsync(),
+            active = await visible.CountAsync(u => u.IsActive),
+            inactive = await visible.CountAsync(u => !u.IsActive),
+            doctors = await visible.CountAsync(u => u.UserType == "Doctor" || u.Specialization != null),
+            neverLoggedIn = await visible.CountAsync(u => u.LastLoginAt == null),
+        };
+
         return Ok(Result<object>.Success(new
         {
             items = users,
+            stats,
             totalCount,
             pageNumber,
             pageSize,
@@ -267,6 +353,10 @@ public class UsersController : ControllerBase
                     .Where(bu => bu.UserId == u.Id && bu.TenantId == tenantId.Value && bu.IsActive)
                     .Select(bu => bu.BranchId)
                     .ToList(),
+                HasAllLocations = _context.TenantUsers
+                    .Any(tu => tu.UserId == u.Id && tu.TenantId == tenantId.Value && (tu.HasAllLocations || tu.IsOwner)),
+                IsOwner = _context.TenantUsers
+                    .Any(tu => tu.UserId == u.Id && tu.TenantId == tenantId.Value && tu.IsOwner),
                 Schedule = _context.DoctorSchedules
                     .Where(s => s.DoctorId == u.Id && !s.IsDeleted)
                     .OrderBy(s => s.DayOfWeek)
@@ -304,15 +394,25 @@ public class UsersController : ControllerBase
             return BadRequest(Result.Failure("Unable to resolve the current organization."));
 
         var canManageOwners = await CanManageOwnersAsync(tenantId.Value);
-        if (!canManageOwners && request.RoleIds != null && await _context.Roles.AnyAsync(role => request.RoleIds.Contains(role.Id)
-            && role.TenantId == tenantId.Value
-            && role.IsSystemRole
-            && role.NormalizedName == ClinIQ.Shared.Constants.Roles.OrganizationOwner.ToUpper()))
-            return Forbid();
 
         var userType = string.IsNullOrWhiteSpace(request.UserType) ? null : request.UserType.Trim();
         if (userType != null && !AllowedUserTypes.Contains(userType))
-            return BadRequest(Result.Failure("Invalid user type. Allowed: Doctor, PharmacyManager, LabManager, Receptionist, Nurse."));
+            return BadRequest(Result.Failure("Invalid user type. Allowed: Admin, Doctor, PharmacyManager, LabManager, Receptionist, Nurse."));
+
+        var (roleIds, roleError) = await ResolveRoleIdsAsync(tenantId.Value, request.RoleIds, userType, canManageOwners, applyDefault: true);
+        if (roleError != null)
+            return StatusCode(StatusCodes.Status403Forbidden, Result.Failure(roleError, "FORBIDDEN"));
+
+        // Organization admins see every location by default; anyone else only
+        // when explicitly granted. Granting requires All Locations yourself.
+        var hasAllLocations = request.HasAllLocations ?? string.Equals(userType, "Admin", StringComparison.OrdinalIgnoreCase);
+        if (hasAllLocations && !await CanGrantAllLocationsAsync(tenantId.Value))
+        {
+            if (request.HasAllLocations == true)
+                return StatusCode(StatusCodes.Status403Forbidden,
+                    Result.Failure("Only a user with All Locations access can grant it.", "FORBIDDEN"));
+            hasAllLocations = false;
+        }
 
         var user = new ApplicationUser
         {
@@ -346,6 +446,7 @@ public class UsersController : ControllerBase
             UserId = user.Id,
             IsOwner = false,
             IsActive = true,
+            HasAllLocations = hasAllLocations,
             JoinedAt = DateTime.UtcNow
         });
 
@@ -372,18 +473,15 @@ public class UsersController : ControllerBase
             });
         }
 
-        // Assign roles scoped to the current tenant.
-        if (request.RoleIds != null && request.RoleIds.Any())
+        // Assign roles scoped to the current tenant (validated above).
+        foreach (var roleId in roleIds)
         {
-            foreach (var roleId in request.RoleIds)
+            _context.UserRoles.Add(new UserRole
             {
-                _context.UserRoles.Add(new UserRole
-                {
-                    UserId = user.Id,
-                    RoleId = roleId,
-                    TenantId = tenantId.Value
-                });
-            }
+                UserId = user.Id,
+                RoleId = roleId,
+                TenantId = tenantId.Value
+            });
         }
 
         // Doctor schedule (time slots + fee) created together with the account.
@@ -437,12 +535,7 @@ public class UsersController : ControllerBase
             && await IsProtectedOwnerAsync(id, tenantId.Value))
             return Forbid();
 
-        if (!await CanManageOwnersAsync(tenantId.Value) && request.RoleIds != null
-            && await _context.Roles.AnyAsync(role => request.RoleIds.Contains(role.Id)
-                && role.TenantId == tenantId.Value
-                && role.IsSystemRole
-                && role.NormalizedName == ClinIQ.Shared.Constants.Roles.OrganizationOwner.ToUpper()))
-            return Forbid();
+        var canManageOwners = await CanManageOwnersAsync(tenantId.Value);
 
         user.FirstName = request.FirstName;
         user.LastName = request.LastName;
@@ -453,7 +546,33 @@ public class UsersController : ControllerBase
 
         var userType = string.IsNullOrWhiteSpace(request.UserType) ? user.UserType : request.UserType.Trim();
         if (userType != null && !AllowedUserTypes.Contains(userType))
-            return BadRequest(Result.Failure("Invalid user type. Allowed: Doctor, PharmacyManager, LabManager, Receptionist, Nurse."));
+            return BadRequest(Result.Failure("Invalid user type. Allowed: Admin, Doctor, PharmacyManager, LabManager, Receptionist, Nurse."));
+
+        // null RoleIds = leave roles alone; an explicit list replaces them.
+        List<Guid>? roleIds = null;
+        if (request.RoleIds != null)
+        {
+            var (resolved, roleError) = await ResolveRoleIdsAsync(tenantId.Value, request.RoleIds, userType, canManageOwners, applyDefault: false);
+            if (roleError != null)
+                return StatusCode(StatusCodes.Status403Forbidden, Result.Failure(roleError, "FORBIDDEN"));
+            roleIds = resolved;
+        }
+
+        if (request.HasAllLocations.HasValue)
+        {
+            var membership = await _context.TenantUsers
+                .FirstOrDefaultAsync(tu => tu.UserId == id && tu.TenantId == tenantId.Value);
+            if (membership != null && membership.HasAllLocations != request.HasAllLocations.Value)
+            {
+                if (!await CanGrantAllLocationsAsync(tenantId.Value))
+                    return StatusCode(StatusCodes.Status403Forbidden,
+                        Result.Failure("Only a user with All Locations access can change it.", "FORBIDDEN"));
+                if (membership.IsOwner && !request.HasAllLocations.Value)
+                    return BadRequest(Result.Failure("The organization owner always has access to all locations."));
+                membership.HasAllLocations = request.HasAllLocations.Value;
+            }
+        }
+
         user.UserType = userType;
         user.Designation = request.Designation;
         user.EmployeeId = request.EmployeeId;
@@ -463,18 +582,16 @@ public class UsersController : ControllerBase
         user.Bio = request.Bio;
         user.DepartmentId = request.DepartmentId;
 
-        // Update roles scoped to the current tenant.
-        var existingRoles = await _context.UserRoles
-            .Where(ur => ur.UserId == id && ur.TenantId == tenantId.Value)
-            .ToListAsync();
-        _context.UserRoles.RemoveRange(existingRoles);
-
-        if (request.RoleIds != null && request.RoleIds.Any())
+        // Replace roles scoped to the current tenant — only the ones that change,
+        // so the audit trail shows real ROLE_ASSIGNED / ROLE_REMOVED events.
+        if (roleIds != null)
         {
-            foreach (var roleId in request.RoleIds)
-            {
+            var existingRoles = await _context.UserRoles
+                .Where(ur => ur.UserId == id && ur.TenantId == tenantId.Value)
+                .ToListAsync();
+            _context.UserRoles.RemoveRange(existingRoles.Where(ur => !roleIds.Contains(ur.RoleId)));
+            foreach (var roleId in roleIds.Where(r => existingRoles.All(ur => ur.RoleId != r)))
                 _context.UserRoles.Add(new UserRole { UserId = id, RoleId = roleId, TenantId = tenantId.Value });
-            }
         }
 
         // Replace branch assignments when the client sends a location list.
@@ -724,7 +841,8 @@ public record CreateUserRequest(
     int? SlotDuration = null,
     decimal? ConsultationFee = null,
     string[]? WorkingDays = null,
-    List<Guid>? BranchIds = null
+    List<Guid>? BranchIds = null,
+    bool? HasAllLocations = null
 );
 
 public record UpdateUserRequest(
@@ -747,7 +865,8 @@ public record UpdateUserRequest(
     int? SlotDuration = null,
     decimal? ConsultationFee = null,
     string[]? WorkingDays = null,
-    List<Guid>? BranchIds = null
+    List<Guid>? BranchIds = null,
+    bool? HasAllLocations = null
 );
 
 public record AdminResetPasswordRequest(

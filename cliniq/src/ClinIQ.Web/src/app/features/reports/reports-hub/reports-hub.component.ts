@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
-import { CATEGORY_ACCENTS, ReportCategory, ReportContext, ReportsService } from '../reports.service';
+import { CATEGORY_ACCENTS, ReportCategory, ReportContext, ReportDef, ReportsService } from '../reports.service';
 
 /**
  * Report Center: every report the caller may open, grouped by department.
@@ -53,6 +53,26 @@ import { CATEGORY_ACCENTS, ReportCategory, ReportContext, ReportsService } from 
         <mat-icon>visibility_off</mat-icon>
         <div><strong>No reports available</strong><p>Your role does not include access to any report yet. Ask an administrator for report permissions.</p></div>
       </div>
+
+      <section class="quick" *ngIf="!loading && !query && quickPicks.length">
+        <h2><mat-icon>bolt</mat-icon>Quick picks</h2>
+        <div class="quick-list">
+          <a *ngFor="let q of quickPicks; let i = index" class="qp" [routerLink]="['/reports', q.id]" [queryParams]="q.params"
+             [style.--accent]="accent(q.category)" [style.animation-delay.ms]="i * 40">
+            <span class="qp-icon"><mat-icon>{{ q.icon }}</mat-icon></span>
+            <span class="qp-text"><strong>{{ q.label }}</strong><small>{{ q.hint }}</small></span>
+          </a>
+        </div>
+      </section>
+
+      <section class="recent" *ngIf="!loading && !query && recent.length">
+        <h2><mat-icon>history</mat-icon>Recently viewed</h2>
+        <div class="recent-list">
+          <a *ngFor="let r of recent" [routerLink]="['/reports', r.report.id]" [style.--accent]="accent(r.category)">
+            <mat-icon>{{ r.report.icon }}</mat-icon>{{ r.report.name }}
+          </a>
+        </div>
+      </section>
 
       <nav class="jump" *ngIf="!loading && visible.length > 1">
         <a *ngFor="let c of visible" (click)="scrollTo(c.id)" [style.--accent]="accent(c.id)">
@@ -146,6 +166,34 @@ import { CATEGORY_ACCENTS, ReportCategory, ReportContext, ReportsService } from 
       border: 1px solid var(--border-color, #e2e8f0); border-bottom-width: 2px;
     }
     .clear { border: 0; background: transparent; cursor: pointer; display: flex; padding: 2px; color: var(--text-muted, #64748b); }
+
+    .quick, .recent { margin-bottom: 20px; }
+    .quick h2, .recent h2 {
+      display: flex; align-items: center; gap: 6px; margin: 0 0 10px; font-size: 0.8rem; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted, #64748b);
+    }
+    .quick h2 mat-icon, .recent h2 mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .quick-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+    .qp {
+      display: flex; align-items: center; gap: 11px; padding: 12px 14px; border-radius: 13px; text-decoration: none;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 9%, var(--bg-card, #fff)), var(--bg-card, #fff));
+      border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border-color, #e2e8f0));
+      transition: transform .15s, box-shadow .15s; animation: fade .4s ease-out both;
+    }
+    .qp:hover { transform: translateY(-2px); box-shadow: 0 12px 26px -14px var(--accent); }
+    .qp-icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0; color: #fff; background: var(--accent); }
+    .qp-icon mat-icon { font-size: 19px; width: 19px; height: 19px; }
+    .qp-text { display: flex; flex-direction: column; min-width: 0; }
+    .qp-text strong { font-size: 0.86rem; color: var(--text-primary, #1e293b); }
+    .qp-text small { font-size: 0.73rem; color: var(--text-muted, #64748b); }
+    .recent-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .recent-list a {
+      display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 10px; text-decoration: none;
+      font-size: 0.8rem; font-weight: 600; color: var(--text-primary, #1e293b); background: var(--bg-card, #fff);
+      border: 1px solid var(--border-color, #e2e8f0); transition: border-color .15s;
+    }
+    .recent-list a:hover { border-color: var(--accent); }
+    .recent-list mat-icon { font-size: 17px; width: 17px; height: 17px; color: var(--accent); }
 
     .jump { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 18px; scrollbar-width: thin; }
     .jump a {
@@ -248,6 +296,20 @@ export class ReportsHubComponent implements OnInit {
   loading = true;
   error = '';
   query = '';
+  quickPicks: { id: string; category: string; label: string; hint: string; icon: string; params: Record<string, string> }[] = [];
+  recent: { report: ReportDef; category: string }[] = [];
+
+  /** One-click starting points; only those the user can open are shown. */
+  private static readonly QUICK: { id: string; label: string; hint: string; icon: string; params: Record<string, string> }[] = [
+    { id: 'appointments', label: "Today's appointments", hint: 'Who is booked today', icon: 'event', params: { range: 'today' } },
+    { id: 'management', label: 'This month at a glance', hint: 'Patients, visits, revenue', icon: 'insights', params: { range: 'month' } },
+    { id: 'payments', label: "Today's collections", hint: 'Cash and card received today', icon: 'point_of_sale', params: { range: 'today' } },
+    { id: 'billing', label: "This month's revenue", hint: 'Invoices and dues', icon: 'receipt_long', params: { range: 'month' } },
+    { id: 'beds', label: 'Bed occupancy now', hint: 'Free and occupied beds', icon: 'bed', params: {} },
+    { id: 'inventory', label: 'Low stock', hint: 'Items to reorder', icon: 'production_quantity_limits', params: { status: 'Low Stock' } },
+    { id: 'stock-expiry', label: 'Expiring in 30 days', hint: 'Batches to use or return', icon: 'event_busy', params: { status: 'Within 30 days' } },
+    { id: 'doctor-activity', label: 'Doctor activity', hint: 'This month, per doctor', icon: 'assignment_ind', params: { range: 'month' } },
+  ];
 
   constructor(private reports: ReportsService) {}
 
@@ -262,6 +324,7 @@ export class ReportsHubComponent implements OnInit {
         this.canExport = catalog.canExport;
         this.context = context;
         this.applySearch();
+        this.buildShortcuts();
         this.loading = false;
       },
       error: (e: Error) => {
@@ -269,6 +332,20 @@ export class ReportsHubComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  private buildShortcuts(): void {
+    const index = new Map<string, { report: ReportDef; category: string }>();
+    for (const c of this.categories) for (const r of c.reports) index.set(r.id, { report: r, category: c.id });
+
+    this.quickPicks = ReportsHubComponent.QUICK
+      .filter(q => index.has(q.id))
+      .map(q => ({ ...q, category: index.get(q.id)!.category }))
+      .slice(0, 6);
+
+    let ids: string[] = [];
+    try { ids = JSON.parse(localStorage.getItem('medicorex.reports.recent') || '[]'); } catch { ids = []; }
+    this.recent = ids.map(id => index.get(id)).filter((x): x is { report: ReportDef; category: string } => !!x).slice(0, 5);
   }
 
   accent(categoryId: string): string {

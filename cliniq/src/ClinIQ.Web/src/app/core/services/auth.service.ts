@@ -166,7 +166,8 @@ export class AuthService {
       refreshToken
     }).pipe(
       map(response => response.data),
-      tap(response => this.handleAuthentication(response)),
+      // A refresh must never move the user out of the location they chose.
+      tap(response => this.handleAuthentication(response, undefined, true)),
       catchError(error => {
         this.clearAuth();
         return throwError(() => error);
@@ -271,7 +272,13 @@ export class AuthService {
       );
   }
 
-  private handleAuthentication(response: LoginResponse, preferredBranchId?: string): void {
+  /**
+   * @param preferredBranchId explicit switch target ('all' or a branch id)
+   * @param keepCurrentLocation token refresh: keep the stored selection
+   */
+  private handleAuthentication(response: LoginResponse, preferredBranchId?: string, keepCurrentLocation = false): void {
+    const storedBranch = this.storage.getItem<string>(environment.branchKey);
+
     this.storage.setItem(environment.tokenKey, response.accessToken);
     this.storage.setItem(environment.refreshTokenKey, response.refreshToken);
     this.storage.setItem(environment.userKey, response.user);
@@ -281,10 +288,17 @@ export class AuthService {
     if (firstTenant) {
       this.storage.setItem(environment.tenantKey, firstTenant.tenantId);
 
+      const canSeeAll = this.tokenGrantsAllLocations(response.accessToken);
+
       if (preferredBranchId === 'all') {
         this.storage.setItem(environment.branchKey, 'all');
       } else if (preferredBranchId) {
         this.storage.setItem(environment.branchKey, preferredBranchId);
+      } else if (keepCurrentLocation && storedBranch && (storedBranch !== 'all' || canSeeAll)) {
+        // unchanged — the server re-validates the header on every request anyway
+      } else if (canSeeAll) {
+        // Organization owners/admins start in the organization-wide view.
+        this.storage.setItem(environment.branchKey, 'all');
       } else {
         const primaryBranch = firstTenant.branches?.find(b => b.isPrimary) || firstTenant.branches?.[0];
         if (primaryBranch) {
@@ -301,6 +315,17 @@ export class AuthService {
     // Load the effective permission context for the new session so the UI
     // (sidebar, buttons, guards) reflects the user's real grants.
     this.permissions.load(true).subscribe();
+  }
+
+  /** UX only: the server decides; this just picks the starting view. */
+  private tokenGrantsAllLocations(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return payload?.all_locations === 'true' || payload?.all_locations === true
+        || payload?.is_super_admin === 'true';
+    } catch {
+      return false;
+    }
   }
 
   private clearAuth(): void {

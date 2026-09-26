@@ -12,7 +12,19 @@
         <div class="title-row">
           <span class="title-icon"><mat-icon>{{ def?.icon || 'assessment' }}</mat-icon></span>
           <div>
-            <h1>{{ def?.name || 'Report' }}</h1>
+            <div class="h1-row">
+              <h1>{{ def?.name || 'Report' }}</h1>
+              <button type="button" class="switch no-print" *ngIf="category && category.reports.length > 1"
+                      [matMenuTriggerFor]="switchMenu" matTooltip="Open another {{ category.name }} report" aria-label="Switch report">
+                <mat-icon>expand_more</mat-icon>
+              </button>
+              <mat-menu #switchMenu="matMenu">
+                <button mat-menu-item *ngFor="let r of category?.reports" [routerLink]="['/reports', r.id]" [disabled]="r.id === def?.id">
+                  <mat-icon>{{ r.icon }}</mat-icon><span>{{ r.name }}</span>
+                </button>
+                <a mat-menu-item routerLink="/reports"><mat-icon>apps</mat-icon><span>All reports</span></a>
+              </mat-menu>
+            </div>
             <p class="desc">{{ def?.description }}</p>
           </div>
         </div>
@@ -24,7 +36,7 @@
       </div>
 
       <div class="head-actions no-print" *ngIf="def">
-        <button mat-stroked-button (click)="refresh()" [disabled]="loading || refreshing">
+        <button mat-stroked-button class="refresh-btn" (click)="refresh()" [disabled]="loading || refreshing" matTooltip="Reload with the latest data">
           <mat-icon>refresh</mat-icon> Refresh
         </button>
         <button mat-flat-button class="export-btn" [matMenuTriggerFor]="exportMenu" [disabled]="!data || exporting">
@@ -76,6 +88,15 @@
             </div>
           </div>
 
+          <div class="group grow" *ngIf="hasFilter('search')">
+            <span class="group-label">Search</span>
+            <label class="search">
+              <mat-icon>search</mat-icon>
+              <input type="search" [ngModel]="filters.search" (ngModelChange)="searchChanged($event)"
+                     (keydown.enter)="apply()" placeholder="Number, name, code…" aria-label="Search rows">
+            </label>
+          </div>
+
           <div class="group location">
             <span class="group-label">Location</span>
             <mat-select class="select" [(ngModel)]="filters.location" (selectionChange)="apply()"
@@ -85,9 +106,16 @@
               </mat-option>
             </mat-select>
           </div>
+
+          <button type="button" class="more-toggle" *ngIf="selectFilterCount" (click)="showMoreFilters = !showMoreFilters"
+                  [class.on]="showMoreFilters" [attr.aria-expanded]="showMoreFilters">
+            <mat-icon>tune</mat-icon> Filters
+            <span class="badge" *ngIf="activeSelectFilters">{{ activeSelectFilters }}</span>
+            <mat-icon class="chev">{{ showMoreFilters ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
         </div>
 
-        <div class="filter-row secondary" *ngIf="def.filters.length">
+        <div class="filter-row secondary" *ngIf="selectFilterCount && showMoreFilters">
           <div class="group" *ngIf="hasFilter('doctorId')">
             <span class="group-label">Doctor</span>
             <mat-select class="select" [(ngModel)]="filters.doctorId" (selectionChange)="apply()" aria-label="Doctor">
@@ -120,15 +148,6 @@
             </mat-select>
           </div>
 
-          <div class="group grow" *ngIf="hasFilter('search')">
-            <span class="group-label">Search</span>
-            <label class="search">
-              <mat-icon>search</mat-icon>
-              <input type="search" [ngModel]="filters.search" (ngModelChange)="searchChanged($event)"
-                     (keydown.enter)="apply()" placeholder="Number, name, code…" aria-label="Search rows">
-            </label>
-          </div>
-
           <button mat-button class="reset" *ngIf="activeFilterCount" (click)="resetFilters()">
             <mat-icon>filter_alt_off</mat-icon> Clear {{ activeFilterCount }}
           </button>
@@ -150,6 +169,18 @@
         <strong>{{ data.reportName }}</strong> · {{ data.locationScope.name }} · {{ periodLabel }}
       </div>
 
+      <!-- ===== Plain-language summary ===== -->
+      <p class="story" *ngIf="!loading && data">
+        <mat-icon>info</mat-icon>
+        <span [innerText]="story"></span>
+      </p>
+      <div class="widen no-print" *ngIf="!loading && data && data.totalCount === 0 && def.usesDateRange && filters.preset !== 'year'">
+        <mat-icon>event_busy</mat-icon>
+        <span>Nothing was recorded in this period{{ activeFilterCount ? ' with these filters' : '' }}.</span>
+        <button mat-stroked-button (click)="choosePreset('year')">Show this year</button>
+        <button mat-button *ngIf="activeFilterCount" (click)="resetFilters()">Clear filters</button>
+      </div>
+
       <!-- ===== KPIs ===== -->
       <section class="kpis" *ngIf="loading">
         <div class="kpi skeleton" *ngFor="let s of [1,2,3,4]"></div>
@@ -157,7 +188,7 @@
       <section class="kpis" *ngIf="!loading && data?.summary?.length" [class.dim]="refreshing">
         <div class="kpi" *ngFor="let k of data!.summary; let i = index" [attr.data-tone]="k.tone || 'neutral'"
              [style.animation-delay.ms]="i * 40">
-          <span class="kpi-label">{{ k.label }}</span>
+          <span class="kpi-label">{{ k.label }}<mat-icon class="kpi-help" *ngIf="kpiHint(k.key)" [matTooltip]="kpiHint(k.key)">help_outline</mat-icon></span>
           <span class="kpi-value">{{ fmt.value(k.value, k.format) }}</span>
         </div>
       </section>
@@ -228,6 +259,17 @@
                        [length]="data.totalCount" [pageIndex]="pageIndex" [pageSize]="pageSize"
                        [pageSizeOptions]="[10, 25, 50, 100]" (page)="page($event)" showFirstLastButtons>
         </mat-paginator>
+      </section>
+      <!-- ===== Related ===== -->
+      <section class="related no-print" *ngIf="!loading && related.length">
+        <h3>More {{ category?.name }} reports</h3>
+        <div class="rel-list">
+          <a *ngFor="let r of related" [routerLink]="['/reports', r.id]" class="rel">
+            <mat-icon>{{ r.icon }}</mat-icon>
+            <span><strong>{{ r.name }}</strong><small>{{ r.description }}</small></span>
+            <mat-icon class="go">arrow_forward</mat-icon>
+          </a>
+        </div>
       </section>
     </ng-container>
   </div>

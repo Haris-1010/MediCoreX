@@ -1,0 +1,249 @@
+<app-main-layout>
+  <div class="uf">
+
+    <header class="head">
+      <div>
+        <nav class="crumbs">
+          <a routerLink="/dashboard">Dashboard</a><mat-icon>chevron_right</mat-icon>
+          <a routerLink="/settings/users">Users</a><mat-icon>chevron_right</mat-icon>
+          <span>{{ isEdit ? 'Edit' : 'New user' }}</span>
+        </nav>
+        <h1>{{ isEdit ? 'Edit user' : 'Add a new user' }}</h1>
+        <p>{{ isEdit ? 'Update details, access and status. Changes apply at their next request.' : 'Four quick steps: who they are, their details, what they can access, and anything specific to their job.' }}</p>
+      </div>
+      <button mat-stroked-button (click)="goBack()"><mat-icon>arrow_back</mat-icon> Back to users</button>
+    </header>
+
+    <form class="layout" (ngSubmit)="save()" #userForm="ngForm" novalidate>
+      <div class="main">
+
+        <!-- 1. Type -->
+        <section class="step">
+          <header><span class="num">1</span><div><h2>What is their job?</h2><p>This sets sensible defaults for role and access.</p></div></header>
+          <div class="types" role="radiogroup" aria-label="User type">
+            <button type="button" *ngFor="let t of userTypes" class="type" role="radio"
+                    [attr.aria-checked]="user.userType === t.value" [class.on]="user.userType === t.value"
+                    [class.error]="showErrors && !user.userType" (click)="onUserTypeChange(t)">
+              <span class="t-icon"><mat-icon>{{ t.icon }}</mat-icon></span>
+              <span class="t-body"><strong>{{ t.label }}</strong><small>{{ t.description }}</small></span>
+              <mat-icon class="check">check_circle</mat-icon>
+            </button>
+          </div>
+          <div class="err" *ngIf="showErrors && !user.userType"><mat-icon>error</mat-icon> Choose a user type</div>
+        </section>
+
+        <!-- 2. Details -->
+        <section class="step">
+          <header><span class="num">2</span><div><h2>Personal details</h2><p>Used to sign in and shown across the app.</p></div></header>
+          <div class="grid two">
+            <label class="field">
+              <span>First name <b>*</b></span>
+              <div class="input" [class.invalid]="isInvalid(firstName)"><mat-icon>person</mat-icon>
+                <input type="text" [(ngModel)]="user.firstName" name="firstName" #firstName="ngModel" required minlength="2" placeholder="e.g. Sara" autocomplete="given-name">
+              </div>
+              <small class="err" *ngIf="isInvalid(firstName)">At least 2 characters</small>
+            </label>
+            <label class="field">
+              <span>Last name <b>*</b></span>
+              <div class="input" [class.invalid]="isInvalid(lastName)"><mat-icon>badge</mat-icon>
+                <input type="text" [(ngModel)]="user.lastName" name="lastName" #lastName="ngModel" required minlength="2" placeholder="e.g. Khan" autocomplete="family-name">
+              </div>
+              <small class="err" *ngIf="isInvalid(lastName)">At least 2 characters</small>
+            </label>
+            <label class="field">
+              <span>Email <b>*</b></span>
+              <div class="input" [class.invalid]="isInvalid(email)"><mat-icon>mail</mat-icon>
+                <input type="email" [(ngModel)]="user.email" name="email" #email="ngModel" required email placeholder="name@clinic.com" autocomplete="off">
+              </div>
+              <small class="hint" *ngIf="!isInvalid(email)">They sign in with this address.</small>
+              <small class="err" *ngIf="isInvalid(email)">Enter a valid email</small>
+            </label>
+            <label class="field">
+              <span>Phone</span>
+              <div class="input"><mat-icon>call</mat-icon>
+                <input type="tel" [(ngModel)]="user.phone" name="phone" placeholder="+92 300 1234567" autocomplete="off">
+              </div>
+            </label>
+          </div>
+
+          <div class="password" *ngIf="!isEdit">
+            <label class="field">
+              <span>Password <em>optional</em></span>
+              <div class="input"><mat-icon>lock</mat-icon>
+                <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="user.password" name="password" placeholder="Leave blank to use the default password" autocomplete="new-password">
+                <button type="button" class="icon-btn" (click)="showPassword = !showPassword" [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+                  <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+                <button type="button" class="icon-btn" *ngIf="user.password" (click)="copyPassword()" aria-label="Copy password"><mat-icon>content_copy</mat-icon></button>
+              </div>
+            </label>
+            <button type="button" mat-stroked-button class="gen" (click)="generatePassword()"><mat-icon>auto_awesome</mat-icon> Generate strong password</button>
+            <div class="strength" *ngIf="user.password" [attr.data-score]="passwordStrength.score">
+              <span class="bars"><i *ngFor="let b of [1,2,3,4,5]" [class.on]="b <= passwordStrength.score"></i></span>
+              {{ passwordStrength.label }}
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Access -->
+        <section class="step">
+          <header><span class="num">3</span><div><h2>Access</h2><p>Roles decide what they can do; locations decide where.</p></div></header>
+
+          <div class="block" *ngIf="rolesAvailable">
+            <div class="block-head">
+              <h3>Roles</h3>
+              <span class="hint" *ngIf="!isEdit && !rolesTouched && selectedTypeInfo">Pre-selected for a {{ selectedTypeInfo.label }} — change if needed</span>
+            </div>
+            <div class="roles">
+              <button type="button" *ngFor="let r of availableRoles" class="role" [class.on]="isRoleSelected(r.id)" (click)="toggleRole(r.id)"
+                      [matTooltip]="r.description || ((r.permissionNames?.length || 0) + ' permissions')">
+                <mat-icon>{{ isRoleSelected(r.id) ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+                {{ r.label }}
+                <span class="custom" *ngIf="!r.isSystemRole">Custom</span>
+              </button>
+            </div>
+            <div class="warn" *ngIf="!user.roleIds?.length">
+              <mat-icon>warning</mat-icon> Without a role this user can sign in but won't see any module.
+            </div>
+          </div>
+
+          <div class="block">
+            <div class="block-head"><h3>Locations</h3></div>
+
+            <div class="all-loc" [class.on]="user.hasAllLocations" [class.locked]="!canGrantAllLocations || isOwner">
+              <div class="all-text">
+                <mat-icon>public</mat-icon>
+                <div>
+                  <strong>Access to all locations</strong>
+                  <small *ngIf="isOwner">The organization owner always sees every location.</small>
+                  <small *ngIf="!isOwner && canGrantAllLocations">Sees every location — including ones added later — and starts in the organization-wide view.</small>
+                  <small *ngIf="!isOwner && !canGrantAllLocations">Only a user with all-location access can grant this.</small>
+                </div>
+              </div>
+              <mat-slide-toggle [(ngModel)]="user.hasAllLocations" name="hasAllLocations"
+                                [disabled]="!canGrantAllLocations || isOwner" aria-label="Access to all locations"></mat-slide-toggle>
+            </div>
+
+            <div class="loc-head" *ngIf="locations.length">
+              <span>{{ user.hasAllLocations ? 'Home locations (optional — used for schedules and defaults)' : 'Choose the locations they work at' }}</span>
+              <button type="button" class="link" (click)="selectAllLocations(selectedLocations.length !== locations.length)">
+                {{ selectedLocations.length === locations.length ? 'Clear' : 'Select all' }}
+              </button>
+            </div>
+            <div class="locs">
+              <button type="button" *ngFor="let loc of locations" class="loc" [class.on]="isBranchSelected(loc.id)" (click)="toggleBranch(loc.id)">
+                <mat-icon>{{ isBranchSelected(loc.id) ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+                <span class="loc-text"><strong>{{ loc.name }}</strong><small>{{ loc.city || (loc.isMainBranch ? 'Main location' : loc.code) }}</small></span>
+                <span class="main" *ngIf="loc.isMainBranch">Main</span>
+              </button>
+            </div>
+            <div class="muted" *ngIf="!locations.length">No locations found.</div>
+            <div class="err" *ngIf="showErrors && !user.hasAllLocations && !user.branchIds?.length"><mat-icon>error</mat-icon> Pick at least one location</div>
+          </div>
+
+          <div class="block status-row">
+            <div>
+              <h3>Account status</h3>
+              <small>{{ user.isActive ? 'Active — can sign in.' : 'Suspended — cannot sign in until re-activated.' }}</small>
+            </div>
+            <mat-slide-toggle [(ngModel)]="user.isActive" name="isActive" aria-label="Active"></mat-slide-toggle>
+          </div>
+        </section>
+
+        <!-- 4. Job specific -->
+        <section class="step" *ngIf="user.userType === 'Doctor'">
+          <header><span class="num">4</span><div><h2>Doctor profile &amp; schedule</h2><p>Shown on appointments and used to create time slots.</p></div></header>
+          <div class="grid two">
+            <label class="field">
+              <span>Specialization <b>*</b></span>
+              <div class="input" [class.invalid]="isInvalid(specialization)"><mat-icon>medical_services</mat-icon>
+                <input type="text" [(ngModel)]="user.specialization" name="specialization" #specialization="ngModel" required placeholder="e.g. Cardiology">
+              </div>
+              <small class="err" *ngIf="isInvalid(specialization)">Required for doctors</small>
+            </label>
+            <label class="field">
+              <span>License number</span>
+              <div class="input"><mat-icon>verified</mat-icon><input type="text" [(ngModel)]="user.licenseNumber" name="licenseNumber" placeholder="e.g. PMDC-12345"></div>
+            </label>
+            <label class="field">
+              <span>Qualifications</span>
+              <div class="input"><mat-icon>school</mat-icon><input type="text" [(ngModel)]="user.qualifications" name="qualifications" placeholder="e.g. MBBS, FCPS"></div>
+            </label>
+            <label class="field">
+              <span>Department</span>
+              <div class="input"><mat-icon>apartment</mat-icon>
+                <select [(ngModel)]="user.departmentId" name="departmentId">
+                  <option value="">No department</option>
+                  <option *ngFor="let d of departments" [ngValue]="d.id">{{ d.name }}</option>
+                </select>
+              </div>
+            </label>
+          </div>
+          <label class="field">
+            <span>Short bio</span>
+            <textarea [(ngModel)]="user.bio" name="bio" rows="2" placeholder="Shown to patients and staff — experience, focus areas…"></textarea>
+          </label>
+
+          <h3 class="sub">Consultation hours</h3>
+          <div class="grid four">
+            <label class="field"><span>Starts</span><div class="input"><mat-icon>schedule</mat-icon><input type="time" [(ngModel)]="user.consultationStartTime" name="consultationStartTime"></div></label>
+            <label class="field"><span>Ends</span><div class="input"><mat-icon>schedule</mat-icon><input type="time" [(ngModel)]="user.consultationEndTime" name="consultationEndTime"></div></label>
+            <label class="field"><span>Slot length (min)</span><div class="input"><mat-icon>timelapse</mat-icon><input type="number" min="10" max="180" step="5" [(ngModel)]="user.slotDuration" name="slotDuration"></div></label>
+            <label class="field"><span>Consultation fee</span><div class="input"><mat-icon>payments</mat-icon><input type="number" min="0" [(ngModel)]="user.consultationFee" name="consultationFee"></div></label>
+          </div>
+          <div class="days">
+            <button type="button" *ngFor="let day of weekDays" class="day" [class.on]="isDaySelected(day)" (click)="toggleDay(day)">{{ day.slice(0, 3) }}</button>
+          </div>
+        </section>
+
+        <section class="step" *ngIf="user.userType && user.userType !== 'Doctor'">
+          <header><span class="num">4</span><div><h2>Job details</h2><p>Optional — helps colleagues and HR.</p></div></header>
+          <div class="grid two">
+            <label class="field"><span>Designation</span><div class="input"><mat-icon>work</mat-icon><input type="text" [(ngModel)]="user.designation" name="designation" placeholder="e.g. Senior Nurse"></div></label>
+            <label class="field"><span>Employee ID</span><div class="input"><mat-icon>tag</mat-icon><input type="text" [(ngModel)]="user.employeeId" name="employeeId" placeholder="e.g. EMP-001"></div></label>
+          </div>
+        </section>
+      </div>
+
+      <!-- ===== Summary ===== -->
+      <aside class="side">
+        <div class="preview">
+          <div class="pv-top">
+            <span class="pv-avatar">{{ initials }}</span>
+            <div class="pv-id">
+              <strong>{{ fullName || 'New user' }}</strong>
+              <small>{{ user.email || 'email not set' }}</small>
+            </div>
+          </div>
+          <dl>
+            <div><dt>Type</dt><dd>{{ selectedTypeInfo?.label || '—' }}</dd></div>
+            <div><dt>Roles</dt><dd>
+              <span class="pv-chip" *ngFor="let r of selectedRoles">{{ r.label }}</span>
+              <span *ngIf="!selectedRoles.length" class="pv-warn">None</span>
+            </dd></div>
+            <div><dt>Locations</dt><dd>
+              <span class="pv-chip all" *ngIf="user.hasAllLocations"><mat-icon>public</mat-icon>All locations</span>
+              <ng-container *ngIf="!user.hasAllLocations">
+                <span class="pv-chip" *ngFor="let l of selectedLocations">{{ l.name }}</span>
+                <span *ngIf="!selectedLocations.length" class="pv-warn">None</span>
+              </ng-container>
+            </dd></div>
+            <div><dt>Status</dt><dd><span class="pv-status" [class.off]="!user.isActive">{{ user.isActive ? 'Active' : 'Suspended' }}</span></dd></div>
+          </dl>
+
+          <div class="todo" *ngIf="missing.length">
+            <strong>Still needed</strong>
+            <span *ngFor="let m of missing"><mat-icon>radio_button_unchecked</mat-icon>{{ m }}</span>
+          </div>
+          <div class="ready" *ngIf="!missing.length"><mat-icon>task_alt</mat-icon> Ready to save</div>
+
+          <button mat-flat-button class="save" type="submit" [disabled]="saving || loadingUser">
+            <mat-icon>{{ saving ? 'hourglass_top' : (isEdit ? 'save' : 'person_add') }}</mat-icon>
+            {{ saving ? 'Saving…' : (isEdit ? 'Save changes' : 'Create user') }}
+          </button>
+          <button mat-button type="button" class="cancel" (click)="goBack()">Cancel</button>
+        </div>
+      </aside>
+    </form>
+  </div>
+</app-main-layout>

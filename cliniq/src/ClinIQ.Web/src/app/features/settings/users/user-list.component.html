@@ -1,0 +1,167 @@
+<app-main-layout>
+  <div class="users">
+
+    <!-- ===== Header ===== -->
+    <header class="head">
+      <div>
+        <nav class="crumbs">
+          <a routerLink="/dashboard">Dashboard</a><mat-icon>chevron_right</mat-icon>
+          <span>Administration</span><mat-icon>chevron_right</mat-icon><span>Users</span>
+        </nav>
+        <div class="title-row">
+          <span class="title-icon"><mat-icon>manage_accounts</mat-icon></span>
+          <div>
+            <h1>Users</h1>
+            <p>Everyone who can sign in to your organization — their role, locations and status.</p>
+          </div>
+        </div>
+      </div>
+      <button mat-flat-button class="add" (click)="addUser()" *ngIf="permissions.has('users.create')">
+        <mat-icon>person_add</mat-icon> Add user
+      </button>
+    </header>
+
+    <!-- ===== Summary ===== -->
+    <section class="stats" *ngIf="stats">
+      <button type="button" class="stat" [class.on]="!filterStatus" (click)="setStatus('')">
+        <span class="stat-icon"><mat-icon>groups</mat-icon></span>
+        <span class="stat-body"><strong>{{ stats.total }}</strong><small>Total users</small></span>
+      </button>
+      <button type="button" class="stat success" [class.on]="filterStatus === 'active'" (click)="setStatus('active')">
+        <span class="stat-icon"><mat-icon>check_circle</mat-icon></span>
+        <span class="stat-body"><strong>{{ stats.active }}</strong><small>Active</small></span>
+      </button>
+      <button type="button" class="stat danger" [class.on]="filterStatus === 'inactive'" (click)="setStatus('inactive')">
+        <span class="stat-icon"><mat-icon>block</mat-icon></span>
+        <span class="stat-body"><strong>{{ stats.inactive }}</strong><small>Suspended</small></span>
+      </button>
+      <div class="stat static teal">
+        <span class="stat-icon"><mat-icon>medical_services</mat-icon></span>
+        <span class="stat-body"><strong>{{ stats.doctors }}</strong><small>Doctors</small></span>
+      </div>
+      <div class="stat static amber">
+        <span class="stat-icon"><mat-icon>schedule</mat-icon></span>
+        <span class="stat-body"><strong>{{ stats.neverLoggedIn }}</strong><small>Never signed in</small></span>
+      </div>
+    </section>
+
+    <!-- ===== Toolbar ===== -->
+    <section class="toolbar">
+      <label class="search">
+        <mat-icon>search</mat-icon>
+        <input type="search" autocomplete="off" placeholder="Search by name or email"
+               [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange($event)" aria-label="Search users">
+        <button *ngIf="searchTerm" type="button" class="x" (click)="searchTerm=''; onSearchChange('')" aria-label="Clear search"><mat-icon>close</mat-icon></button>
+      </label>
+
+      <div class="chips" role="tablist" aria-label="Filter by user type">
+        <button *ngFor="let t of typeFilters" type="button" role="tab" [attr.aria-selected]="filterType === t.value"
+                [class.on]="filterType === t.value" (click)="setType(t.value)">
+          <mat-icon>{{ t.icon }}</mat-icon>{{ t.label }}
+        </button>
+      </div>
+
+      <button *ngIf="hasFilters()" class="clear" type="button" (click)="clearFilters()">
+        <mat-icon>filter_alt_off</mat-icon> Clear
+      </button>
+    </section>
+
+    <!-- ===== List ===== -->
+    <section class="list-card">
+      <div class="card-head">
+        <span><strong>{{ totalCount }}</strong> {{ totalCount === 1 ? 'user' : 'users' }}{{ hasFilters() ? ' match' : '' }}</span>
+      </div>
+
+      <div class="skeleton" *ngIf="loading && !users.length">
+        <div class="sk" *ngFor="let s of [1,2,3,4,5]"></div>
+      </div>
+
+      <div class="table-wrap" *ngIf="users.length" [class.dim]="loading">
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Type &amp; role</th>
+              <th>Locations</th>
+              <th>Status</th>
+              <th>Last seen</th>
+              <th class="right"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users" (click)="editUser(user.id)" tabindex="0" (keydown.enter)="editUser(user.id)"
+                [class.inactive]="!user.isActive">
+              <td>
+                <div class="who">
+                  <span class="avatar" [attr.data-tone]="typeTone(user)">{{ getInitials(user) }}</span>
+                  <div class="who-text">
+                    <span class="name">
+                      {{ displayName(user) }}
+                      <span class="tag you" *ngIf="isSelfUser(user)">You</span>
+                      <span class="tag owner" *ngIf="user.isOwner"><mat-icon>workspace_premium</mat-icon>Owner</span>
+                    </span>
+                    <span class="email">{{ user.email }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="type" *ngIf="displayUserType(user)" [attr.data-tone]="typeTone(user)">
+                  <mat-icon>{{ typeIcon(displayUserType(user)) }}</mat-icon>{{ typeLabel(displayUserType(user)) }}
+                </span>
+                <div class="roles">
+                  <span class="role" *ngFor="let r of visibleRoles(user).slice(0, 2)">{{ r }}</span>
+                  <span class="role more" *ngIf="visibleRoles(user).length > 2">+{{ visibleRoles(user).length - 2 }}</span>
+                  <span class="role none" *ngIf="!visibleRoles(user).length && !user.isOwner" matTooltip="This user has no role, so no permissions until you assign one">
+                    <mat-icon>warning</mat-icon>No role
+                  </span>
+                </div>
+              </td>
+              <td>
+                <span class="loc all" *ngIf="user.hasAllLocations"><mat-icon>public</mat-icon>All locations</span>
+                <ng-container *ngIf="!user.hasAllLocations">
+                  <span class="loc" *ngFor="let l of (user.locations || []).slice(0, 2)"><mat-icon>location_on</mat-icon>{{ l }}</span>
+                  <span class="loc more" *ngIf="(user.locations?.length || 0) > 2" [matTooltip]="user.locations.slice(2).join(', ')">+{{ user.locations.length - 2 }}</span>
+                  <span class="muted" *ngIf="!user.locations?.length">—</span>
+                </ng-container>
+              </td>
+              <td>
+                <span class="status" [class.off]="!user.isActive">{{ user.isActive ? 'Active' : 'Suspended' }}</span>
+              </td>
+              <td class="seen" [title]="user.lastLoginAt ? (user.lastLoginAt | date:'medium') : ''">
+                {{ user.lastLoginAt ? (user.lastLoginAt | timeAgo) : 'Never' }}
+              </td>
+              <td class="right" (click)="$event.stopPropagation()">
+                <button mat-icon-button (click)="editUser(user.id)" matTooltip="Edit" aria-label="Edit user"><mat-icon>edit</mat-icon></button>
+                <button mat-icon-button [matMenuTriggerFor]="rowMenu" aria-label="More actions"><mat-icon>more_vert</mat-icon></button>
+                <mat-menu #rowMenu="matMenu" xPosition="before">
+                  <button mat-menu-item (click)="openPermissions(user)"><mat-icon>tune</mat-icon><span>Permissions</span></button>
+                  <button mat-menu-item (click)="openPasswordResetDialog(user)"><mat-icon>key</mat-icon><span>Reset password</span></button>
+                  <button mat-menu-item *ngIf="canSuspend(user)" (click)="toggleSuspend(user)">
+                    <mat-icon>{{ user.isActive ? 'person_off' : 'how_to_reg' }}</mat-icon>
+                    <span>{{ user.isActive ? 'Suspend' : 'Activate' }}</span>
+                  </button>
+                  <button mat-menu-item *ngIf="canDelete(user)" class="danger" (click)="deleteUser(user)">
+                    <mat-icon>delete</mat-icon><span>Delete</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="empty" *ngIf="!loading && !users.length">
+        <mat-icon>{{ hasFilters() ? 'person_search' : 'group_add' }}</mat-icon>
+        <strong>{{ hasFilters() ? 'No users match these filters' : 'No users yet' }}</strong>
+        <p>{{ hasFilters() ? 'Try another name, type or status.' : 'Add your first team member to give them access.' }}</p>
+        <button mat-stroked-button *ngIf="hasFilters()" (click)="clearFilters()">Clear filters</button>
+        <button mat-flat-button class="add" *ngIf="!hasFilters() && permissions.has('users.create')" (click)="addUser()">
+          <mat-icon>person_add</mat-icon> Add user
+        </button>
+      </div>
+
+      <mat-paginator *ngIf="totalCount > 10" [length]="totalCount" [pageIndex]="pageIndex" [pageSize]="pageSize"
+                     [pageSizeOptions]="[10, 25, 50, 100]" (page)="onPageChange($event)" showFirstLastButtons></mat-paginator>
+    </section>
+  </div>
+</app-main-layout>

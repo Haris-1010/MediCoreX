@@ -87,7 +87,7 @@ public class RolesController : ControllerBase
         // so they can be assigned to users in this organization.
         var roles = await _context.Roles
             .Where(r => !r.IsDeleted && r.IsActive
-                && (r.TenantId == null || r.TenantId == tenantId.Value)
+                && (r.TenantId == tenantId.Value || (r.TenantId == null && r.IsSystemRole))
                 && r.NormalizedName != ClinIQ.Shared.Constants.Roles.SuperAdmin.ToUpperInvariant()
                 && r.NormalizedName != ClinIQ.Shared.Constants.Roles.OrganizationOwner.ToUpperInvariant())
             .Select(r => new

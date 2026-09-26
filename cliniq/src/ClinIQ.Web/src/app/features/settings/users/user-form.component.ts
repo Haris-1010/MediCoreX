@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { PermissionService } from '../../../core/services/permission.service';
 
 interface UserTypeInfo {
   value: string;
@@ -14,240 +15,19 @@ interface UserTypeInfo {
 @Component({
   standalone: false,
   selector: 'app-user-form',
-  template: `
-    <app-main-layout>
-      <app-page-header [title]="isEdit ? 'Edit User' : 'Create User'" [breadcrumbs]="[{ label: 'Dashboard', route: '/dashboard' }, { label: 'Settings', route: '/settings' }, { label: 'Users', route: '/settings/users' }, { label: isEdit ? 'Edit' : 'New' }]"></app-page-header>
-
-      <div class="page-card">
-        <div class="page-header">
-          <div>
-            <h2>{{ isEdit ? 'Edit User' : 'Create User' }}</h2>
-            <p>{{ isEdit ? 'Update account details, type-specific fields and assigned roles.' : 'Choose a user type, fill in the details and assign access roles.' }}</p>
-          </div>
-          <button class="btn btn-outline" (click)="goBack()">Back to Users</button>
-        </div>
-
-        <form (ngSubmit)="save()" #userForm="ngForm" class="form-container" novalidate>
-          <!-- User type -->
-          <div class="section">
-            <h3 class="section-title">User Type <span class="required">*</span></h3>
-            <div class="type-grid">
-              <label *ngFor="let t of userTypes" class="type-card" [class.active]="user.userType === t.value" [class.error]="showErrors && !user.userType">
-                <input type="radio" name="userType" [value]="t.value" [(ngModel)]="user.userType" (change)="onUserTypeChange(t)" #userTypeCtrl="ngModel" required>
-                <span class="type-icon"><mat-icon>{{ t.icon }}</mat-icon></span>
-                <span class="type-body">
-                  <strong>{{ t.label }}</strong>
-                  <small>{{ t.description }}</small>
-                </span>
-              </label>
-            </div>
-            <div class="field-error" *ngIf="showErrors && !user.userType">Please select a user type</div>
-          </div>
-
-          <!-- Account -->
-          <div class="section">
-            <h3 class="section-title">Account Details</h3>
-            <div class="form-row">
-              <div class="form-group">
-                <label>First Name <span class="required">*</span></label>
-                <input type="text" class="form-control" [(ngModel)]="user.firstName" name="firstName" #firstName="ngModel" required minlength="2" placeholder="e.g. John" [class.invalid]="isInvalid(firstName)">
-                <div class="field-error" *ngIf="isInvalid(firstName)">First name is required (min 2 characters)</div>
-              </div>
-              <div class="form-group">
-                <label>Last Name <span class="required">*</span></label>
-                <input type="text" class="form-control" [(ngModel)]="user.lastName" name="lastName" #lastName="ngModel" required minlength="2" placeholder="e.g. Doe" [class.invalid]="isInvalid(lastName)">
-                <div class="field-error" *ngIf="isInvalid(lastName)">Last name is required (min 2 characters)</div>
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Email <span class="required">*</span></label>
-                <input type="email" class="form-control" [(ngModel)]="user.email" name="email" #email="ngModel" required email placeholder="e.g. john.doe@clinic.com" [class.invalid]="isInvalid(email)">
-                <div class="field-error" *ngIf="isInvalid(email)">Valid email is required</div>
-              </div>
-              <div class="form-group">
-                <label>Phone</label>
-                <input type="tel" class="form-control" [(ngModel)]="user.phone" name="phone" placeholder="e.g. +1 234 567 890">
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group" *ngIf="!isEdit">
-                <label>Password <span class="muted">(optional — default: ChangeMe&#64;123)</span></label>
-                <input type="password" class="form-control" [(ngModel)]="user.password" name="password" placeholder="Leave blank for default" autocomplete="new-password">
-              </div>
-              <div class="form-group" [class.half]="isEdit">
-                <label>Status</label>
-                <select class="form-control" [(ngModel)]="user.isActive" name="isActive">
-                  <option [ngValue]="true">Active</option>
-                  <option [ngValue]="false">Inactive</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Doctor-specific -->
-          <div class="section" *ngIf="user.userType === 'Doctor'">
-            <h3 class="section-title">Doctor Details</h3>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Specialization <span class="required">*</span></label>
-                <input type="text" class="form-control" [(ngModel)]="user.specialization" name="specialization" #specialization="ngModel" required placeholder="e.g. Cardiology" [class.invalid]="isInvalid(specialization)">
-                <div class="field-error" *ngIf="isInvalid(specialization)">Specialization is required for doctors</div>
-              </div>
-              <div class="form-group">
-                <label>License Number</label>
-                <input type="text" class="form-control" [(ngModel)]="user.licenseNumber" name="licenseNumber" placeholder="e.g. MD12345">
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Qualifications</label>
-                <input type="text" class="form-control" [(ngModel)]="user.qualifications" name="qualifications" placeholder="e.g. MBBS, MD">
-              </div>
-              <div class="form-group">
-                <label>Department</label>
-                <select class="form-control" [(ngModel)]="user.departmentId" name="departmentId">
-                  <option value="">Select department</option>
-                  <option *ngFor="let d of departments" [ngValue]="d.id">{{ d.name }}</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Bio</label>
-              <textarea class="form-control" [(ngModel)]="user.bio" name="bio" rows="2" placeholder="Brief professional summary..."></textarea>
-            </div>
-
-            <h3 class="section-title sub">Schedule &amp; Fee</h3>
-            <div class="form-row four">
-              <div class="form-group">
-                <label>Start Time</label>
-                <input type="time" class="form-control" [(ngModel)]="user.consultationStartTime" name="consultationStartTime">
-              </div>
-              <div class="form-group">
-                <label>End Time</label>
-                <input type="time" class="form-control" [(ngModel)]="user.consultationEndTime" name="consultationEndTime">
-              </div>
-              <div class="form-group">
-                <label>Slot (min)</label>
-                <input type="number" class="form-control" min="10" max="180" [(ngModel)]="user.slotDuration" name="slotDuration">
-              </div>
-              <div class="form-group">
-                <label>Consultation Fee</label>
-                <input type="number" class="form-control" min="0" [(ngModel)]="user.consultationFee" name="consultationFee">
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Working Days</label>
-              <div class="days-grid">
-                <label *ngFor="let day of weekDays" class="day-chip" [class.active]="isDaySelected(day)">
-                  <input type="checkbox" [checked]="isDaySelected(day)" (change)="toggleDay(day)">
-                  {{ day }}
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- Locations -->
-          <div class="section">
-            <h3 class="section-title">Locations</h3>
-            <p class="section-hint">Assign the locations this user can access. At least one is required.</p>
-            <div class="checkbox-group" *ngIf="locations.length">
-              <label *ngFor="let loc of locations" class="checkbox-label" [class.suggested]="isBranchSelected(loc.id)">
-                <input type="checkbox" [checked]="isBranchSelected(loc.id)" (change)="toggleBranch(loc.id)">
-                {{ loc.name }}
-                <span class="muted" *ngIf="loc.isMainBranch"> · Main</span>
-              </label>
-            </div>
-            <div class="muted" *ngIf="!locations.length">No locations available.</div>
-            <div class="field-error" *ngIf="showErrors && !user.branchIds?.length">Select at least one location</div>
-          </div>
-
-          <!-- Non-doctor professional details -->
-          <div class="section" *ngIf="user.userType && user.userType !== 'Doctor'">
-            <h3 class="section-title">Professional Details</h3>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Designation</label>
-                <input type="text" class="form-control" [(ngModel)]="user.designation" name="designation" placeholder="e.g. Senior Nurse">
-              </div>
-              <div class="form-group">
-                <label>Employee ID</label>
-                <input type="text" class="form-control" [(ngModel)]="user.employeeId" name="employeeId" placeholder="e.g. EMP-001">
-              </div>
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button type="button" class="btn btn-outline" (click)="goBack()">Cancel</button>
-            <button type="submit" class="btn btn-primary" [disabled]="saving">
-              {{ saving ? 'Saving...' : (isEdit ? 'Update User' : 'Create User') }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </app-main-layout>
-  `,
-  styles: [`
-    .page-card { background: var(--bg-card, #fff); border: 1px solid var(--border-color, rgba(0, 0, 0, 0.06)); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow-md, 0 8px 24px rgba(15, 23, 42, 0.04)); }
-    .page-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
-    .page-header h2 { margin: 0; color: var(--text-primary, #1f2937); }
-    .page-header p { margin: 0.4rem 0 0; color: var(--text-muted, #6b7280); }
-    .form-container { background: var(--bg-card, white); padding: 8px 0; }
-    .section { margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color, #f1f5f9); }
-    .section:last-of-type { border-bottom: none; }
-    .section-title { margin: 0 0 14px; font-size: 15px; font-weight: 600; color: var(--text-primary, #1f2937); }
-    .section-title.sub { margin-top: 20px; }
-    .section-hint { margin: -6px 0 12px; font-size: 13px; color: var(--text-muted, #6b7280); }
-    .type-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
-    .type-card { display: flex; align-items: flex-start; gap: 10px; padding: 14px; border: 2px solid var(--border-color, #e5e7eb); border-radius: 10px; cursor: pointer; transition: border-color .15s, background .15s; background: var(--bg-card, #fff); position: relative; }
-    .type-card input { position: absolute; opacity: 0; pointer-events: none; }
-    .type-card:hover { border-color: #93c5fd; }
-    .type-card.active { border-color: #2196f3; background: #eff6ff; }
-    .type-card.error { border-color: #ef4444; }
-    .type-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 8px; background: var(--bg-hover, #f1f5f9); color: var(--text-primary, #334155); flex-shrink: 0; }
-    .type-card.active .type-icon { background: #dbeafe; color: #1d4ed8; }
-    .type-icon mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .type-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .type-body strong { font-size: 13px; color: var(--text-primary, #1f2937); }
-    .type-body small { font-size: 11px; color: var(--text-muted, #6b7280); line-height: 1.3; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 4px; }
-    .form-row.four { grid-template-columns: repeat(4, 1fr); }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text-primary, #333); font-size: 13px; }
-    .required { color: #ef4444; font-weight: 700; margin-left: 2px; }
-    .muted { color: var(--text-muted, #6b7280); font-weight: 400; font-size: 12px; }
-    .form-control { width: 100%; padding: 10px; border: 1px solid var(--border-color, #d1d5db); border-radius: 8px; font-size: 14px; box-sizing: border-box; background: var(--bg-card, #fff); color: var(--text-primary, #111827); transition: border-color .15s, box-shadow .15s; }
-    .form-control:focus { border-color: #2196f3; outline: none; box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1); }
-    .form-control.invalid { border-color: #ef4444; }
-    .form-control.invalid:focus { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1); }
-    .field-error { color: #ef4444; font-size: 12px; margin-top: 4px; }
-    textarea.form-control { resize: vertical; }
-    .days-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-    .day-chip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid var(--border-color, #d1d5db); border-radius: 999px; font-size: 13px; cursor: pointer; user-select: none; background: var(--bg-card, #fff); transition: all .15s; }
-    .day-chip input { display: none; }
-    .day-chip.active { background: #eff6ff; border-color: #2196f3; color: #1d4ed8; font-weight: 600; }
-    .checkbox-group { display: flex; flex-wrap: wrap; gap: 12px; }
-    .checkbox-label { display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 14px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 8px; font-size: 13px; background: var(--bg-card, #fff); }
-    .checkbox-label.suggested { border-color: #86efac; background: #f0fdf4; }
-    .muted { color: var(--text-muted, #6b7280); font-size: 13px; }
-    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color, #eee); }
-    .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all .15s; }
-    .btn-primary { background: #2196f3; color: white; }
-    .btn-primary:hover { background: #1976d2; }
-    .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
-    .btn-outline { background: var(--bg-card, white); border: 1px solid var(--border-color, #ddd); color: var(--text-primary, #333); }
-    .btn-outline:hover { background: var(--bg-primary, #f5f5f5); }
-    @media (max-width: 700px) {
-      .form-row, .form-row.four { grid-template-columns: 1fr; }
-      .type-grid { grid-template-columns: 1fr; }
-    }
-  `]
+  templateUrl: './user-form.component.html',
+  styleUrls: ['./user-form.component.scss'],
 })
 export class UserFormComponent implements OnInit {
   isEdit = false;
   userId = '';
   saving = false;
   showErrors = false;
+  loadingUser = false;
+  showPassword = false;
+  isOwner = false;
+  rolesTouched = false;
+  rolesAvailable = true;
 
   userTypes: UserTypeInfo[] = [
     { value: 'Admin', label: 'Admin', icon: 'admin_panel_settings', description: 'Full organization administration', defaultRoleName: 'OrganizationAdmin' },
@@ -281,7 +61,8 @@ export class UserFormComponent implements OnInit {
     consultationEndTime: '17:00',
     slotDuration: 30,
     consultationFee: 0,
-    workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+    hasAllLocations: false
   };
 
   availableRoles: any[] = [];
@@ -292,12 +73,50 @@ export class UserFormComponent implements OnInit {
     private api: ApiService,
     private router: Router,
     private route: ActivatedRoute,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private permissions: PermissionService
   ) {}
+
+  /** UX only — the API refuses the grant for anyone without All Locations. */
+  get canGrantAllLocations(): boolean {
+    const ctx = this.permissions.current();
+    return !!(ctx?.hasAllLocationAccess || ctx?.isSuperAdmin || ctx?.isOwner);
+  }
+
+  get fullName(): string {
+    return `${this.user.firstName || ''} ${this.user.lastName || ''}`.trim();
+  }
+
+  get initials(): string {
+    const f = (this.user.firstName || '')[0] || '';
+    const l = (this.user.lastName || '')[0] || '';
+    return (f + l).toUpperCase() || '?';
+  }
+
+  get selectedRoles(): any[] {
+    return this.availableRoles.filter(r => this.isRoleSelected(r.id));
+  }
+
+  get selectedLocations(): any[] {
+    return this.locations.filter(l => this.isBranchSelected(l.id));
+  }
+
+  /** Items still missing before the form can be saved (drives the checklist). */
+  get missing(): string[] {
+    const m: string[] = [];
+    if (!this.user.userType) m.push('User type');
+    if (!this.user.firstName || this.user.firstName.length < 2) m.push('First name');
+    if (!this.user.lastName || this.user.lastName.length < 2) m.push('Last name');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.user.email || '')) m.push('Valid email');
+    if (this.user.userType === 'Doctor' && !this.user.specialization) m.push('Specialization');
+    if (!this.user.hasAllLocations && !this.user.branchIds?.length) m.push('At least one location');
+    return m;
+  }
 
   ngOnInit() {
     this.loadDepartments();
     this.loadLocations();
+    this.loadRoles();
     const id = this.route.snapshot.paramMap.get('id');
     if (id && id !== 'new') {
       this.isEdit = true;
@@ -334,6 +153,69 @@ export class UserFormComponent implements OnInit {
     });
   }
 
+  loadRoles() {
+    this.api.get<any[]>('v1/roles').subscribe({
+      next: (res: any) => {
+        const list = Array.isArray(res) ? res : (res?.items ?? []);
+        this.availableRoles = list
+          .filter((r: any) => r.isActive !== false)
+          .map((r: any) => ({ ...r, label: String(r.name).replace(/([a-z])([A-Z])/g, '$1 $2') }))
+          .sort((a: any, b: any) => Number(b.isSystemRole === false) - Number(a.isSystemRole === false) || a.label.localeCompare(b.label));
+        this.applyDefaultRole();
+      },
+      // Without roles.view the API still assigns the type's default role.
+      error: () => { this.rolesAvailable = false; this.availableRoles = []; }
+    });
+  }
+
+  isRoleSelected(roleId: string): boolean {
+    return (this.user.roleIds || []).map((r: string) => String(r).toLowerCase()).includes(String(roleId).toLowerCase());
+  }
+
+  toggleRole(roleId: string) {
+    this.rolesTouched = true;
+    const ids: string[] = [...(this.user.roleIds || [])];
+    const idx = ids.findIndex(r => String(r).toLowerCase() === String(roleId).toLowerCase());
+    if (idx >= 0) ids.splice(idx, 1); else ids.push(roleId);
+    this.user.roleIds = ids;
+  }
+
+  /** New users get the role that matches their type, until the admin picks roles by hand. */
+  private applyDefaultRole() {
+    if (this.isEdit || this.rolesTouched || !this.availableRoles.length) return;
+    const wanted = this.selectedTypeInfo?.defaultRoleName?.toLowerCase();
+    const match = wanted ? this.availableRoles.find(r => String(r.name).toLowerCase() === wanted) : undefined;
+    this.user.roleIds = match ? [match.id] : [];
+  }
+
+  generatePassword() {
+    const sets = ['ABCDEFGHJKLMNPQRSTUVWXYZ', 'abcdefghijkmnopqrstuvwxyz', '23456789', '@#$%&*!?'];
+    const bytes = new Uint32Array(14);
+    crypto.getRandomValues(bytes);
+    const chars = Array.from(bytes, (b, i) => { const set = sets[i % sets.length]; return set[b % set.length]; });
+    for (let i = chars.length - 1; i > 0; i--) { const j = bytes[i] % (i + 1); [chars[i], chars[j]] = [chars[j], chars[i]]; }
+    this.user.password = chars.join('');
+    this.showPassword = true;
+  }
+
+  copyPassword() {
+    if (!this.user.password) return;
+    navigator.clipboard?.writeText(this.user.password).then(() => this.notification.info('Password copied'));
+  }
+
+  get passwordStrength(): { score: number; label: string } {
+    const p: string = this.user.password || '';
+    if (!p) return { score: 0, label: '' };
+    let score = 0;
+    if (p.length >= 8) score++;
+    if (p.length >= 12) score++;
+    if (/[A-Z]/.test(p) && /[a-z]/.test(p)) score++;
+    if (/\d/.test(p)) score++;
+    if (/[^A-Za-z0-9]/.test(p)) score++;
+    const labels = ['Very weak', 'Weak', 'Fair', 'Good', 'Strong', 'Excellent'];
+    return { score, label: labels[score] };
+  }
+
   isBranchSelected(branchId: string): boolean {
     return (this.user.branchIds || []).includes(branchId);
   }
@@ -347,9 +229,19 @@ export class UserFormComponent implements OnInit {
   }
 
   onUserTypeChange(type: UserTypeInfo) {
+    this.user.userType = type.value;
     if (type.value === 'Doctor' && !this.user.workingDays?.length) {
       this.user.workingDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     }
+    // Organization admins see every location unless the creator narrows it.
+    if (!this.isEdit && this.canGrantAllLocations) {
+      this.user.hasAllLocations = type.value === 'Admin';
+    }
+    this.applyDefaultRole();
+  }
+
+  selectAllLocations(on: boolean) {
+    this.user.branchIds = on ? this.locations.map(l => l.id) : [];
   }
 
   isDaySelected(day: string): boolean {
@@ -387,8 +279,11 @@ export class UserFormComponent implements OnInit {
   }
 
   loadUser() {
+    this.loadingUser = true;
     this.api.get<any>(`v1/users/${this.userId}`).subscribe({
       next: (res: any) => {
+        this.loadingUser = false;
+        this.isOwner = !!res.isOwner;
         const schedule = Array.isArray(res.schedule) && res.schedule.length ? res.schedule[0] : null;
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const workingDays = Array.isArray(res.schedule) && res.schedule.length
@@ -415,10 +310,12 @@ export class UserFormComponent implements OnInit {
           consultationEndTime: schedule?.endTime || '17:00',
           slotDuration: schedule?.slotDuration || 30,
           consultationFee: schedule?.consultationFee ?? 0,
-          workingDays
+          workingDays,
+          hasAllLocations: !!res.hasAllLocations
         };
       },
       error: (err) => {
+        this.loadingUser = false;
         console.error('Failed to load user', err);
         this.notification.error('Failed to load user');
       }
@@ -440,8 +337,8 @@ export class UserFormComponent implements OnInit {
       this.notification.error('Specialization is required for doctors');
       return;
     }
-    if (!this.user.branchIds?.length) {
-      this.notification.error('Select at least one location');
+    if (!this.user.hasAllLocations && !this.user.branchIds?.length) {
+      this.notification.error('Select at least one location, or give access to all locations');
       return;
     }
 
@@ -464,6 +361,15 @@ export class UserFormComponent implements OnInit {
       designation: this.user.designation || null,
       employeeId: this.user.employeeId || null
     };
+
+    // Only send the All Locations flag when the caller could actually grant it.
+    if (this.canGrantAllLocations && !this.isOwner) {
+      payload.hasAllLocations = !!this.user.hasAllLocations;
+    }
+    // Without the roles list the API applies the type's default role.
+    if (!this.rolesAvailable) {
+      delete payload.roleIds;
+    }
 
     if (!this.isEdit) {
       payload.password = this.user.password || undefined;
@@ -493,7 +399,7 @@ export class UserFormComponent implements OnInit {
       },
       error: (err) => {
         this.saving = false;
-        this.notification.error('Failed to save user: ' + (err.message || 'Unknown error'));
+        this.notification.error(err?.message || 'Failed to save user');
       }
     });
   }
