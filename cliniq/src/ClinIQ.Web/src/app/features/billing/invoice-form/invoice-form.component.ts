@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, of } from 'rxjs';
@@ -76,19 +76,66 @@ import { PatientPickerComponent, PatientPickerValue } from '../../../shared/comp
                 <mat-label>Search Service or Inventory Item</mat-label>
                 <input matInput formControlName="itemSearch"
                        placeholder="Type to search services and inventory items..."
+                       autocomplete="off"
                        (focus)="onItemFocus()"
+                       (blur)="closeItemResults()"
                        (input)="onItemSearchInput($event)"
                        (keydown)="onItemKeydown($event)">
                 <mat-icon matPrefix>search</mat-icon>
+                <mat-spinner matSuffix *ngIf="itemSearching" diameter="18"></mat-spinner>
               </mat-form-field>
-              <div class="search-results" *ngIf="combinedResults.length > 0">
-                <div class="search-result-item" *ngFor="let r of combinedResults"
-                     (click)="addSelectedItem(r)">
-                  <span class="result-type" [class]="'type-' + r._type">{{ r._type === 'service' ? 'SVC' : 'INV' }}</span>
-                  <span class="result-name">{{ r._name }}</span>
-                  <span class="result-code" *ngIf="r._code">{{ r._code }}</span>
-                  <span class="result-price">{{ r._price | currencyFormat }}</span>
-                  <span class="result-stock" *ngIf="r._stock !== null">Stock: {{ r._stock }}</span>
+
+              <!-- mousedown is swallowed so clicking a row does not blur the input first -->
+              <div class="search-panel" *ngIf="itemPanelOpen" (mousedown)="$event.preventDefault()">
+                <div class="panel-scroll" #resultScroll>
+                <ng-container *ngFor="let group of resultGroups">
+                  <div class="panel-group" *ngIf="group.items.length > 0">
+                    <div class="group-label">
+                      <mat-icon>{{ group.icon }}</mat-icon>
+                      <span>{{ group.label }}</span>
+                      <span class="group-count">{{ group.items.length }}</span>
+                    </div>
+                    <div class="result-row" *ngFor="let r of group.items"
+                         [class.active]="combinedResults.indexOf(r) === activeResultIndex"
+                         (mouseenter)="activeResultIndex = combinedResults.indexOf(r)"
+                         (click)="addSelectedItem(r)">
+                      <div class="result-avatar" [class]="'result-avatar av-' + r._type">
+                        <mat-icon>{{ r._type === 'service' ? 'medical_services' : 'medication' }}</mat-icon>
+                      </div>
+                      <div class="result-main">
+                        <div class="result-name">
+                          <ng-container *ngFor="let part of highlightParts(r._name)">
+                            <mark *ngIf="part.match">{{ part.text }}</mark><ng-container *ngIf="!part.match">{{ part.text }}</ng-container>
+                          </ng-container>
+                        </div>
+                        <div class="result-meta">
+                          <span class="result-code" *ngIf="r._code">{{ r._code }}</span>
+                          <span class="result-sub" *ngIf="r._subtitle">{{ r._subtitle }}</span>
+                        </div>
+                      </div>
+                      <div class="result-side">
+                        <span class="result-price">{{ r._price | currencyFormat }}</span>
+                        <span class="stock-pill" *ngIf="r._stock !== null" [class]="'stock-pill ' + stockClass(r)">
+                          {{ r._stockStatus === 'OutOfStock' ? 'Out of stock' : (r._stock + ' in stock') }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </ng-container>
+                </div>
+
+                <div class="panel-empty" *ngIf="!itemSearching && combinedResults.length === 0">
+                  <mat-icon>search_off</mat-icon>
+                  <div>
+                    <div class="empty-title">No matches for "{{ itemSearchTerm }}"</div>
+                    <div class="empty-sub">Try a name, code or generic name</div>
+                  </div>
+                </div>
+
+                <div class="panel-footer" *ngIf="combinedResults.length > 0">
+                  <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+                  <span><kbd>Enter</kbd> add</span>
+                  <span><kbd>Esc</kbd> close</span>
                 </div>
               </div>
             </div>
@@ -430,44 +477,186 @@ import { PatientPickerComponent, PatientPickerValue } from '../../../shared/comp
     }
     .item-search-bar .full-width { width: 100%; }
 
-    .search-results {
+    .item-search-bar mat-spinner { margin-right: 10px; }
+
+    .search-panel {
       position: absolute;
+      top: 56px;
+      left: 0;
+      right: 0;
       z-index: 100;
       background: var(--bg-card, #fff);
-      border: 1px solid var(--border-color, #c5cae9);
-      border-radius: 8px;
-      box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.12));
-      max-height: 260px;
-      overflow-y: auto;
-      width: calc(100% - 2rem);
-      margin: -0.75rem 1rem 0;
+      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14), 0 2px 6px rgba(15, 23, 42, 0.06);
+      overflow: hidden;
+      animation: panel-in 0.14s ease-out;
     }
-    .search-result-item {
+    @keyframes panel-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .panel-scroll {
+      max-height: 340px;
+      overflow-y: auto;
+    }
+    .panel-group { padding: 0 6px 6px; }
+    .panel-group + .panel-group { border-top: 1px solid var(--border-color, #e2e8f0); }
+    .group-label {
+      position: sticky;
+      top: 0;
+      z-index: 1;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 0.75rem;
-      cursor: pointer;
-      transition: background 0.15s;
+      gap: 6px;
+      padding: 8px 8px 6px;
+      background: var(--bg-card, #fff);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text-muted, #64748b);
     }
-    .search-result-item:hover { background: #e8eaf6; }
-    .result-type {
-      display: inline-flex;
+    .group-label mat-icon { font-size: 15px; width: 15px; height: 15px; }
+    .group-count {
+      margin-left: auto;
+      padding: 1px 7px;
+      border-radius: 10px;
+      background: var(--bg-badge, #f5f5f5);
+      color: var(--text-secondary, #475569);
+      font-size: 0.66rem;
+      letter-spacing: 0;
+    }
+
+    .result-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .result-row.active {
+      background: var(--bg-hover, #f1f5f9);
+      border-left-color: var(--accent-primary, #667eea);
+    }
+    .result-avatar {
+      display: flex;
       align-items: center;
       justify-content: center;
-      width: 32px;
-      height: 22px;
-      border-radius: 4px;
-      font-size: 0.6rem;
-      font-weight: 700;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
       flex-shrink: 0;
     }
-    .result-type.type-service { background: #e3f2fd; color: #1565c0; }
-    .result-type.type-inventory { background: #e8f5e9; color: #2e7d32; }
-    .result-name { font-weight: 500; flex: 1; }
-    .result-code { color: #7986cb; font-size: 0.8rem; }
-    .result-price { font-weight: 600; color: #1a237e; }
-    .result-stock { font-size: 0.75rem; color: #666; }
+    .result-avatar mat-icon { font-size: 20px; width: 20px; height: 20px; }
+    .av-service { background: rgba(33, 150, 243, 0.12); color: #1e88e5; }
+    .av-inventory { background: rgba(76, 175, 80, 0.14); color: #2e7d32; }
+
+    .result-main { flex: 1; min-width: 0; }
+    .result-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-primary, #1e293b);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .result-name mark {
+      background: rgba(102, 126, 234, 0.18);
+      color: inherit;
+      border-radius: 3px;
+      padding: 0 1px;
+    }
+    .result-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 2px;
+      font-size: 0.74rem;
+      color: var(--text-muted, #64748b);
+      min-width: 0;
+    }
+    .result-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      padding: 0 6px;
+      border-radius: 4px;
+      background: var(--bg-badge, #f5f5f5);
+      color: var(--text-secondary, #475569);
+      flex-shrink: 0;
+    }
+    .result-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .result-side {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+    .result-price {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text-primary, #1e293b);
+      font-variant-numeric: tabular-nums;
+    }
+    .stock-pill {
+      padding: 1px 8px;
+      border-radius: 10px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .stock-in { background: rgba(76, 175, 80, 0.14); color: #2e7d32; }
+    .stock-low { background: rgba(255, 152, 0, 0.16); color: #b26a00; }
+    .stock-out { background: rgba(244, 67, 54, 0.14); color: #c62828; }
+
+    .panel-empty {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 16px;
+      color: var(--text-muted, #64748b);
+    }
+    .panel-empty mat-icon { font-size: 28px; width: 28px; height: 28px; opacity: 0.7; }
+    .empty-title { font-weight: 600; color: var(--text-primary, #1e293b); font-size: 0.88rem; }
+    .empty-sub { font-size: 0.76rem; margin-top: 2px; }
+
+    .panel-footer {
+      display: flex;
+      gap: 16px;
+      padding: 7px 14px;
+      border-top: 1px solid var(--border-color, #e2e8f0);
+      background: var(--bg-primary, #f5f5f5);
+      font-size: 0.7rem;
+      color: var(--text-muted, #64748b);
+    }
+    .panel-footer kbd {
+      display: inline-block;
+      min-width: 18px;
+      margin-right: 3px;
+      padding: 0 4px;
+      border: 1px solid var(--border-color, #e2e8f0);
+      border-bottom-width: 2px;
+      border-radius: 4px;
+      background: var(--bg-card, #fff);
+      font-family: inherit;
+      font-size: 0.66rem;
+      text-align: center;
+    }
+    @media (max-width: 600px) {
+      .panel-footer { display: none; }
+      .result-row { gap: 10px; padding: 8px 6px; }
+    }
+
+    :host-context(.dark-theme) .av-service { color: #64b5f6; }
+    :host-context(.dark-theme) .av-inventory,
+    :host-context(.dark-theme) .stock-in { color: #81c784; }
+    :host-context(.dark-theme) .stock-low { color: #ffb74d; }
+    :host-context(.dark-theme) .stock-out { color: #e57373; }
+    :host-context(.dark-theme) .result-name mark { background: rgba(129, 140, 248, 0.28); }
     .add-item-btn { margin-top: 0.35rem; }
 
     .compact-grid {
@@ -620,6 +809,12 @@ export class InvoiceFormComponent implements OnInit, OnDestroy {
   allInventoryItems: any[] = [];
   allPatients: any[] = [];
   combinedResults: any[] = [];
+  itemSearchTerm = '';
+  itemSearching = false;
+  itemPanelOpen = false;
+  activeResultIndex = -1;
+  private itemSearchSeq = 0;
+  @ViewChild('resultScroll') resultScroll?: ElementRef<HTMLElement>;
   availableDiscounts: any[] = [];
   subtotal = 0;
   templateDiscountValue = 0;
@@ -754,12 +949,21 @@ export class InvoiceFormComponent implements OnInit, OnDestroy {
       this.allServices = Array.isArray(res) ? res : ((res as any)?.data ?? []);
     });
   }
-
+  // Coming back to a field that still has a term: show its results again.
+  if ((this.form.get('itemSearch')?.value || '').trim()) {
+    this.itemPanelOpen = true;
+    this.activeResultIndex = this.combinedResults.length > 0 ? 0 : -1;
+  }
 }
 onItemSearchInput(event: any) {
   const term = (event.target.value || '').trim();
+  this.itemSearchTerm = term;
+  this.activeResultIndex = -1;
+  const seq = ++this.itemSearchSeq;
   if (!term) {
     this.combinedResults = [];
+    this.itemSearching = false;
+    this.itemPanelOpen = false;
     return;
   }
 
@@ -776,15 +980,23 @@ onItemSearchInput(event: any) {
       _type: 'service',
       _name: s.name,
       _code: s.code,
+      _subtitle: null,
       _price: s.price,
       _tax: s.taxPercent || 0,
       _stock: null,
+      _stockStatus: null,
       _itemId: s.id
     }));
+
+  // Show matching services right away; inventory follows from the API.
+  this.combinedResults = svcMapped;
+  this.itemSearching = true;
+  this.itemPanelOpen = true;
 
   // Inventory: dedicated search endpoint
   this.api.get<any>('v1/inventory/items/search', { term }).subscribe({
     next: (r) => {
+      if (seq !== this.itemSearchSeq) return; // a newer keystroke owns the panel
       const items = Array.isArray(r) ? r : (r?.data ?? r?.items ?? []);
       const invMapped = items
         .filter((i: any) => i.sellingPrice > 0)
@@ -792,25 +1004,89 @@ onItemSearchInput(event: any) {
           _type: 'inventory',
           _name: i.name,
           _code: i.code,
+          _subtitle: i.genericName || i.brandName || null,
           _price: i.sellingPrice,
           _tax: i.taxPercent || 0,
           _stock: i.currentStock,
+          _stockStatus: i.stockStatus,
           _itemId: i.id
         }));
 
       this.combinedResults = [...svcMapped, ...invMapped];
+      this.activeResultIndex = this.combinedResults.length > 0 ? 0 : -1;
+      this.itemSearching = false;
     },
     error: () => {
+      if (seq !== this.itemSearchSeq) return;
       this.combinedResults = svcMapped;
+      this.activeResultIndex = svcMapped.length > 0 ? 0 : -1;
+      this.itemSearching = false;
     }
   });
 }
 
+  get resultGroups() {
+    return [
+      { label: 'Services', icon: 'medical_services', items: this.combinedResults.filter(r => r._type === 'service') },
+      { label: 'Inventory items', icon: 'inventory_2', items: this.combinedResults.filter(r => r._type === 'inventory') }
+    ];
+  }
+
+  highlightParts(text: string): { text: string; match: boolean }[] {
+    const term = this.itemSearchTerm;
+    if (!text || !term) return [{ text: text || '', match: false }];
+    const at = text.toLowerCase().indexOf(term.toLowerCase());
+    if (at < 0) return [{ text, match: false }];
+    return [
+      { text: text.slice(0, at), match: false },
+      { text: text.slice(at, at + term.length), match: true },
+      { text: text.slice(at + term.length), match: false }
+    ].filter(p => p.text);
+  }
+
+  stockClass(r: any): string {
+    if (r._stockStatus === 'OutOfStock') return 'stock-out';
+    if (r._stockStatus === 'LowStock') return 'stock-low';
+    return 'stock-in';
+  }
+
+  closeItemResults() {
+    this.itemPanelOpen = false;
+    this.activeResultIndex = -1;
+  }
+
   onItemKeydown(event: KeyboardEvent) {
-    if (event.key === 'Enter' && this.combinedResults.length === 1) {
-      event.preventDefault();
-      this.addSelectedItem(this.combinedResults[0]);
+    const count = this.combinedResults.length;
+    switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowUp':
+        if (!count) return;
+        event.preventDefault();
+        this.itemPanelOpen = true;
+        const step = event.key === 'ArrowDown' ? 1 : -1;
+        this.activeResultIndex = (this.activeResultIndex + step + count) % count;
+        this.scrollActiveIntoView();
+        break;
+      case 'Enter':
+        if (!this.itemPanelOpen || !count) return;
+        event.preventDefault();
+        this.addSelectedItem(this.combinedResults[Math.max(this.activeResultIndex, 0)]);
+        break;
+      case 'Escape':
+        if (this.itemPanelOpen) {
+          event.preventDefault();
+          this.closeItemResults();
+        }
+        break;
     }
+  }
+
+  private scrollActiveIntoView() {
+    setTimeout(() => {
+      this.resultScroll?.nativeElement
+        .querySelector('.result-row.active')
+        ?.scrollIntoView({ block: 'nearest' });
+    });
   }
 
   addSelectedItem(item: any) {
@@ -820,6 +1096,7 @@ onItemSearchInput(event: any) {
     if (existing) {
       this.notification.warning(`${item._name} is already added to the invoice.`);
       this.combinedResults = [];
+      this.closeItemResults();
       this.form.get('itemSearch')?.setValue('', { emitEvent: false });
       return;
     }
@@ -832,6 +1109,7 @@ onItemSearchInput(event: any) {
       serviceTaxPercent: [item._tax]
     }));
     this.combinedResults = [];
+    this.closeItemResults();
     this.form.get('itemSearch')?.setValue('', { emitEvent: false });
     this.calculateTotals();
   }
