@@ -38,7 +38,7 @@ A production-grade, enterprise-level, multi-tenant Clinic + Hospital Management 
 
 ### Backend
 - **Framework**: ASP.NET Core 8
-- **Database**: SQL Server with Entity Framework Core 8
+- **Database**: PostgreSQL with Entity Framework Core 8 (Npgsql)
 - **Authentication**: JWT with refresh token rotation
 - **Real-time**: SignalR
 - **Validation**: FluentValidation
@@ -54,7 +54,7 @@ A production-grade, enterprise-level, multi-tenant Clinic + Hospital Management 
 
 - .NET 8 SDK
 - Node.js 18+ and npm
-- SQL Server 2019+ (or SQL Server Express)
+- PostgreSQL 15+ (or Docker)
 - Angular CLI 19
 
 ## Getting Started
@@ -139,7 +139,7 @@ The system supports multi-tenant architecture with:
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=.;Database=ClinIQ;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
+    "DefaultConnection": "Host=localhost;Port=5432;Database=medicorex;Username=medicorex;Password=medicorex_dev"
   },
   "JwtSettings": {
     "Secret": "your-secret-key-min-32-characters",

@@ -11,8 +11,10 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
     {
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
 
-        optionsBuilder.UseSqlServer(
-            "Server=LAPTOP-9RLFOJO3;Database=MediCoreX;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True");
+        // Only used by `dotnet ef`; override with CLINIQ_DESIGN_CONNECTION if needed.
+        optionsBuilder.UseNpgsql(
+            Environment.GetEnvironmentVariable("CLINIQ_DESIGN_CONNECTION")
+            ?? "Host=localhost;Port=5432;Database=medicorex;Username=medicorex;Password=medicorex_dev");
 
         // Provide stub services for design-time (migrations only)
         var tenantService = new StubTenantService();

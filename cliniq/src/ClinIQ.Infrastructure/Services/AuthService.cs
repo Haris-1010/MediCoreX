@@ -43,7 +43,7 @@ public class AuthService : IAuthService
     public async Task<Result<LoginResponse>> LoginAsync(LoginRequest request, string ipAddress, CancellationToken cancellationToken = default)
     {
         var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower() && u.IsActive, cancellationToken);
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
         {
@@ -115,7 +115,7 @@ public class AuthService : IAuthService
     public async Task<Result> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         // Check if user already exists
-        if (await _context.Users.AnyAsync(u => u.Email == request.Email, cancellationToken))
+        if (await _context.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower(), cancellationToken))
             return Result.Failure("User with this email already exists");
 
         // The first account owns the platform. Later registrations belong to

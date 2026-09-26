@@ -14,11 +14,10 @@ This guide will help you set up the ClinIQ project on your local development mac
    - Download from: https://nodejs.org/
    - Verify installation: `node --version` and `npm --version`
 
-3. **SQL Server 2019+**
-   - Options:
-     - SQL Server Express (free): https://www.microsoft.com/sql-server/sql-server-downloads
-     - SQL Server Developer (free for dev): https://www.microsoft.com/sql-server/sql-server-downloads
-     - Docker: `docker pull mcr.microsoft.com/mssql/server:2022-latest`
+3. **PostgreSQL 15+**
+   - Docker (simplest): `docker run -d --name medicorex-pg -e POSTGRES_USER=medicorex -e POSTGRES_PASSWORD=medicorex_dev -e POSTGRES_DB=medicorex -p 5432:5432 postgres:17`
+   - Or a native install: https://www.postgresql.org/download/
+   - On Apple Silicon without Docker Desktop: `brew install colima docker && colima start`
 
 4. **Angular CLI 19**
    - Install: `npm install -g @angular/cli@19`
@@ -46,62 +45,53 @@ cd cliniq
 
 ### 2. Database Setup
 
-#### Option A: Using SQL Server directly
-
-1. Open SQL Server Management Studio or Azure Data Studio
-2. Connect to your SQL Server instance
-3. Create a new database named `ClinIQ`
-
-```sql
-CREATE DATABASE ClinIQ;
-```
-
-#### Option B: Using Docker
-
-```bash
-docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=ClinIQ@2024!" \
-  -p 1433:1433 --name cliniq-sql \
-  -d mcr.microsoft.com/mssql/server:2022-latest
-```
+Start PostgreSQL (see Prerequisites) and create an empty `medicorex` database.
+The Docker command above already creates it.
 
 ### 3. Configure Connection String
 
-Edit `src/ClinIQ.API/appsettings.Development.json`:
+`src/ClinIQ.API/appsettings.json`:
 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=ClinIQ;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
+    "DefaultConnection": "Host=localhost;Port=5432;Database=medicorex;Username=medicorex;Password=medicorex_dev"
   }
 }
 ```
 
-For Docker/SQL Server with password:
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost,1433;Database=ClinIQ;User Id=sa;Password=ClinIQ@2024!;TrustServerCertificate=True"
-  }
-}
-```
+### 4. Create the Schema
 
-### 4. Run Database Migrations
+The API applies pending migrations on startup. To do it by hand:
 
 ```bash
-cd src/ClinIQ.API
-dotnet ef database update
+dotnet ef database update -p src/ClinIQ.Infrastructure -s src/ClinIQ.API
 ```
 
 If Entity Framework CLI is not installed:
 ```bash
-dotnet tool install --global dotnet-ef
+dotnet tool install --global dotnet-ef --version 8.0.0
 ```
 
-### 5. Seed Initial Data (Optional)
+### 5. Move Data from the Old SQL Server Database (one time)
 
-Using SQL Server Management Studio or Azure Data Studio:
-1. Open `scripts/seed-data.sql`
-2. Execute the script against the ClinIQ database
+`tools/ClinIQ.DbMigrator` copies every row from the old SQL Server database
+into the PostgreSQL schema, then compares every value on both sides and checks
+foreign keys. It validates everything first and writes nothing if a single
+value would not fit. Run it against an empty, freshly migrated database and
+**before** starting the API (startup seeding would otherwise add rows):
+
+```bash
+dotnet run --project tools/ClinIQ.DbMigrator -- \
+  --source "Server=YOUR_SQLSERVER;Database=MediCoreX;Trusted_Connection=True;TrustServerCertificate=True" \
+  --target "Host=localhost;Port=5432;Database=medicorex;Username=medicorex;Password=medicorex_dev" \
+  --fill-null "Tenants.Package=0,Tenants.SubscriptionStatus=0"
+```
+
+`--fill-null` only replaces the listed NULLs (each replacement is printed);
+`--replace` empties a non-empty target first; `--verify-only` re-runs the
+comparison without writing. The T-SQL files in `scripts/` target the old SQL
+Server database and are not needed for PostgreSQL.
 
 ### 6. Run the Backend API
 
@@ -251,7 +241,7 @@ docker-compose up --build
 ```
 
 This will start:
-- SQL Server on port 1433
+- PostgreSQL on port 5432
 - API on port 5000
 - Web app on port 80
 - Redis on port 6379
@@ -277,9 +267,9 @@ docker run -p 80:80 cliniq-web
 ### Common Issues
 
 1. **Database connection failed**
-   - Verify SQL Server is running
+   - Verify PostgreSQL is running (`pg_isready -h localhost`)
    - Check connection string in appsettings.json
-   - Ensure firewall allows connection on port 1433
+   - Ensure firewall allows connection on port 5432
 
 2. **EF Core migration errors**
    - Ensure you're in the API project directory

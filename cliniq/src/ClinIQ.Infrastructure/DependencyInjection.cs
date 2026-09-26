@@ -15,7 +15,7 @@ public static class DependencyInjection
     {
         // Database
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(
+            options.UseNpgsql(
                 configuration.GetConnectionString("DefaultConnection"),
                 b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
 
@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IPermissionService, PermissionService>();
         services.AddScoped<IEntitlementService, EntitlementService>();
         services.AddScoped<IOrganizationProvisioningService, OrganizationProvisioningService>();
+        services.AddScoped<ILocationScopeService, LocationScopeService>();
         services.AddScoped<IServiceService, ServiceService>();
         services.AddScoped<IAuditService, AuditService>();
 

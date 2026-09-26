@@ -296,7 +296,7 @@ public class UsersController : ControllerBase
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.UsersCreate)]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
-        if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+        if (await _context.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower()))
             return BadRequest(Result.Failure("User with this email already exists"));
 
         var tenantId = _tenantService.GetCurrentTenantId();

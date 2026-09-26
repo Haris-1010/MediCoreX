@@ -16,8 +16,11 @@ public class PrescriptionConfiguration : IEntityTypeConfiguration<Prescription>
             .IsRequired()
             .HasMaxLength(50);
 
+        // Unique among live rows only: numbers are generated from a count that
+        // excludes soft-deleted prescriptions, so deleted rows can share a number.
         builder.HasIndex(p => new { p.TenantId, p.PrescriptionNumber })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false");
 
         builder.Property(p => p.Diagnosis)
             .HasMaxLength(500);

@@ -21,7 +21,7 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
 
         builder.HasIndex(t => t.Slug)
             .IsUnique()
-            .HasFilter("[Slug] IS NOT NULL");
+            .HasFilter("\"Slug\" IS NOT NULL");
 
         builder.Property(t => t.Email)
             .HasMaxLength(256);

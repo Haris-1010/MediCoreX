@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using ClinIQ.API.Authorization;
+using ClinIQ.Application.Interfaces;
 using ClinIQ.Domain.Common;
 using ClinIQ.Domain.Entities;
 using ClinIQ.Domain.Interfaces;
@@ -18,10 +19,12 @@ namespace ClinIQ.API.Controllers.v1;
 ///
 /// Security model (backend is the authority — nothing from Angular is trusted):
 ///   - every row is filtered to the caller's tenant,
-///   - a caller WITHOUT "All Locations" only ever sees rows for their current
-///     location plus organization-level rows (BranchId IS NULL); a forged
-///     locationId can therefore never widen the result set,
-///   - a caller WITH "All Locations" may pick any location of their own tenant,
+///   - locationId is validated by <see cref="ILocationScopeService"/>: it must be
+///     one of the caller's locations (or any tenant location for All Locations
+///     callers), otherwise 403 — a forged id can never widen the result set,
+///   - default view: All Locations callers see everything; others see their
+///     current location plus organization-level rows (BranchId IS NULL),
+///   - an explicitly chosen location shows only that location's rows,
 ///   - export enforces the exact same predicates as the list.
 /// </summary>
 [ApiController]
@@ -32,19 +35,16 @@ public class AuditLogsController : ControllerBase
     private const int MaxExportRows = 50000;
 
     private readonly ApplicationDbContext _context;
-    private readonly ITenantService _tenantService;
-    private readonly ICurrentUserService _currentUserService;
+    private readonly ILocationScopeService _scopeService;
     private readonly IAuditService _auditService;
 
     public AuditLogsController(
         ApplicationDbContext context,
-        ITenantService tenantService,
-        ICurrentUserService currentUserService,
+        ILocationScopeService scopeService,
         IAuditService auditService)
     {
         _context = context;
-        _tenantService = tenantService;
-        _currentUserService = currentUserService;
+        _scopeService = scopeService;
         _auditService = auditService;
     }
 
@@ -58,6 +58,7 @@ public class AuditLogsController : ControllerBase
         [FromQuery] DateTime? dateTo = null,
         [FromQuery] Guid? userId = null,
         [FromQuery] Guid? locationId = null,
+        [FromQuery] bool allLocations = false,
         [FromQuery] string? module = null,
         [FromQuery] string? action = null,
         [FromQuery] string? entityType = null,
@@ -70,9 +71,12 @@ public class AuditLogsController : ControllerBase
         pageNumber = Math.Max(1, pageNumber);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        var scoped = ApplyScope(locationId, out var scopeError);
+        if (dateFrom.HasValue && dateTo.HasValue && dateTo.Value.Date < dateFrom.Value.Date)
+            return BadRequest(Result.Failure("Date To must be on or after Date From.", "INVALID_DATE_RANGE"));
+
+        var (scoped, scopeError) = await ApplyScopeAsync(locationId, requestAllLocations: allLocations);
         if (scoped is null)
-            return StatusCode(StatusCodes.Status403Forbidden, Result.Failure(scopeError, "FORBIDDEN"));
+            return StatusCode(StatusCodes.Status403Forbidden, Result.Failure(scopeError!, "FORBIDDEN"));
 
         var query = ApplyFilters(scoped, dateFrom, dateTo, userId, module, action, entityType, entityId, success, searchTerm);
         query = ApplySort(query, sortBy, sortDescending);
@@ -122,9 +126,9 @@ public class AuditLogsController : ControllerBase
     [RequirePermission(Permissions.AuditView)]
     public async Task<IActionResult> GetAuditLog(Guid id)
     {
-        var scoped = ApplyScope(null, out var scopeError);
+        var (scoped, scopeError) = await ApplyScopeAsync(null, anyAllowedLocation: true);
         if (scoped is null)
-            return StatusCode(StatusCodes.Status403Forbidden, Result.Failure(scopeError, "FORBIDDEN"));
+            return StatusCode(StatusCodes.Status403Forbidden, Result.Failure(scopeError!, "FORBIDDEN"));
 
         var log = await scoped.FirstOrDefaultAsync(a => a.Id == id);
         if (log is null)
@@ -188,6 +192,7 @@ public class AuditLogsController : ControllerBase
         [FromQuery] DateTime? dateTo = null,
         [FromQuery] Guid? userId = null,
         [FromQuery] Guid? locationId = null,
+        [FromQuery] bool allLocations = false,
         [FromQuery] string? module = null,
         [FromQuery] string? action = null,
         [FromQuery] string? entityType = null,
@@ -195,9 +200,12 @@ public class AuditLogsController : ControllerBase
         [FromQuery] bool? success = null,
         [FromQuery] string? searchTerm = null)
     {
-        var scoped = ApplyScope(locationId, out var scopeError);
+        if (dateFrom.HasValue && dateTo.HasValue && dateTo.Value.Date < dateFrom.Value.Date)
+            return BadRequest(Result.Failure("Date To must be on or after Date From.", "INVALID_DATE_RANGE"));
+
+        var (scoped, scopeError) = await ApplyScopeAsync(locationId, requestAllLocations: allLocations);
         if (scoped is null)
-            return StatusCode(StatusCodes.Status403Forbidden, Result.Failure(scopeError, "FORBIDDEN"));
+            return StatusCode(StatusCodes.Status403Forbidden, Result.Failure(scopeError!, "FORBIDDEN"));
 
         var query = ApplyFilters(scoped, dateFrom, dateTo, userId, module, action, entityType, entityId, success, searchTerm);
 
@@ -256,6 +264,7 @@ public class AuditLogsController : ControllerBase
             BranchSpecified = true,
             BranchId = locationId,
             Success = true,
+            // Filter metadata only; the free-text term may be a patient name.
             AdditionalData = JsonSerializer.Serialize(new
             {
                 dateFrom,
@@ -267,7 +276,7 @@ public class AuditLogsController : ControllerBase
                 entityType,
                 entityId,
                 success,
-                searchTerm,
+                searchApplied = !string.IsNullOrWhiteSpace(searchTerm),
                 rowCount = rows.Count,
             }),
         });
@@ -276,55 +285,68 @@ public class AuditLogsController : ControllerBase
         return File(bytes, "text/csv", $"audit-logs-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv");
     }
 
+    /// <summary>
+    /// Distinct values for the filter dropdowns, computed from the rows the
+    /// caller is allowed to see (so they never reveal another tenant's users
+    /// or another location's activity), plus the caller's selectable locations.
+    /// </summary>
+    [HttpGet("filter-options")]
+    [RequirePermission(Permissions.AuditView)]
+    public async Task<IActionResult> GetFilterOptions(CancellationToken cancellationToken)
+    {
+        var (scoped, scopeError) = await ApplyScopeAsync(null, anyAllowedLocation: true);
+        if (scoped is null)
+            return StatusCode(StatusCodes.Status403Forbidden, Result.Failure(scopeError!, "FORBIDDEN"));
+
+        var modules = await scoped.Select(a => a.Module).Distinct().OrderBy(m => m).Take(200).ToListAsync(cancellationToken);
+        var actions = await scoped.Select(a => a.Action).Distinct().OrderBy(a => a).Take(500).ToListAsync(cancellationToken);
+        var entities = await scoped.Where(a => a.EntityType != null && a.EntityType != "")
+            .Select(a => a.EntityType).Distinct().OrderBy(e => e).Take(300).ToListAsync(cancellationToken);
+        var users = await scoped.Where(a => a.UserId != null)
+            .GroupBy(a => a.UserId)
+            .Select(g => new { id = g.Key, name = g.Max(a => a.UserName), email = g.Max(a => a.UserEmail) })
+            .OrderBy(u => u.name)
+            .Take(1000)
+            .ToListAsync(cancellationToken);
+        var locations = await _scopeService.GetSelectableAsync(cancellationToken);
+        var canExport = await _scopeService.HasPermissionAsync(Permissions.AuditExport, cancellationToken);
+
+        return Ok(Result<object>.Success(new { modules, actions, entities, users, locations, canExport }));
+    }
+
     // ------------------------------------------------------------------
     // Security + filtering helpers
     // ------------------------------------------------------------------
 
     /// <summary>
-    /// Tenant + location authorization. Returns NULL (with an error message)
-    /// when the caller may not run the query. Non-"All Locations" callers are
-    /// pinned to their current location and organization-level rows, so a
-    /// forged locationId can only ever narrow, never widen, the scope.
+    /// Tenant + location authorization through <see cref="ILocationScopeService"/>.
+    /// Returns (NULL, error) when the caller may not read the requested location.
+    /// <paramref name="anyAllowedLocation"/> widens the default to every location
+    /// the caller belongs to (detail view / dropdown values), never beyond.
     /// </summary>
-    private IQueryable<AuditLog>? ApplyScope(Guid? requestedLocationId, out string error)
+    private async Task<(IQueryable<AuditLog>? Query, string? Error)> ApplyScopeAsync(
+        Guid? requestedLocationId, bool anyAllowedLocation = false, bool requestAllLocations = false)
     {
-        error = string.Empty;
+        var (scope, error) = await _scopeService.ResolveAsync(requestedLocationId, default, requestAllLocations);
+        if (scope is null)
+            return (null, error);
 
-        var tenantId = _tenantService.GetCurrentTenantId();
-        if (tenantId is null)
+        var query = _context.AuditLogs.AsNoTracking().Where(a => a.TenantId == scope.TenantId);
+
+        if (requestedLocationId.HasValue)
+            return (query.Where(a => a.BranchId == scope.BranchId), null);
+
+        if (scope.CanSeeAllLocations && (scope.BranchId is null || anyAllowedLocation))
+            return (query, null);
+
+        if (anyAllowedLocation)
         {
-            error = "No organization context.";
-            return null;
+            var allowed = scope.AllowedBranchIds.ToList();
+            return (query.Where(a => a.BranchId == null || allowed.Contains(a.BranchId.Value)), null);
         }
 
-        var query = _context.AuditLogs.Where(a => a.TenantId == tenantId);
-
-        if (_tenantService.HasAllLocationAccess())
-        {
-            if (requestedLocationId.HasValue)
-            {
-                // Must be a real, non-deleted branch of the caller's tenant.
-                var belongsToTenant = _context.Branches
-                    .IgnoreQueryFilters()
-                    .Any(b => b.Id == requestedLocationId.Value
-                              && b.TenantId == tenantId
-                              && !b.IsDeleted);
-
-                if (!belongsToTenant)
-                {
-                    error = "You do not have access to this location.";
-                    return null;
-                }
-
-                return query.Where(a => a.BranchId == requestedLocationId.Value);
-            }
-
-            return query;
-        }
-
-        // Scoped caller: their current location plus organization-level rows.
-        var currentBranchId = _tenantService.GetCurrentBranchId();
-        return query.Where(a => a.BranchId == null || a.BranchId == currentBranchId);
+        var branchId = scope.BranchId;
+        return (query.Where(a => a.BranchId == null || a.BranchId == branchId), null);
     }
 
     private static IQueryable<AuditLog> ApplyFilters(
@@ -411,9 +433,12 @@ public class AuditLogsController : ControllerBase
 
             var result = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
             foreach (var property in document.RootElement.EnumerateObject())
-                result[property.Name] = property.Value.ValueKind == JsonValueKind.String
-                    ? property.Value.GetString()
-                    : property.Value.GetRawText();
+                result[property.Name] = property.Value.ValueKind switch
+                {
+                    JsonValueKind.String => property.Value.GetString(),
+                    JsonValueKind.Null or JsonValueKind.Undefined => null,
+                    _ => property.Value.GetRawText(),
+                };
             return result;
         }
         catch (JsonException)

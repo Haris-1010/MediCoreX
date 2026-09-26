@@ -49,7 +49,7 @@ public class PlatformAdminsController : ControllerBase
             return BadRequest(new { message = "Password must be at least 8 characters." });
 
         var email = request.Email.Trim();
-        if (await context.Users.IgnoreQueryFilters().AnyAsync(user => user.Email == email, cancellationToken))
+        if (await context.Users.IgnoreQueryFilters().AnyAsync(user => user.Email.ToLower() == email.ToLower(), cancellationToken))
             return Conflict(new { message = "A user with this email already exists." });
 
         var user = new ApplicationUser

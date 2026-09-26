@@ -1,0 +1,234 @@
+<app-main-layout>
+  <div class="viewer" [style.--accent]="accent">
+
+    <!-- ===== Header ===== -->
+    <header class="head">
+      <div class="head-main">
+        <nav class="crumbs no-print">
+          <a routerLink="/reports">Reports</a>
+          <mat-icon>chevron_right</mat-icon>
+          <span>{{ category?.name || 'Report' }}</span>
+        </nav>
+        <div class="title-row">
+          <span class="title-icon"><mat-icon>{{ def?.icon || 'assessment' }}</mat-icon></span>
+          <div>
+            <h1>{{ def?.name || 'Report' }}</h1>
+            <p class="desc">{{ def?.description }}</p>
+          </div>
+        </div>
+        <div class="meta" *ngIf="data">
+          <span class="pill scope"><mat-icon>{{ data.locationScope.locationId ? 'location_on' : 'public' }}</mat-icon>{{ data.locationScope.name }}</span>
+          <span class="pill"><mat-icon>date_range</mat-icon>{{ periodLabel }}</span>
+          <span class="pill subtle"><mat-icon>schedule</mat-icon>Generated {{ data.generatedAt | date:'d MMM, HH:mm' }}</span>
+        </div>
+      </div>
+
+      <div class="head-actions no-print" *ngIf="def">
+        <button mat-stroked-button (click)="refresh()" [disabled]="loading || refreshing">
+          <mat-icon>refresh</mat-icon> Refresh
+        </button>
+        <button mat-flat-button class="export-btn" [matMenuTriggerFor]="exportMenu" [disabled]="!data || exporting">
+          <mat-icon>{{ exporting ? 'hourglass_top' : 'ios_share' }}</mat-icon> Export
+        </button>
+        <mat-menu #exportMenu="matMenu" xPosition="before">
+          <button mat-menu-item (click)="exportCsv()" [disabled]="!canExport">
+            <mat-icon>table_view</mat-icon>
+            <span>CSV / Excel</span>
+          </button>
+          <button mat-menu-item (click)="print()">
+            <mat-icon>picture_as_pdf</mat-icon>
+            <span>Print / Save as PDF</span>
+          </button>
+          <div class="menu-note" *ngIf="!canExport">CSV export needs the reports.export permission.</div>
+        </mat-menu>
+      </div>
+    </header>
+
+    <!-- ===== Access / error states ===== -->
+    <div class="notice" *ngIf="!loading && error" [class.denied]="denied">
+      <mat-icon>{{ denied ? 'lock' : 'error_outline' }}</mat-icon>
+      <div>
+        <strong>{{ denied ? 'Access restricted' : 'This report could not be loaded' }}</strong>
+        <p>{{ error }}</p>
+        <a mat-button routerLink="/reports"><mat-icon>arrow_back</mat-icon> Back to Report Center</a>
+      </div>
+    </div>
+
+    <ng-container *ngIf="def && !(error && !data)">
+
+      <!-- ===== Filter bar ===== -->
+      <section class="filters no-print">
+        <div class="filter-row">
+          <div class="group" *ngIf="def.usesDateRange">
+            <span class="group-label">Period</span>
+            <div class="segmented" role="radiogroup" aria-label="Period">
+              <button *ngFor="let p of presets" type="button" role="radio" [attr.aria-checked]="filters.preset === p.key"
+                      [class.on]="filters.preset === p.key" (click)="choosePreset(p.key)">{{ p.label }}</button>
+            </div>
+          </div>
+
+          <div class="group dates" *ngIf="def.usesDateRange && filters.preset === 'custom'">
+            <span class="group-label">From – To</span>
+            <div class="date-pair">
+              <input type="date" [(ngModel)]="filters.from" [max]="filters.to" (change)="customDateChanged()" aria-label="From date">
+              <span>→</span>
+              <input type="date" [(ngModel)]="filters.to" [min]="filters.from" (change)="customDateChanged()" aria-label="To date">
+            </div>
+          </div>
+
+          <div class="group location">
+            <span class="group-label">Location</span>
+            <mat-select class="select" [(ngModel)]="filters.location" (selectionChange)="apply()"
+                        [disabled]="locationLocked" panelClass="report-select-panel" aria-label="Location">
+              <mat-option *ngFor="let l of context?.locations" [value]="l.id === null ? 'all' : l.id">
+                <mat-icon class="opt-icon">{{ l.id === null ? 'public' : 'location_on' }}</mat-icon>{{ l.name }}
+              </mat-option>
+            </mat-select>
+          </div>
+        </div>
+
+        <div class="filter-row secondary" *ngIf="def.filters.length">
+          <div class="group" *ngIf="hasFilter('doctorId')">
+            <span class="group-label">Doctor</span>
+            <mat-select class="select" [(ngModel)]="filters.doctorId" (selectionChange)="apply()" aria-label="Doctor">
+              <mat-option value="">All doctors</mat-option>
+              <mat-option *ngFor="let d of context?.doctors" [value]="d.id">{{ d.name }}</mat-option>
+            </mat-select>
+          </div>
+
+          <div class="group" *ngIf="hasFilter('departmentId')">
+            <span class="group-label">Department</span>
+            <mat-select class="select" [(ngModel)]="filters.departmentId" (selectionChange)="apply()" aria-label="Department">
+              <mat-option value="">All departments</mat-option>
+              <mat-option *ngFor="let d of context?.departments" [value]="d.id">{{ d.name }}</mat-option>
+            </mat-select>
+          </div>
+
+          <div class="group" *ngIf="statusFilter as f">
+            <span class="group-label">{{ f.label }}</span>
+            <mat-select class="select" [(ngModel)]="filters.status" (selectionChange)="apply()" [attr.aria-label]="f.label">
+              <mat-option value="">Any</mat-option>
+              <mat-option *ngFor="let o of f.options" [value]="o">{{ statusLabel(o) }}</mat-option>
+            </mat-select>
+          </div>
+
+          <div class="group" *ngIf="genderFilter as f">
+            <span class="group-label">{{ f.label }}</span>
+            <mat-select class="select" [(ngModel)]="filters.gender" (selectionChange)="apply()" [attr.aria-label]="f.label">
+              <mat-option value="">Any</mat-option>
+              <mat-option *ngFor="let o of f.options" [value]="o">{{ o }}</mat-option>
+            </mat-select>
+          </div>
+
+          <div class="group grow" *ngIf="hasFilter('search')">
+            <span class="group-label">Search</span>
+            <label class="search">
+              <mat-icon>search</mat-icon>
+              <input type="search" [ngModel]="filters.search" (ngModelChange)="searchChanged($event)"
+                     (keydown.enter)="apply()" placeholder="Number, name, code…" aria-label="Search rows">
+            </label>
+          </div>
+
+          <button mat-button class="reset" *ngIf="activeFilterCount" (click)="resetFilters()">
+            <mat-icon>filter_alt_off</mat-icon> Clear {{ activeFilterCount }}
+          </button>
+        </div>
+
+        <div class="active-chips" *ngIf="activeFilterCount">
+          <span class="fchip" *ngIf="filters.doctorId">{{ doctorName(filters.doctorId) }}<button (click)="clearFilter('doctorId')" aria-label="Remove doctor filter"><mat-icon>close</mat-icon></button></span>
+          <span class="fchip" *ngIf="filters.departmentId">{{ departmentName(filters.departmentId) }}<button (click)="clearFilter('departmentId')" aria-label="Remove department filter"><mat-icon>close</mat-icon></button></span>
+          <span class="fchip" *ngIf="filters.status">{{ statusLabel(filters.status) }}<button (click)="clearFilter('status')" aria-label="Remove status filter"><mat-icon>close</mat-icon></button></span>
+          <span class="fchip" *ngIf="filters.gender">{{ filters.gender }}<button (click)="clearFilter('gender')" aria-label="Remove gender filter"><mat-icon>close</mat-icon></button></span>
+          <span class="fchip" *ngIf="filters.search">“{{ filters.search }}”<button (click)="clearFilter('search')" aria-label="Remove search"><mat-icon>close</mat-icon></button></span>
+        </div>
+
+        <mat-progress-bar *ngIf="refreshing" mode="indeterminate" class="bar"></mat-progress-bar>
+      </section>
+
+      <!-- ===== Print header ===== -->
+      <div class="print-only print-head" *ngIf="data">
+        <strong>{{ data.reportName }}</strong> · {{ data.locationScope.name }} · {{ periodLabel }}
+      </div>
+
+      <!-- ===== KPIs ===== -->
+      <section class="kpis" *ngIf="loading">
+        <div class="kpi skeleton" *ngFor="let s of [1,2,3,4]"></div>
+      </section>
+      <section class="kpis" *ngIf="!loading && data?.summary?.length" [class.dim]="refreshing">
+        <div class="kpi" *ngFor="let k of data!.summary; let i = index" [attr.data-tone]="k.tone || 'neutral'"
+             [style.animation-delay.ms]="i * 40">
+          <span class="kpi-label">{{ k.label }}</span>
+          <span class="kpi-value">{{ fmt.value(k.value, k.format) }}</span>
+        </div>
+      </section>
+
+      <!-- ===== Charts ===== -->
+      <section class="charts" *ngIf="!loading && data && (trendGroups.length || breakdowns.length)" [class.dim]="refreshing">
+        <article class="panel wide" *ngFor="let g of trendGroups">
+          <header>
+            <h3>{{ g.series[0].name }}<span *ngIf="g.series[1]" class="vs"> vs {{ g.series[1].name }}</span></h3>
+            <div class="legend">
+              <span *ngFor="let s of g.series; let i = index"><i [style.background]="palette[i]" [class.dashed]="i === 1"></i>{{ s.name }}</span>
+            </div>
+          </header>
+          <app-trend-chart [series]="g.series" [colors]="palette"></app-trend-chart>
+        </article>
+
+        <article class="panel" *ngFor="let b of breakdowns">
+          <header><h3>{{ b.name }}</h3></header>
+          <app-bar-list [series]="b" [color]="accent"></app-bar-list>
+        </article>
+      </section>
+
+      <!-- ===== Table ===== -->
+      <section class="table-card" *ngIf="!loading && data">
+        <header class="table-head">
+          <div>
+            <h3>Details</h3>
+            <span class="count">{{ data.totalCount | number }} {{ data.totalCount === 1 ? 'record' : 'records' }}</span>
+          </div>
+          <span class="hint no-print" *ngIf="data.columns.length">Click a column heading to sort</span>
+        </header>
+
+        <div class="table-wrap" [class.dim]="refreshing">
+          <table *ngIf="data.rows.length; else noRows">
+            <thead>
+              <tr>
+                <th *ngFor="let c of data.columns" [class.num]="isNumeric(c)" [class.sortable]="c.sortable"
+                    [class.sorted]="appliedSort === c.key" (click)="sort(c)"
+                    [attr.aria-sort]="appliedSort === c.key ? (appliedDescending ? 'descending' : 'ascending') : null"
+                    [attr.tabindex]="c.sortable ? 0 : null" (keydown.enter)="sort(c)">
+                  <span>{{ c.label }}</span>
+                  <mat-icon class="sort-icon" *ngIf="c.sortable">{{ appliedSort === c.key ? (appliedDescending ? 'south' : 'north') : 'unfold_more' }}</mat-icon>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of data.rows; trackBy: trackRow">
+                <td *ngFor="let c of data.columns" [class.num]="isNumeric(c)" [class.strong]="c.type === 'currency'">
+                  <span *ngIf="c.type === 'status' && row[c.key]; else plain" class="status" [attr.data-tone]="tone(row[c.key])">
+                    {{ statusLabel('' + row[c.key]) }}
+                  </span>
+                  <ng-template #plain>{{ fmt.cell(row[c.key], c.type) }}</ng-template>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <ng-template #noRows>
+            <div class="no-rows">
+              <mat-icon>inbox</mat-icon>
+              <strong>No records match</strong>
+              <p>Try a wider period{{ activeFilterCount ? ' or clear the filters' : '' }}.</p>
+              <button mat-stroked-button *ngIf="activeFilterCount" (click)="resetFilters()">Clear filters</button>
+            </div>
+          </ng-template>
+        </div>
+
+        <mat-paginator class="no-print" *ngIf="data.totalCount > 10"
+                       [length]="data.totalCount" [pageIndex]="pageIndex" [pageSize]="pageSize"
+                       [pageSizeOptions]="[10, 25, 50, 100]" (page)="page($event)" showFirstLastButtons>
+        </mat-paginator>
+      </section>
+    </ng-container>
+  </div>
+</app-main-layout>

@@ -98,7 +98,9 @@ public class TenantsControllerSecurityTests : IDisposable
         var result = await _controller.GetCurrentTenant();
 
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
-        ok.Value!.ToString().Should().Contain("Org A");
-        ok.Value.ToString().Should().NotContain("Org B");
+        // Result<T>.ToString() is just the type name — inspect the serialized payload.
+        var json = System.Text.Json.JsonSerializer.Serialize(ok.Value);
+        json.Should().Contain("Org A");
+        json.Should().NotContain("Org B");
     }
 }

@@ -24,7 +24,7 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
 
         builder.HasIndex(p => new { p.TenantId, p.MRN })
             .IsUnique()
-            .HasFilter("[MRN] IS NOT NULL");
+            .HasFilter("\"MRN\" IS NOT NULL");
 
         builder.Property(p => p.FirstName)
             .IsRequired()

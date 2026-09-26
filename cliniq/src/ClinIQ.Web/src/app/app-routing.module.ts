@@ -129,6 +129,12 @@ const routes: Routes = [
     data: { permission: 'Reports.View' }
   },
   {
+    path: 'audit-logs',
+    loadChildren: () => import('./features/audit/audit.module').then(m => m.AuditModule),
+    canActivate: [AuthGuard, permissionGuard],
+    data: { permission: 'Audit.View' }
+  },
+  {
     path: 'insurance',
     loadChildren: () => import('./features/insurance/insurance.module').then(m => m.InsuranceModule),
     canActivate: [AuthGuard, permissionGuard],

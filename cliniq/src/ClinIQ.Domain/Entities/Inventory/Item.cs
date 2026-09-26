@@ -51,6 +51,7 @@ public class Item : BranchEntity
     public decimal MinimumStock { get; set; }
     public decimal MaximumStock { get; set; }
     public decimal ReorderLevel { get; set; }
+    public decimal ReorderQuantity { get; set; }
 
     // Expiry
     public bool TracksExpiry { get; set; }

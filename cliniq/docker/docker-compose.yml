@@ -1,21 +1,21 @@
 version: '3.8'
 
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+  postgres:
+    image: postgres:17
     container_name: cliniq-db
     environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=ClinIQ@2024!
-      - MSSQL_PID=Express
+      - POSTGRES_USER=medicorex
+      - POSTGRES_PASSWORD=medicorex_dev
+      - POSTGRES_DB=medicorex
     ports:
-      - "1433:1433"
+      - "5432:5432"
     volumes:
-      - sqlserver-data:/var/opt/mssql
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - cliniq-network
     healthcheck:
-      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "ClinIQ@2024!" -Q "SELECT 1"
+      test: ["CMD-SHELL", "pg_isready -U medicorex -d medicorex"]
       interval: 10s
       timeout: 3s
       retries: 10
@@ -29,11 +29,11 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:5000
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ClinIQ;User Id=sa;Password=ClinIQ@2024!;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=medicorex;Username=medicorex;Password=medicorex_dev
     ports:
       - "5000:5000"
     depends_on:
-      sqlserver:
+      postgres:
         condition: service_healthy
     networks:
       - cliniq-network
@@ -61,7 +61,7 @@ services:
       - cliniq-network
 
 volumes:
-  sqlserver-data:
+  postgres-data:
   redis-data:
 
 networks:

@@ -236,7 +236,7 @@ public class LocationQueryFilterTests : IDisposable
         patient.TenantId.Should().Be(TenantA);
         patient.BranchId.Should().Be(Branch2);
 
-        var reloaded = await _db.Patients.IgnoreQueryFilters>()
+        var reloaded = await _db.Patients.IgnoreQueryFilters()
             .SingleAsync(p => p.Id == patient.Id);
         reloaded.TenantId.Should().Be(TenantA);
         reloaded.BranchId.Should().Be(Branch2);
@@ -249,7 +249,7 @@ public class LocationQueryFilterTests : IDisposable
         _tenantService.Setup(t => t.GetCurrentBranchId()).Returns(Branch1);
         _tenantService.Setup(t => t.HasAllLocationAccess()).Returns(false);
 
-        var otherLocationPatient = _db.Patients.IgnoreQueryFilters>()
+        var otherLocationPatient = _db.Patients.IgnoreQueryFilters()
             .Single(p => p.TenantId == TenantA && p.BranchId == Branch2);
 
         _db.Patients.FirstOrDefault(p => p.Id == otherLocationPatient.Id).Should().BeNull();

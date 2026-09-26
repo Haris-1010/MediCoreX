@@ -215,7 +215,17 @@ const NAV: NavItem[] = [
     ],
   },
 
-  { label: 'Reports', icon: 'bar_chart', route: '/reports', module: 'reports', permission: 'reports.view' },
+  {
+    label: 'Reports', icon: 'bar_chart', module: 'reports', permission: 'reports.view',
+    children: [
+      { label: 'Report Center', icon: 'dashboard_customize', route: '/reports', module: 'reports', permission: 'reports.view' },
+      { label: 'Management Summary', icon: 'insights', route: '/reports/management', module: 'reports', permission: 'reports.financial' },
+      { label: 'Invoices & Revenue', icon: 'receipt_long', route: '/reports/billing', module: 'reports', permission: 'reports.financial' },
+      { label: 'Doctor Activity', icon: 'assignment_ind', route: '/reports/doctor-activity', module: 'reports', permission: 'doctors.view' },
+      { label: 'Current Stock', icon: 'inventory', route: '/reports/inventory', module: 'reports', permission: 'inventory.view' },
+      { label: 'Audit Activity', icon: 'history', route: '/reports/audit-activity', module: 'reports', permission: 'audit.view' },
+    ],
+  },
 
   {
     label: 'Administration', icon: 'admin_panel_settings',
@@ -224,6 +234,7 @@ const NAV: NavItem[] = [
       { label: 'Doctors', icon: 'medical_services', route: '/doctors' },
       { label: 'Departments', icon: 'apartment', route: '/departments' },
       { label: 'Users', icon: 'manage_accounts', route: '/settings/users', permission: 'users.view' },
+      { label: 'Audit Logs', icon: 'policy', route: '/audit-logs', permission: 'audit.view' },
       { label: 'Settings', icon: 'settings', route: '/settings', permission: 'settings.view' },
     ],
   },

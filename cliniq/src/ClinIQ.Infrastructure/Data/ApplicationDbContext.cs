@@ -10,6 +10,7 @@ using ClinIQ.Domain.Entities.Inventory;
 using ClinIQ.Domain.Entities.Tenancy;
 using ClinIQ.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace ClinIQ.Infrastructure.Data;
 
@@ -18,6 +19,14 @@ public class ApplicationDbContext : DbContext
     private readonly ITenantService _tenantService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IDateTimeService _dateTimeService;
+
+    static ApplicationDbContext()
+    {
+        // Keep SQL Server datetime2 semantics: DateTime maps to "timestamp without
+        // time zone" and values are stored exactly as given, whatever their Kind.
+        // Without this Npgsql rejects the UTC DateTimes the app writes everywhere.
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+    }
 
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
@@ -115,16 +124,27 @@ public class ApplicationDbContext : DbContext
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
 
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        // SQL Server silently used decimal(18,2) for every unconfigured decimal;
+        // Npgsql would create unbounded numeric. Keep the same precision and
+        // rounding. Explicit HasPrecision/HasColumnType calls still win.
+        configurationBuilder.Properties<decimal>().HavePrecision(18, 2);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
         // Apply all configurations from assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+        Configurations.ReportingIndexes.Apply(modelBuilder);
 
-        // The existing database has a mixed schema: only these tables use a
-        // SQL Server timestamp; the other inherited RowVersion columns are
-        // required varbinary values and must be inserted normally.
+        // Only these tables carried a SQL Server timestamp (rowversion) before the
+        // move to PostgreSQL; the other inherited RowVersion columns are plain
+        // bytea values inserted normally. PostgreSQL has no auto-updating binary
+        // rowversion, so the token is stamped in SaveChangesAsync instead and the
+        // column is never database-generated.
         var timestampTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "BedAllocations", "Beds", "DoctorSchedules", "Invoices", "Patients",
@@ -135,13 +155,10 @@ public class ApplicationDbContext : DbContext
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             var rowVersion = entityType.FindProperty(nameof(BaseEntity.RowVersion));
-            if (rowVersion is not null && timestampTables.Contains(entityType.GetTableName() ?? string.Empty))
-            {
-                modelBuilder.Entity(entityType.ClrType)
-                    .Property<byte[]>(nameof(BaseEntity.RowVersion))
-                    .IsRowVersion()
-                    .IsConcurrencyToken();
-            }
+            if (rowVersion is null) continue;
+
+            rowVersion.ValueGenerated = ValueGenerated.Never;
+            rowVersion.IsConcurrencyToken = timestampTables.Contains(entityType.GetTableName() ?? string.Empty);
         }
 
         // CRITICAL: EF Core only applies the LAST HasQueryFilter per entity.
@@ -247,7 +264,22 @@ public class ApplicationDbContext : DbContext
         }
     }
 
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    // Both overloads EF funnels every save through. Overriding only the async
+    // one let a synchronous SaveChanges() skip tenant/location stamping and the
+    // audit trail entirely.
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        ApplySaveConventions();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        ApplySaveConventions();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void ApplySaveConventions()
     {
         foreach (var entry in ChangeTracker.Entries<BaseEntity>())
         {
@@ -257,12 +289,18 @@ public class ApplicationDbContext : DbContext
                     entry.Entity.Id = entry.Entity.Id == Guid.Empty ? Guid.NewGuid() : entry.Entity.Id;
                     entry.Entity.CreatedAt = _dateTimeService.UtcNow;
                     entry.Entity.CreatedBy = _currentUserService.UserId;
-                    if (entry.Entity.RowVersion is null)
+                    if (IsRowVersionToken(entry))
+                        entry.Entity.RowVersion = NewRowVersion();
+                    else if (entry.Entity.RowVersion is null)
                         entry.Entity.RowVersion = Array.Empty<byte>();
                     break;
                 case EntityState.Modified:
                     entry.Entity.UpdatedAt = _dateTimeService.UtcNow;
                     entry.Entity.UpdatedBy = _currentUserService.UserId;
+                    // The original value stays in the UPDATE's WHERE clause, so a
+                    // concurrent writer still gets DbUpdateConcurrencyException.
+                    if (IsRowVersionToken(entry))
+                        entry.Entity.RowVersion = NewRowVersion();
                     break;
             }
         }
@@ -294,9 +332,13 @@ public class ApplicationDbContext : DbContext
         // Business audit capture. Runs after tenant/location stamping so every
         // row carries the final TenantId/BranchId of the entity it describes.
         CaptureAuditEntries();
-
-        return await base.SaveChangesAsync(cancellationToken);
     }
+
+    private static bool IsRowVersionToken(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<BaseEntity> entry)
+        => entry.Property(e => e.RowVersion).Metadata.IsConcurrencyToken;
+
+    // 8 bytes, like the SQL Server timestamp values carried over from the old database.
+    private static byte[] NewRowVersion() => Guid.NewGuid().ToByteArray()[..8];
 
     private static readonly JsonSerializerOptions AuditJsonOptions = new();
 
@@ -335,6 +377,7 @@ public class ApplicationDbContext : DbContext
             var oldValues = new Dictionary<string, object?>();
             var newValues = new Dictionary<string, object?>();
             var changedFields = new List<string>();
+            var passwordChanged = false;
             string action;
 
             if (entry.State == EntityState.Added)
@@ -385,15 +428,34 @@ public class ApplicationDbContext : DbContext
                     newValues[prop.Metadata.Name] = after;
                 }
 
+                // The hash itself is never captured, but an admin resetting a
+                // password must still leave a trace (self-service changes are
+                // suppressed here and logged by AuthService instead).
+                passwordChanged = entry.Properties.Any(p =>
+                    p.Metadata.Name == "PasswordHash" && p.IsModified && !Equals(p.OriginalValue, p.CurrentValue));
+
                 // Nothing worth recording (e.g. only UpdatedAt/RowVersion moved).
-                if (changedFields.Count == 0) continue;
+                if (changedFields.Count == 0 && !passwordChanged) continue;
             }
+
+            // ---- what, in business terms ----
+            var label = DescribeAccessRow(entry.Entity)
+                        ?? AuditPolicy.DescribeEntity(entry.Entity, newValues.Count > 0 ? newValues : oldValues);
+            var changes = changedFields.ToDictionary(
+                f => f, f => (oldValues.GetValueOrDefault(f), newValues.GetValueOrDefault(f)));
+            var semantic = AuditPolicy.ResolveSemantic(
+                entityType, action, policy.EntityLabel, label ?? policy.EntityLabel,
+                changes, newValues, passwordChanged);
 
             // ---- who / where ----
             var tenantId = (entry.Entity as ITenantEntity)?.TenantId
                            ?? _tenantService.GetCurrentTenantId();
 
-            Guid? branchId = policy.Location switch
+            Guid? branchId = entry.Entity is BranchUser access
+                // Location access rows belong to the location being granted/removed,
+                // so "what happened at Islamabad" includes "Dr. Ali got access".
+                ? access.BranchId
+                : policy.Location switch
             {
                 AuditLocationScope.Organization => null,
                 AuditLocationScope.Ambient => _tenantService.GetCurrentBranchId(),
@@ -417,7 +479,6 @@ public class ApplicationDbContext : DbContext
                 if (locationName == string.Empty) locationName = null;
             }
 
-            var label = AuditPolicy.DescribeEntity(entry.Entity, newValues.Count > 0 ? newValues : oldValues);
             var entityId = entry.Entity is BaseEntity keyed ? keyed.Id.ToString() : null;
 
             rows ??= new List<AuditLog>();
@@ -434,12 +495,13 @@ public class ApplicationDbContext : DbContext
                 UserId = currentUserId,
                 UserName = _currentUserService.FullName,
                 UserEmail = _currentUserService.Email,
-                Action = action,
+                Action = semantic?.Action ?? action,
                 Module = policy.Module,
                 EntityType = policy.EntityLabel,
                 EntityId = entityId,
                 EntityName = label ?? policy.EntityLabel,
-                Description = BuildAuditDescription(action, policy.EntityLabel, label, changedFields.Count),
+                Description = semantic?.Description
+                              ?? BuildAuditDescription(action, policy.EntityLabel, label, changedFields.Count),
                 OldValues = oldValues.Count > 0 ? JsonSerializer.Serialize(oldValues, AuditJsonOptions) : null,
                 NewValues = newValues.Count > 0 ? JsonSerializer.Serialize(newValues, AuditJsonOptions) : null,
                 AffectedColumns = changedFields.Count > 0 ? JsonSerializer.Serialize(changedFields) : null,
@@ -454,6 +516,27 @@ public class ApplicationDbContext : DbContext
 
         if (rows is { Count: > 0 })
             AuditLogs.AddRange(rows);
+    }
+
+    /// <summary>
+    /// Readable subject for access join rows, e.g. "Ali Khan → Islamabad" or
+    /// "Doctor → patients.view". Plain id lookups; small and only on access changes.
+    /// </summary>
+    private string? DescribeAccessRow(object entity)
+    {
+        string? UserName(Guid id) => Users.IgnoreQueryFilters().Where(u => u.Id == id)
+            .Select(u => (u.FirstName + " " + u.LastName).Trim()).FirstOrDefault();
+        string? RoleName(Guid id) => Roles.IgnoreQueryFilters().Where(r => r.Id == id).Select(r => r.Name).FirstOrDefault();
+        string? PermissionName(Guid id) => Permissions.Where(p => p.Id == id).Select(p => p.Name).FirstOrDefault();
+
+        return entity switch
+        {
+            BranchUser bu => $"{UserName(bu.UserId) ?? "User"} → {Branches.IgnoreQueryFilters().Where(b => b.Id == bu.BranchId).Select(b => b.Name).FirstOrDefault() ?? "Location"}",
+            UserRole ur => $"{UserName(ur.UserId) ?? "User"} → {RoleName(ur.RoleId) ?? "Role"}",
+            RolePermission rp => $"{RoleName(rp.RoleId) ?? "Role"} → {PermissionName(rp.PermissionId) ?? "Permission"}",
+            UserPermission up => $"{UserName(up.UserId) ?? "User"} → {PermissionName(up.PermissionId) ?? "Permission"} ({(up.IsGranted ? "grant" : "deny")})",
+            _ => null,
+        };
     }
 
     private static bool IsCapturable(string fieldName, Type clrType) =>

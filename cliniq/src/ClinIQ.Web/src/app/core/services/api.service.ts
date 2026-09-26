@@ -113,6 +113,37 @@ export class ApiService {
     );
   }
 
+  /**
+   * Downloads a server-generated file with query params. Uses the server's
+   * Content-Disposition filename when present, and turns an error body (which
+   * arrives as a Blob) back into the API's message.
+   */
+  downloadFile(endpoint: string, params: QueryParams | undefined, fallbackName: string): Observable<void> {
+    return this.http.get(`${this.baseUrl}/${endpoint}`, {
+      params: this.buildParams(params),
+      responseType: 'blob',
+      observe: 'response'
+    }).pipe(
+      map(response => {
+        const disposition = response.headers.get('Content-Disposition') ?? '';
+        const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
+        const url = window.URL.createObjectURL(response.body as Blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = match ? decodeURIComponent(match[1]) : fallbackName;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      }),
+      catchError(async (error: HttpErrorResponse) => {
+        let message = 'Export failed';
+        if (error.error instanceof Blob) {
+          try { message = JSON.parse(await error.error.text())?.message ?? message; } catch { /* not JSON */ }
+        }
+        throw new Error(error.status === 403 ? (message || 'You do not have permission to export this.') : message);
+      })
+    );
+  }
+
   private buildParams(params?: QueryParams): HttpParams {
     let httpParams = new HttpParams();
 

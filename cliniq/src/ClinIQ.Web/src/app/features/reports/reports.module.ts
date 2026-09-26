@@ -4,12 +4,18 @@ import { RouterModule, Routes } from '@angular/router';
 import { SharedModule } from '../../shared/shared.module';
 import { LayoutModule } from '../../layout/layout.module';
 
-import { ReportsDashboardComponent } from './reports-dashboard/reports-dashboard.component';
+import { ReportsHubComponent } from './reports-hub/reports-hub.component';
+import { ReportViewerComponent } from './report-viewer/report-viewer.component';
+import { TrendChartComponent } from './charts/trend-chart.component';
+import { BarListComponent } from './charts/bar-list.component';
 
-const routes: Routes = [{ path: '', component: ReportsDashboardComponent }];
+const routes: Routes = [
+  { path: '', component: ReportsHubComponent },
+  { path: ':reportId', component: ReportViewerComponent },
+];
 
 @NgModule({
-  declarations: [ReportsDashboardComponent],
-  imports: [CommonModule, SharedModule, LayoutModule, RouterModule.forChild(routes)]
+  declarations: [ReportsHubComponent, ReportViewerComponent, TrendChartComponent, BarListComponent],
+  imports: [CommonModule, SharedModule, LayoutModule, RouterModule.forChild(routes)],
 })
 export class ReportsModule { }

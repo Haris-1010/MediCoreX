@@ -28,8 +28,18 @@ public class CurrentUserService : ICurrentUserService
     public string? Email => User?.FindFirst(ClaimTypes.Email)?.Value
         ?? User?.FindFirst("email")?.Value;
 
-    public string? FullName => User?.FindFirst("name")?.Value
-        ?? User?.FindFirst(ClaimTypes.Name)?.Value;
+    // The access token carries "full_name" (AuthService); "name" is kept for
+    // tokens from other issuers.
+    public string? FullName => User?.FindFirst("full_name")?.Value
+        ?? User?.FindFirst("name")?.Value
+        ?? User?.FindFirst(ClaimTypes.Name)?.Value
+        ?? JoinNames(User?.FindFirst(ClaimTypes.GivenName)?.Value, User?.FindFirst(ClaimTypes.Surname)?.Value);
+
+    private static string? JoinNames(string? first, string? last)
+    {
+        var joined = $"{first} {last}".Trim();
+        return joined.Length > 0 ? joined : null;
+    }
 
     public Guid? TenantId
     {

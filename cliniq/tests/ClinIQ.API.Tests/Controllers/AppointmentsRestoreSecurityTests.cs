@@ -95,7 +95,7 @@ public class AppointmentsRestoreSecurityTests : IDisposable
 
         result.Should().BeOfType<OkObjectResult>();
 
-        var reloaded = await _db.Appointments.IgnoreQueryFilters>()
+        var reloaded = await _db.Appointments.IgnoreQueryFilters()
             .SingleAsync(a => a.Id == _ownLocationDeleted.Id);
         reloaded.IsDeleted.Should().BeFalse();
         reloaded.Status.Should().Be(AppointmentStatus.Scheduled);
@@ -108,7 +108,7 @@ public class AppointmentsRestoreSecurityTests : IDisposable
 
         result.Should().BeOfType<NotFoundObjectResult>();
 
-        var reloaded = await _db.Appointments.IgnoreQueryFilters>()
+        var reloaded = await _db.Appointments.IgnoreQueryFilters()
             .SingleAsync(a => a.Id == _otherLocationDeleted.Id);
         reloaded.IsDeleted.Should().BeTrue();
     }

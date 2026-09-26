@@ -204,7 +204,7 @@ public class StaffController : ControllerBase
         if (tenantId is null)
             return BadRequest(Result.Failure("Unable to resolve the current organization."));
 
-        if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+        if (await _context.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower()))
             return BadRequest(Result.Failure("User with this email already exists"));
 
         var user = new ApplicationUser
