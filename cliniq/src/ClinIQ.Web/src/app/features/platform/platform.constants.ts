@@ -24,6 +24,8 @@ export const PLATFORM_FEATURES: PlatformFeature[] = [
   { key: 'radiology', label: 'Radiology', icon: 'medical_information', description: 'Radiology orders and reports' },
   { key: 'users', label: 'Users', icon: 'manage_accounts', description: 'User management' },
   { key: 'roles', label: 'Roles', icon: 'shield', description: 'Role and permission management' },
-  { key: 'reports', label: 'Reports', icon: 'bar_chart', description: 'Standard reports' },
+  { key: 'reports', label: 'Reports', icon: 'bar_chart', description: 'Standard reports and analytics' },
+  { key: 'audit_logs', label: 'Audit Logs', icon: 'policy', description: 'Track who did what, when and where' },
+  { key: 'settings', label: 'Settings', icon: 'settings', description: 'Organization settings and branding' },
   { key: 'form_designer', label: 'Form Designer', icon: 'edit_note', description: 'Custom form builder' },
 ];

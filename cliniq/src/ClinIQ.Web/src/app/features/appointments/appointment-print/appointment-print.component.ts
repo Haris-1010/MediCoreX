@@ -6,7 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../../core/services/api.service';
-import { TenantService, Tenant } from '../../../core/services/tenant.service';
+import { TenantService, Tenant, Branding } from '../../../core/services/tenant.service';
 import { PrintBrandHeaderComponent } from '../../../shared/components/print-brand-header/print-brand-header.component';
 
 @Component({
@@ -56,7 +56,7 @@ import { PrintBrandHeaderComponent } from '../../../shared/components/print-bran
 })
 export class AppointmentPrintComponent implements OnInit {
   appointment: any = null;
-  branding: Tenant | null = null;
+  branding: Branding | null = null;
   loading = true;
   issuedAt: Date = new Date();
   currencySymbol = '';
@@ -80,7 +80,7 @@ export class AppointmentPrintComponent implements OnInit {
         error: () => { this.loading = false; }
       });
     }
-    this.tenantService.loadTenant().subscribe(tenant => this.branding = tenant);
+    this.tenantService.loadBranding().subscribe(branding => this.branding = branding);
   }
 
   get statusClass(): string {

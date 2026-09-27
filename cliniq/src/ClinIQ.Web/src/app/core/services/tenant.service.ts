@@ -42,10 +42,27 @@ export interface Branch {
   id: string;
   name: string;
   code: string;
+  logoUrl?: string;
+  website?: string;
   address: string;
   phone: string;
   email: string;
   isActive: boolean;
+}
+
+export interface Branding {
+  logoUrl?: string;
+  name?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postalCode?: string;
+  branchId?: string;
+  branchName?: string;
 }
 
 @Injectable({
@@ -59,6 +76,9 @@ export class TenantService {
   currentTenant$ = this.currentTenantSubject.asObservable();
   currentBranch$ = this.currentBranchSubject.asObservable();
   branches$ = this.branchesSubject.asObservable();
+
+  private effectiveBrandingSubject = new BehaviorSubject<Branding | null>(null);
+  effectiveBranding$ = this.effectiveBrandingSubject.asObservable();
 
   constructor(
     private api: ApiService,
@@ -75,6 +95,12 @@ export class TenantService {
   loadBranches(): Observable<Branch[]> {
     return this.api.get<Branch[]>('v1/branches').pipe(
       tap(branches => this.branchesSubject.next(branches))
+    );
+  }
+
+  loadBranding(): Observable<Branding> {
+    return this.api.get<any>('v1/branches/current/branding').pipe(
+      tap(branding => this.effectiveBrandingSubject.next(branding))
     );
   }
 

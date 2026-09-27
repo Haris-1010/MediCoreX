@@ -251,6 +251,7 @@ public static class PermissionCatalog
             ["laboratory"]      = Features.Laboratory,
             ["radiology"]       = Features.Radiology,
             ["reports"]         = Features.Reports,
+            ["audit"]           = Features.AuditLogs,
         };
 
     /// <summary>Prefixes that are never gated by the subscription.</summary>

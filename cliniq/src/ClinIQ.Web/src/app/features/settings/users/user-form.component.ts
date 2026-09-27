@@ -93,10 +93,6 @@ export class UserFormComponent implements OnInit {
     return (f + l).toUpperCase() || '?';
   }
 
-  get selectedRoles(): any[] {
-    return this.availableRoles.filter(r => this.isRoleSelected(r.id));
-  }
-
   get selectedLocations(): any[] {
     return this.locations.filter(l => this.isBranchSelected(l.id));
   }
@@ -116,7 +112,6 @@ export class UserFormComponent implements OnInit {
   ngOnInit() {
     this.loadDepartments();
     this.loadLocations();
-    this.loadRoles();
     const id = this.route.snapshot.paramMap.get('id');
     if (id && id !== 'new') {
       this.isEdit = true;
@@ -151,41 +146,6 @@ export class UserFormComponent implements OnInit {
         this.notification.error('Failed to load locations');
       }
     });
-  }
-
-  loadRoles() {
-    this.api.get<any[]>('v1/roles').subscribe({
-      next: (res: any) => {
-        const list = Array.isArray(res) ? res : (res?.items ?? []);
-        this.availableRoles = list
-          .filter((r: any) => r.isActive !== false)
-          .map((r: any) => ({ ...r, label: String(r.name).replace(/([a-z])([A-Z])/g, '$1 $2') }))
-          .sort((a: any, b: any) => Number(b.isSystemRole === false) - Number(a.isSystemRole === false) || a.label.localeCompare(b.label));
-        this.applyDefaultRole();
-      },
-      // Without roles.view the API still assigns the type's default role.
-      error: () => { this.rolesAvailable = false; this.availableRoles = []; }
-    });
-  }
-
-  isRoleSelected(roleId: string): boolean {
-    return (this.user.roleIds || []).map((r: string) => String(r).toLowerCase()).includes(String(roleId).toLowerCase());
-  }
-
-  toggleRole(roleId: string) {
-    this.rolesTouched = true;
-    const ids: string[] = [...(this.user.roleIds || [])];
-    const idx = ids.findIndex(r => String(r).toLowerCase() === String(roleId).toLowerCase());
-    if (idx >= 0) ids.splice(idx, 1); else ids.push(roleId);
-    this.user.roleIds = ids;
-  }
-
-  /** New users get the role that matches their type, until the admin picks roles by hand. */
-  private applyDefaultRole() {
-    if (this.isEdit || this.rolesTouched || !this.availableRoles.length) return;
-    const wanted = this.selectedTypeInfo?.defaultRoleName?.toLowerCase();
-    const match = wanted ? this.availableRoles.find(r => String(r.name).toLowerCase() === wanted) : undefined;
-    this.user.roleIds = match ? [match.id] : [];
   }
 
   generatePassword() {
@@ -237,7 +197,6 @@ export class UserFormComponent implements OnInit {
     if (!this.isEdit && this.canGrantAllLocations) {
       this.user.hasAllLocations = type.value === 'Admin';
     }
-    this.applyDefaultRole();
   }
 
   selectAllLocations(on: boolean) {
@@ -355,7 +314,6 @@ export class UserFormComponent implements OnInit {
       lastName: this.user.lastName,
       phone: this.user.phone,
       isActive: this.user.isActive,
-      roleIds: this.user.roleIds || [],
       branchIds: this.user.branchIds || [],
       userType: this.user.userType,
       designation: this.user.designation || null,

@@ -163,12 +163,12 @@
     <mat-tab label="Branding" *appHasPermission="'organization.branding'">
       <div class="tab-content">
         <form [formGroup]="brandingForm" (ngSubmit)="saveBranding()">
-          <h3>Organization Branding</h3>
-          <p class="muted">This information appears on printed documents, receipts, and reports.</p>
+          <h3>Location Branding</h3>
+          <p class="muted">Branding for the current location. If a field is left empty, the organization-level value is used as fallback.</p>
           
           <div class="logo-upload-section">
-            <h4>Organization Logo</h4>
-            <p class="muted">Upload a logo that will appear on all printed documents (Patient records, Appointment slips, Invoices, etc.)</p>
+            <h4>Location Logo</h4>
+            <p class="muted">Upload a logo that will appear on printed documents for this location.</p>
             <div class="logo-preview-container">
               <div class="logo-preview" *ngIf="brandingForm.get('logoUrl')?.value">
                 <img [src]="brandingForm.get('logoUrl')?.value" alt="Organization Logo" class="logo-preview-img">

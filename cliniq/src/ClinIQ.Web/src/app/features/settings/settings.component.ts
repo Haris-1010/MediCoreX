@@ -148,7 +148,7 @@ export class SettingsComponent implements OnInit {
     });
 
     this.brandingForm = this.fb.group({ name: [''], logoUrl: [''], phone: [''], email: [''], website: [''], address: [''], city: [''], state: [''], postalCode: [''], country: [''] });
-    this.api.get<any>('v1/tenants/current').subscribe(r => this.brandingForm.patchValue({
+    this.api.get<any>('v1/branches/current/branding').subscribe(r => this.brandingForm.patchValue({
       name: r?.name, logoUrl: r?.logoUrl, phone: r?.phone, email: r?.email,
       website: r?.website, address: r?.address, city: r?.city, state: r?.state,
       postalCode: r?.postalCode, country: r?.country
@@ -176,7 +176,21 @@ export class SettingsComponent implements OnInit {
   saveBranding() {
     const value = this.brandingForm.value;
     Object.keys(value).forEach(k => { if (value[k] === '') value[k] = null; });
-    this.api.put('v1/tenants', 'current', value).subscribe(() => this.notification.success('Branding saved'));
+    const branch = this.tenantService.getCurrentBranch();
+    if (!branch) {
+      this.notification.error('No location selected. Please select a location first.');
+      return;
+    }
+    this.api.put<any>('v1/branches', branch.id, {
+      name: branch.name, code: branch.code, ...value, isActive: branch.isActive
+    }).subscribe({
+      next: () => {
+        this.notification.success('Location branding saved');
+        this.tenantService.loadBranding().subscribe();
+        this.tenantService.loadBranches().subscribe();
+      },
+      error: (err) => this.notification.error(this.extractError(err))
+    });
   }
 
   onLogoSelected(event: Event) {
@@ -187,8 +201,15 @@ export class SettingsComponent implements OnInit {
     const formData = new FormData();
     formData.append('file', file);
 
+    const branch = this.tenantService.getCurrentBranch();
+    if (!branch) {
+      this.notification.error('No location selected. Please select a location first.');
+      input.value = '';
+      return;
+    }
+
     this.logoUploading = true;
-    this.api.upload<any>('v1/tenants/current/logo', formData).subscribe({
+    this.api.upload<any>(`v1/branches/${branch.id}/logo`, formData).subscribe({
       next: (res) => {
         const logoUrl = res?.logoUrl || res?.data?.logoUrl;
         if (logoUrl) {
@@ -196,6 +217,8 @@ export class SettingsComponent implements OnInit {
         }
         this.notification.success('Logo uploaded successfully');
         this.logoUploading = false;
+        this.tenantService.loadBranding().subscribe();
+        this.tenantService.loadBranches().subscribe();
       },
       error: (err) => {
         this.notification.error(this.extractError(err));
@@ -208,6 +231,7 @@ export class SettingsComponent implements OnInit {
 
   removeLogo() {
     this.brandingForm.patchValue({ logoUrl: '' });
+    this.tenantService.loadBranding().subscribe();
   }
 
   // ------------------------- USERS -------------------------

@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../../core/services/api.service';
-import { TenantService } from '../../../core/services/tenant.service';
+import { TenantService, Branding } from '../../../core/services/tenant.service';
 import { PrintBrandHeaderComponent } from '../../../shared/components/print-brand-header/print-brand-header.component';
 
 @Component({
@@ -191,7 +191,7 @@ import { PrintBrandHeaderComponent } from '../../../shared/components/print-bran
 })
 export class LabPrintComponent implements OnInit {
   order: any = null;
-  branding: any = null;
+  branding: Branding | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -207,7 +207,7 @@ export class LabPrintComponent implements OnInit {
         error: () => {}
       });
     }
-    this.tenantService.loadTenant().subscribe(tenant => this.branding = tenant);
+    this.tenantService.loadBranding().subscribe(branding => this.branding = branding);
   }
 
   print() { window.print(); }

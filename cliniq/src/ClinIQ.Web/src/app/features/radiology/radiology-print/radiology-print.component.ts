@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../../core/services/api.service';
-import { TenantService } from '../../../core/services/tenant.service';
+import { TenantService, Branding } from '../../../core/services/tenant.service';
 
 @Component({
   standalone: true,
@@ -16,12 +16,12 @@ import { TenantService } from '../../../core/services/tenant.service';
       <!-- Inline brand header - always visible -->
       <div class="brand-header">
         <div class="brand-left">
-          <img *ngIf="branding?.logoUrl" [src]="branding.logoUrl" alt="Logo" class="brand-logo" />
+          <img *ngIf="branding?.logoUrl" [src]="branding?.logoUrl" alt="Logo" class="brand-logo" />
           <div>
             <h1 class="org-name">{{ branding?.name || 'Radiology Department' }}</h1>
             <div class="contact-row">
-              <span *ngIf="branding?.phone" class="contact-item">{{ branding.phone }}</span>
-              <span *ngIf="branding?.address" class="contact-item">{{ branding.address }}</span>
+              <span *ngIf="branding?.phone" class="contact-item">{{ branding?.phone }}</span>
+              <span *ngIf="branding?.address" class="contact-item">{{ branding?.address }}</span>
             </div>
           </div>
         </div>
@@ -196,7 +196,7 @@ import { TenantService } from '../../../core/services/tenant.service';
 })
 export class RadiologyPrintComponent implements OnInit {
   report: any = null;
-  branding: any = null;
+  branding: Branding | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -212,7 +212,7 @@ export class RadiologyPrintComponent implements OnInit {
         error: () => {}
       });
     }
-    this.tenantService.loadTenant().subscribe(tenant => this.branding = tenant);
+    this.tenantService.loadBranding().subscribe(branding => this.branding = branding);
   }
 
   print() { window.print(); }

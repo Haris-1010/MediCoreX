@@ -7,7 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../../core/services/api.service';
-import { TenantService } from '../../../core/services/tenant.service';
+import { TenantService, Branding } from '../../../core/services/tenant.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { PrintBrandHeaderComponent } from '../../../shared/components/print-brand-header/print-brand-header.component';
@@ -136,7 +136,7 @@ import { SharedModule } from '../../../shared/shared.module';
 })
 export class InvoicePrintComponent implements OnInit {
   invoice: any = null;
-  branding: any = null;
+  branding: Branding | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -166,7 +166,7 @@ export class InvoicePrintComponent implements OnInit {
         error: () => {}
       });
     }
-    this.tenantService.loadTenant().subscribe(tenant => this.branding = tenant);
+    this.tenantService.loadBranding().subscribe(branding => this.branding = branding);
   }
 
   print() { window.print(); }

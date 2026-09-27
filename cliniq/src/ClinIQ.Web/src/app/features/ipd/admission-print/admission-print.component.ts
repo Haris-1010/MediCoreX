@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../../core/services/api.service';
-import { TenantService } from '../../../core/services/tenant.service';
+import { TenantService, Branding } from '../../../core/services/tenant.service';
 import { PrintBrandHeaderComponent } from '../../../shared/components/print-brand-header/print-brand-header.component';
 
 @Component({
@@ -181,7 +181,7 @@ import { PrintBrandHeaderComponent } from '../../../shared/components/print-bran
 export class AdmissionPrintPageComponent implements OnInit {
   admission: any = null;
   allocationHistory: any[] = [];
-  branding: any = null;
+  branding: Branding | null = null;
   today = new Date();
 
   constructor(
@@ -201,7 +201,7 @@ export class AdmissionPrintPageComponent implements OnInit {
         next: (r) => { this.allocationHistory = Array.isArray(r) ? r : []; }
       });
     }
-    this.tenantService.loadTenant().subscribe(tenant => this.branding = tenant);
+    this.tenantService.loadBranding().subscribe(branding => this.branding = branding);
   }
 
   print() { window.print(); }

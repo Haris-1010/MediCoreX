@@ -79,7 +79,7 @@ export class PermissionService {
       'prescriptions', 'services', 'billing', 'inventory', 'suppliers', 'purchase_orders',
       'pharmacy', 'laboratory', 'radiology',
       'doctors', 'staff', 'departments', 'facility', 'wards', 'reports', 'settings',
-      'audit', 'admissions', 'beds'
+      'audit_logs', 'admissions', 'beds'
     ];
 
     return {

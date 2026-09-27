@@ -9,7 +9,7 @@
           <span>{{ isEdit ? 'Edit' : 'New user' }}</span>
         </nav>
         <h1>{{ isEdit ? 'Edit user' : 'Add a new user' }}</h1>
-        <p>{{ isEdit ? 'Update details, access and status. Changes apply at their next request.' : 'Four quick steps: who they are, their details, what they can access, and anything specific to their job.' }}</p>
+        <p>{{ isEdit ? 'Update details, access and status. Changes apply at their next request.' : 'Quick steps: who they are, their details, locations, and anything specific to their job.' }}</p>
       </div>
       <button mat-stroked-button (click)="goBack()"><mat-icon>arrow_back</mat-icon> Back to users</button>
     </header>
@@ -87,25 +87,7 @@
 
         <!-- 3. Access -->
         <section class="step">
-          <header><span class="num">3</span><div><h2>Access</h2><p>Roles decide what they can do; locations decide where.</p></div></header>
-
-          <div class="block" *ngIf="rolesAvailable">
-            <div class="block-head">
-              <h3>Roles</h3>
-              <span class="hint" *ngIf="!isEdit && !rolesTouched && selectedTypeInfo">Pre-selected for a {{ selectedTypeInfo.label }} — change if needed</span>
-            </div>
-            <div class="roles">
-              <button type="button" *ngFor="let r of availableRoles" class="role" [class.on]="isRoleSelected(r.id)" (click)="toggleRole(r.id)"
-                      [matTooltip]="r.description || ((r.permissionNames?.length || 0) + ' permissions')">
-                <mat-icon>{{ isRoleSelected(r.id) ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
-                {{ r.label }}
-                <span class="custom" *ngIf="!r.isSystemRole">Custom</span>
-              </button>
-            </div>
-            <div class="warn" *ngIf="!user.roleIds?.length">
-              <mat-icon>warning</mat-icon> Without a role this user can sign in but won't see any module.
-            </div>
-          </div>
+          <header><span class="num">3</span><div><h2>Access</h2><p>Locations decide where they can work.</p></div></header>
 
           <div class="block">
             <div class="block-head"><h3>Locations</h3></div>
@@ -217,10 +199,6 @@
           </div>
           <dl>
             <div><dt>Type</dt><dd>{{ selectedTypeInfo?.label || '—' }}</dd></div>
-            <div><dt>Roles</dt><dd>
-              <span class="pv-chip" *ngFor="let r of selectedRoles">{{ r.label }}</span>
-              <span *ngIf="!selectedRoles.length" class="pv-warn">None</span>
-            </dd></div>
             <div><dt>Locations</dt><dd>
               <span class="pv-chip all" *ngIf="user.hasAllLocations"><mat-icon>public</mat-icon>All locations</span>
               <ng-container *ngIf="!user.hasAllLocations">

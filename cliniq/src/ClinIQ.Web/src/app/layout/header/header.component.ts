@@ -350,6 +350,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
     // Initial branch list load (permission context may arrive later).
     this.tenantService.loadBranches().subscribe({ error: () => {} });
+    this.tenantService.loadBranding().subscribe({ error: () => {} });
   }
 
   ngOnDestroy(): void {

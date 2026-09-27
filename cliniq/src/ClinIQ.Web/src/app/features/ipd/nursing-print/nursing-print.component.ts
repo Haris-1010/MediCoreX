@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../../core/services/api.service';
-import { TenantService } from '../../../core/services/tenant.service';
+import { TenantService, Branding } from '../../../core/services/tenant.service';
 import { PrintBrandHeaderComponent } from '../../../shared/components/print-brand-header/print-brand-header.component';
 
 @Component({
@@ -200,7 +200,7 @@ export class NursingPrintPageComponent implements OnInit {
   medications: any[] = [];
   notes: any[] = [];
   ioRecords: any[] = [];
-  branding: any = null;
+  branding: Branding | null = null;
   today = new Date();
 
   constructor(
@@ -257,7 +257,7 @@ this.api.get<any>(`v1/nursing/medications`, { admissionId: id }).subscribe({
         error: () => {}
       });
     }
-    this.tenantService.loadTenant().subscribe(tenant => this.branding = tenant);
+    this.tenantService.loadBranding().subscribe(branding => this.branding = branding);
   }
 
   getTotalIntake(): number {

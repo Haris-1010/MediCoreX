@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { ApiService, PagedResult } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { TenantService, Tenant } from '../../../core/services/tenant.service';
+import { TenantService, Branding } from '../../../core/services/tenant.service';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
@@ -70,11 +70,11 @@ export class AdmissionListComponent implements OnInit {
   admissions: any[] = []; wards: any[] = [];
   columns = ['admissionNumber', 'patient', 'mrn', 'ward', 'bed', 'doctor', 'admissionDate', 'days', 'status', 'actions'];
   totalCount = 0; pageSize = 10; pageIndex = 0; searchTerm = ''; filterWard = ''; filterStatus = '';
-  branding: Tenant | null = null;
+  branding: Branding | null = null;
 
   constructor(private api: ApiService, private notification: NotificationService, private tenantService: TenantService, private dialog: MatDialog, private router: Router) {}
 
-  ngOnInit() { this.load(); this.api.get<any>('v1/wards').subscribe(r => this.wards = Array.isArray(r) ? r : []); this.tenantService.loadTenant().subscribe(t => this.branding = t); }
+  ngOnInit() { this.load(); this.api.get<any>('v1/wards').subscribe(r => this.wards = Array.isArray(r) ? r : []); this.tenantService.loadBranding().subscribe(t => this.branding = t); }
 
   load() {
     this.api.get<PagedResult<any>>('v1/admissions', { pageNumber: this.pageIndex + 1, pageSize: this.pageSize, searchTerm: this.searchTerm, wardId: this.filterWard, status: this.filterStatus })

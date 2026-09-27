@@ -3,7 +3,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { filter, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { NavigationService, NavItem } from '../../core/services/navigation.service';
-import { TenantService, Tenant } from '../../core/services/tenant.service';
+import { TenantService, Tenant, Branding } from '../../core/services/tenant.service';
 
 @Component({
   standalone: false,
@@ -14,8 +14,8 @@ import { TenantService, Tenant } from '../../core/services/tenant.service';
       <div class="sidebar-header" routerLink="/dashboard" role="link" tabindex="0">
         <div class="logo-container">
           <div class="logo-icon">
-            <img *ngIf="tenant?.logoUrl" [src]="tenant?.logoUrl" alt="logo" class="org-logo">
-            <mat-icon *ngIf="!tenant?.logoUrl">local_hospital</mat-icon>
+            <img *ngIf="branding?.logoUrl" [src]="branding?.logoUrl" alt="logo" class="org-logo">
+            <mat-icon *ngIf="!branding?.logoUrl">local_hospital</mat-icon>
           </div>
           <div class="logo-text">
             <span class="brand">MediCoreX</span>
@@ -612,6 +612,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   @Input() collapsed = false;
 
   tenant: Tenant | null = null;
+  branding: Branding | null = null;
   searchQuery = signal('');
   filteredMenuItems = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
@@ -652,7 +653,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
     this.expandActiveGroup();
 
-    this.tenantService.loadTenant().subscribe(tenant => this.tenant = tenant);
+    this.tenantService.currentTenant$.pipe(takeUntil(this.destroy$)).subscribe(tenant => this.tenant = tenant);
+    this.tenantService.effectiveBranding$.pipe(takeUntil(this.destroy$)).subscribe(branding => this.branding = branding);
+    if (!this.tenantService.getCurrentTenant()) {
+      this.tenantService.loadTenant().subscribe();
+    }
+    this.tenantService.loadBranding().subscribe();
 
   }
 

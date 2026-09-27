@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { TenantService, Tenant } from '../../../core/services/tenant.service';
+import { TenantService, Tenant, Branding } from '../../../core/services/tenant.service';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
@@ -96,7 +96,7 @@ export class DischargeComponent implements OnInit {
   admission: any;
   form!: FormGroup;
   saving = false;
-  branding: Tenant | null = null;
+  branding: Branding | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -118,7 +118,7 @@ export class DischargeComponent implements OnInit {
     });
     const id = this.route.snapshot.paramMap.get('id');
     if (id) this.api.getById<any>('v1/admissions', id).subscribe(r => this.admission = r);
-    this.tenantService.loadTenant().subscribe(tenant => this.branding = tenant);
+    this.tenantService.loadBranding().subscribe(branding => this.branding = branding);
   }
 
   print() {

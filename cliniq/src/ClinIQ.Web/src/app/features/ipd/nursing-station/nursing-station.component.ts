@@ -489,7 +489,7 @@ export class NursingStationComponent implements OnInit {
   constructor(private fb: FormBuilder, private api: ApiService, private dialog: MatDialog, private notification: NotificationService, private tenantService: TenantService) {}
 
   ngOnInit() {
-    this.tenantService.loadTenant().subscribe(t => this.branding = t);
+    this.tenantService.loadBranding().subscribe(t => this.branding = t);
     this.vitalsForm = this.fb.group({
       systolicBP: ['', Validators.required], diastolicBP: ['', Validators.required],
       pulse: ['', Validators.required], temperature: ['', Validators.required], spO2: ['', Validators.required],

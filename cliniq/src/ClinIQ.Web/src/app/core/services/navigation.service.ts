@@ -234,8 +234,8 @@ const NAV: NavItem[] = [
       { label: 'Doctors', icon: 'medical_services', route: '/doctors' },
       { label: 'Departments', icon: 'apartment', route: '/departments' },
       { label: 'Users', icon: 'manage_accounts', route: '/settings/users', permission: 'users.view' },
-      { label: 'Audit Logs', icon: 'policy', route: '/audit-logs', permission: 'audit.view' },
-      { label: 'Settings', icon: 'settings', route: '/settings', permission: 'settings.view' },
+      { label: 'Audit Logs', icon: 'policy', route: '/audit-logs', module: 'audit_logs', permission: 'audit.view' },
+      { label: 'Settings', icon: 'settings', route: '/settings', module: 'settings', permission: 'settings.view' },
     ],
   },
 ];

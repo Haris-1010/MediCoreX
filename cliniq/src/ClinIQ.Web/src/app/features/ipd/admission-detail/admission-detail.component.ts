@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { TenantService, Tenant } from '../../../core/services/tenant.service';
+import { TenantService, Tenant, Branding } from '../../../core/services/tenant.service';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
@@ -185,7 +185,7 @@ export class AdmissionDetailComponent implements OnInit {
   admission: any = null;
   allocationHistory: any[] = [];
   historyColumns = ['bed', 'ward', 'allocatedAt', 'releasedAt', 'duration'];
-  branding: Tenant | null = null;
+  branding: Branding | null = null;
 
   billingData: any = null;
   bedCharges: any[] = [];
@@ -217,7 +217,7 @@ export class AdmissionDetailComponent implements OnInit {
       });
       this.loadBillingData();
     }
-    this.tenantService.loadTenant().subscribe(tenant => this.branding = tenant);
+    this.tenantService.loadBranding().subscribe(branding => this.branding = branding);
   }
 
   loadBillingData() {
