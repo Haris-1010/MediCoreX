@@ -11,14 +11,14 @@ COPY src/ClinIQ.Infrastructure/ClinIQ.Infrastructure.csproj ./src/ClinIQ.Infrast
 COPY src/ClinIQ.API/ClinIQ.API.csproj ./src/ClinIQ.API/
 
 # Restore dependencies
-RUN dotnet restore
+RUN dotnet restore src/ClinIQ.API/ClinIQ.API.csproj
 
 # Copy source code
 COPY src/ ./src/
 
 # Build and publish
 WORKDIR /src/src/ClinIQ.API
-RUN dotnet publish -c Release -o /app/publish --no-restore
+RUN dotnet publish src/ClinIQ.API/ClinIQ.API.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
