@@ -32,10 +32,11 @@ COPY --from=build /app/publish .
 # Change ownership
 RUN chown -R appuser:appuser /app
 
-USER appuser
 
-ENV ASPNETCORE_URLS=http://+:5000
+USER appuser
 
 EXPOSE 5000
 
-ENTRYPOINT ["dotnet", "ClinIQ.API.dll"]
+ENTRYPOINT ["dotnet", "ClinIQ.API.dll", "--urls", "http://+:5000"]
+
+ 
