@@ -27,16 +27,17 @@ WORKDIR /app
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser
 
+# Copy published application
 COPY --from=build /app/publish .
 
 # Change ownership
 RUN chown -R appuser:appuser /app
 
-
+# Run as non-root user
 USER appuser
 
+# API port
 EXPOSE 5000
 
+# Force ASP.NET Core to listen on port 5000
 ENTRYPOINT ["dotnet", "ClinIQ.API.dll", "--urls", "http://+:5000"]
-
- 
