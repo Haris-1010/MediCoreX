@@ -18,7 +18,7 @@ COPY src/ ./src/
 
 # Build and publish
 WORKDIR /src/src/ClinIQ.API
-RUN dotnet publish src/ClinIQ.API/ClinIQ.API.csproj -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish ClinIQ.API.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
