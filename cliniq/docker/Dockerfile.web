@@ -20,27 +20,19 @@ FROM nginx:alpine AS runtime
 # Remove default nginx config
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Render the nginx config with the port(s) this part must answer on
-COPY docker/nginx.web.conf.template /etc/nginx/nginx.web.conf.template
-COPY docker/11-render-nginx-conf.sh /docker-entrypoint.d/11-render-nginx-conf.sh
-RUN tr -d '\r' < /docker-entrypoint.d/11-render-nginx-conf.sh > /tmp/s.sh && \
-    mv /tmp/s.sh /docker-entrypoint.d/11-render-nginx-conf.sh && \
-    chmod +x /docker-entrypoint.d/11-render-nginx-conf.sh
+# Non-root-safe config (unprivileged ports, /tmp pid, logs to stdout/stderr).
+# Baked at build time so the entrypoint never has to write to /etc.
+COPY docker/nginx.web.conf /etc/nginx/nginx.conf
 
 # Copy built Angular app
 COPY --from=build /app/dist/cliniq-web/browser /usr/share/nginx/html
 
-# Create non-root user
 RUN adduser -D -H -u 1000 -s /sbin/nologin nginx-user && \
-    chown -R nginx-user:nginx-user /usr/share/nginx/html && \
-    chown -R nginx-user:nginx-user /var/cache/nginx && \
-    chown -R nginx-user:nginx-user /var/log/nginx && \
-    touch /var/run/nginx.pid && \
-    chown nginx-user:nginx-user /var/run/nginx.pid
+    chown -R nginx-user:nginx-user /usr/share/nginx/html
 
-EXPOSE 80
+EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
+    CMD wget --quiet --tries=1 --spider http://127.0.0.1:8080/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
