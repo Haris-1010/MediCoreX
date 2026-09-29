@@ -66,7 +66,9 @@ import { PatientPickerComponent, PatientPickerValue } from '../../../shared/comp
           <div class="form-row">
             <mat-form-field appearance="outline">
               <mat-label>Date</mat-label>
-              <input matInput [matDatepicker]="picker" formControlName="appointmentDate" [min]="minDate" (dateChange)="loadAvailableSlots()">
+              <input matInput [matDatepicker]="picker" formControlName="appointmentDate"
+                     [min]="minDate" [max]="maxDate" [matDatepickerFilter]="dateFilter"
+                     (dateChange)="loadAvailableSlots()">
               <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
               <mat-datepicker #picker></mat-datepicker>
             </mat-form-field>
@@ -145,6 +147,8 @@ export class AppointmentFormComponent implements OnInit, OnDestroy {
   isEditMode = false;
   saving = false;
   minDate = new Date();
+  maxDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+  availableDates: Set<string> | null = null;
   doctors: any[] = [];
   availableSlots: any[] = [];
   appointmentId: string | null = null;
@@ -240,6 +244,7 @@ export class AppointmentFormComponent implements OnInit, OnDestroy {
   onDoctorSelected(e: any) {
     const doctor = e.option.value;
     this.form.patchValue({ doctorId: doctor.id, doctorSearch: this.displayDoctor(doctor) });
+    this.loadAvailableDates();
     this.loadAvailableSlots();
   }
 
@@ -318,6 +323,7 @@ export class AppointmentFormComponent implements OnInit, OnDestroy {
 
       // Now load available slots, then set timeSlot
       if (a.doctorId && a.appointmentDate) {
+        this.loadAvailableDates();
         this.api.get<any[]>('v1/doctors/available-slots', { doctorId: a.doctorId, date: this.toDateParam(a.appointmentDate) }).subscribe(r => {
           const slots = this.normalizeList<any>(r);
 
@@ -370,6 +376,31 @@ export class AppointmentFormComponent implements OnInit, OnDestroy {
     } else {
       this.availableSlots = [];
     }
+  }
+
+  dateFilter = (d: Date | null): boolean => {
+    if (!d || !this.availableDates) return true;
+    return this.availableDates.has(this.toDateParam(d));
+  };
+
+  loadAvailableDates() {
+    const doctorId = this.form.value.doctorId;
+    if (!doctorId) {
+      this.availableDates = null;
+      return;
+    }
+    const start = this.toDateParam(new Date());
+    const end = this.toDateParam(this.maxDate);
+    this.api.get<any>('v1/doctors/available-dates', { doctorId, start, end }).subscribe({
+      next: (r) => {
+        if (this.form.value.doctorId !== doctorId) return;
+        const dates = Array.isArray(r) ? r : (r?.dates ?? []);
+        this.availableDates = new Set<string>(dates);
+      },
+      error: () => {
+        if (this.form.value.doctorId === doctorId) this.availableDates = null;
+      }
+    });
   }
 
   get noSlots(): boolean {

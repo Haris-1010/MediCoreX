@@ -334,6 +334,35 @@ public class DoctorsController : ControllerBase
         return Ok(Result<object[]>.Success(slots.ToArray()));
     }
 
+    [HttpGet("available-dates")]
+    [RequirePermission(ClinIQ.Shared.Constants.Permissions.DoctorsView)]
+    public async Task<IActionResult> GetAvailableDates([FromQuery] Guid doctorId, [FromQuery] DateTime start, [FromQuery] DateTime end)
+    {
+        var tenantId = _tenantService.GetCurrentTenantId();
+        if (tenantId is null)
+            return BadRequest(Result.Failure("Unable to resolve the current organization."));
+
+        if (start == default) start = DateTime.Today;
+        if (end < start) end = start;
+        if ((end.Date - start.Date).Days > 92) end = start.Date.AddDays(92);
+
+        var workingDays = await _context.DoctorSchedules
+            .Where(s => s.DoctorId == doctorId && !s.IsDeleted && s.EndTime > s.StartTime)
+            .Select(s => s.DayOfWeek)
+            .Distinct()
+            .ToListAsync();
+
+        var daySet = new HashSet<int>(workingDays);
+        var dates = new List<string>();
+        for (var d = start.Date; d <= end.Date; d = d.AddDays(1))
+        {
+            if (daySet.Contains((int)d.DayOfWeek))
+                dates.Add(d.ToString("yyyy-MM-dd"));
+        }
+
+        return Ok(Result<object>.Success(new { dates }));
+    }
+
     [HttpGet("search")]
     [RequirePermission(ClinIQ.Shared.Constants.Permissions.DoctorsView)]
     public async Task<IActionResult> SearchDoctors([FromQuery] string? term, [FromQuery] int limit = 10)

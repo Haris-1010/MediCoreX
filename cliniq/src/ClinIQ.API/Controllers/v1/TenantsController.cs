@@ -96,22 +96,32 @@ public class TenantsController : ControllerBase
         if (tenant == null)
             return NotFound(Result.Failure("No active organization found"));
 
-        var uploadsDir = Path.Combine(_environment.WebRootPath ?? Path.Combine(_environment.ContentRootPath, "wwwroot"), "uploads", "logos");
-        Directory.CreateDirectory(uploadsDir);
-
-        var fileName = $"logo-{tenant.Id}-{DateTime.UtcNow:yyyyMMddHHmmss}{extension}";
-        var filePath = Path.Combine(uploadsDir, fileName);
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
+        using (var memory = new MemoryStream())
         {
-            await file.CopyToAsync(stream);
+            await file.CopyToAsync(memory);
+            tenant.LogoData = memory.ToArray();
         }
 
-        tenant.LogoUrl = $"/uploads/logos/{fileName}";
+        tenant.LogoContentType = GetImageContentType(extension);
+        tenant.LogoUrl = $"/api/v1/tenants/{tenant.Id}/logo?v={DateTime.UtcNow:yyyyMMddHHmmssfff}";
         tenant.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
         return Ok(Result<object>.Success(new { logoUrl = tenant.LogoUrl }, "Logo uploaded successfully"));
+    }
+
+    [HttpGet("{id:guid}/logo")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetTenantLogo(Guid id)
+    {
+        var tenant = await _context.Tenants
+            .IgnoreQueryFilters().AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
+
+        if (tenant?.LogoData == null || tenant.LogoData.Length == 0)
+            return NotFound();
+
+        return File(tenant.LogoData, tenant.LogoContentType ?? "image/png");
     }
 
     [HttpGet]
@@ -146,6 +156,16 @@ public class TenantsController : ControllerBase
 
         return Ok(Result<object>.Success(tenant));
     }
+
+    private static string GetImageContentType(string extension) => extension switch
+    {
+        ".png" => "image/png",
+        ".jpg" or ".jpeg" => "image/jpeg",
+        ".gif" => "image/gif",
+        ".webp" => "image/webp",
+        ".svg" => "image/svg+xml",
+        _ => "application/octet-stream"
+    };
 
     private async Task<Tenant?> ResolveCurrentTenantAsync()
     {

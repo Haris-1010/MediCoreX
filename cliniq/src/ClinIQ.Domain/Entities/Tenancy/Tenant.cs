@@ -11,6 +11,8 @@ public class Tenant : BaseAuditableEntity
     public string? Slug { get; set; }
     public string? Description { get; set; }
     public string? LogoUrl { get; set; }
+    public string? LogoContentType { get; set; }
+    public byte[]? LogoData { get; set; }
     public string? Website { get; set; }
     public string? Email { get; set; }
     public string? Phone { get; set; }

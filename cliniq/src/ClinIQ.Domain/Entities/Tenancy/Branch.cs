@@ -11,6 +11,8 @@ public class Branch : TenantEntity
     public string Code { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? LogoUrl { get; set; }
+    public string? LogoContentType { get; set; }
+    public byte[]? LogoData { get; set; }
     public string? Website { get; set; }
     public string? Address { get; set; }
     public string? City { get; set; }

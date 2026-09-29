@@ -301,23 +301,32 @@ public class BranchesController : ControllerBase
         if (branch is null)
             return NotFound(Result.Failure("Location not found."));
 
-        var uploadsDir = Path.Combine(
-            Directory.GetCurrentDirectory(), "wwwroot", "uploads", "logos");
-        Directory.CreateDirectory(uploadsDir);
-
-        var fileName = $"branch-logo-{branch.Id}-{DateTime.UtcNow:yyyyMMddHHmmss}{extension}";
-        var filePath = Path.Combine(uploadsDir, fileName);
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
+        using (var memory = new MemoryStream())
         {
-            await file.CopyToAsync(stream);
+            await file.CopyToAsync(memory);
+            branch.LogoData = memory.ToArray();
         }
 
-        branch.LogoUrl = $"/uploads/logos/{fileName}";
+        branch.LogoContentType = GetImageContentType(extension);
+        branch.LogoUrl = $"/api/v1/branches/{branch.Id}/logo?v={DateTime.UtcNow:yyyyMMddHHmmssfff}";
         branch.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
         return Ok(Result<object>.Success(new { logoUrl = branch.LogoUrl }, "Logo uploaded successfully"));
+    }
+
+    [HttpGet("{id:guid}/logo")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetBranchLogo(Guid id)
+    {
+        var branch = await _context.Branches
+            .IgnoreQueryFilters().AsNoTracking()
+            .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted);
+
+        if (branch?.LogoData == null || branch.LogoData.Length == 0)
+            return NotFound();
+
+        return File(branch.LogoData, branch.LogoContentType ?? "image/png");
     }
 
     /// <summary>
@@ -364,6 +373,16 @@ public class BranchesController : ControllerBase
             BranchId = branch?.Id
         }));
     }
+
+    private static string GetImageContentType(string extension) => extension switch
+    {
+        ".png" => "image/png",
+        ".jpg" or ".jpeg" => "image/jpeg",
+        ".gif" => "image/gif",
+        ".webp" => "image/webp",
+        ".svg" => "image/svg+xml",
+        _ => "application/octet-stream"
+    };
 
     private Guid? GetCurrentUserId()
     {

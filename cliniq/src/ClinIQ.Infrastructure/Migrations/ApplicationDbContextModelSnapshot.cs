@@ -5914,6 +5914,12 @@ namespace ClinIQ.Infrastructure.Migrations
                     b.Property<bool>("IsMainBranch")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("LogoContentType")
+                        .HasColumnType("text");
+
+                    b.Property<byte[]>("LogoData")
+                        .HasColumnType("bytea");
+
                     b.Property<string>("LogoUrl")
                         .HasColumnType("text");
 
@@ -6121,6 +6127,12 @@ namespace ClinIQ.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasDefaultValue("en-US");
+
+                    b.Property<string>("LogoContentType")
+                        .HasColumnType("text");
+
+                    b.Property<byte[]>("LogoData")
+                        .HasColumnType("bytea");
 
                     b.Property<string>("LogoUrl")
                         .HasColumnType("text");
