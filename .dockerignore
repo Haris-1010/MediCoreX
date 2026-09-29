@@ -1,0 +1,10 @@
+.git
+**/bin/
+**/obj/
+**/node_modules/
+**/logs/
+**/dist/
+cliniq/.vs/
+cliniq/src/ClinIQ.API/%TEMP%/
+**/*.user
+**/*.md

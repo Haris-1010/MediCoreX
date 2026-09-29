@@ -71,6 +71,26 @@ app.MapHub<ClinIQ.API.Hubs.QueueHub>("/hubs/queue");
 
 app.MapHealthChecks("/health");
 
+// The image ships the Angular build in wwwroot. Static files are already
+// served above; this only catches extension-less paths (an Angular route
+// like /login on a hard refresh) and hands them the SPA shell, while /api,
+// /hubs and /health keep their own answers.
+var spaIndex = Path.Combine(AppContext.BaseDirectory, "wwwroot", "index.html");
+if (File.Exists(spaIndex))
+{
+    app.MapWhen(
+        ctx => !ctx.Request.Path.StartsWithSegments("/api")
+            && !ctx.Request.Path.StartsWithSegments("/hubs")
+            && !ctx.Request.Path.StartsWithSegments("/health")
+            && !ctx.Request.Path.StartsWithSegments("/swagger")
+            && !Path.HasExtension(ctx.Request.Path),
+        branch => branch.Run(async ctx =>
+        {
+            ctx.Response.ContentType = "text/html; charset=utf-8";
+            await ctx.Response.SendFileAsync(spaIndex);
+        }));
+}
+
 try
 {
     // Seed permissions, system roles and their default grants. Idempotent, so
