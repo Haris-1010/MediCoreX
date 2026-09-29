@@ -68,6 +68,10 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<ClinIQ.API.Hubs.NotificationHub>("/hubs/notifications");
 app.MapHub<ClinIQ.API.Hubs.QueueHub>("/hubs/queue");
+// The edge routes /api/* to this container when the app runs as parts, so
+// the hubs are also exposed under /api for the Angular SignalR client.
+app.MapHub<ClinIQ.API.Hubs.NotificationHub>("/api/hubs/notifications");
+app.MapHub<ClinIQ.API.Hubs.QueueHub>("/api/hubs/queue");
 
 app.MapHealthChecks("/health");
 
